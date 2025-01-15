@@ -33,5 +33,9 @@
     "experiments": {
       "typedRoutes": true
     }
-  }
+  },
+  "updates": {
+  "enabled": true,
+  "checkAutomatically": "ON_LOAD"
+}
 }

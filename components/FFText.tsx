@@ -19,6 +19,7 @@ const FFText: React.FC<FFTextProps> = ({ children, style }) => {
     color: textColor, // Apply theme-based color
     fontSize: 16,      // Default font size
     fontWeight: '600' as TextStyle['fontWeight'], // Cast to valid fontWeight type
+    gap: 20,
     ...style,         // Merge custom style if provided
   };
 

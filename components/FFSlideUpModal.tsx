@@ -1,5 +1,5 @@
-import React, { useEffect } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import React, { useEffect } from 'react'; 
+import { View, TouchableOpacity, StyleSheet } from 'react-native';
 import { GestureHandlerRootView, PanGestureHandler } from 'react-native-gesture-handler';
 import Animated, {
   Easing,
@@ -27,13 +27,13 @@ const SlideUpModal: React.FC<SlideUpModalProps> = ({ isVisible, onClose, childre
     if (isVisible) {
       // Animate modal sliding up
       translateY.value = withTiming(0, {
-        duration: 300, // Smooth duration
+        duration: 300, // Smooth duration for opening
         easing: Easing.out(Easing.ease),
       });
     } else {
       // Animate modal sliding down when not visible
       translateY.value = withTiming(300, {
-        duration: 300,
+        duration: 300, // Smooth duration for closing
         easing: Easing.in(Easing.ease),
       });
     }
@@ -67,47 +67,66 @@ const SlideUpModal: React.FC<SlideUpModalProps> = ({ isVisible, onClose, childre
   const animatedModalStyle = useAnimatedStyle(() => {
     return {
       transform: [{ translateY: translateY.value }],
-      zIndex: 999,  // Ensure this modal is on top
+      zIndex: 9999,  // Ensure this modal is on top
     };
   });
 
+  // Overlay touch event handler
+  const handleOverlayPress = (event: any) => {
+    // Prevent interaction with the background
+    event.stopPropagation();
+  };
+
   return (
-    <GestureHandlerRootView style={{ flex: 1,  }}>
-      <Animated.View
-        style={[styles.modalContainer, animatedModalStyle, {
-          backgroundColor: theme === 'light' ? '#fff' : '#333',
-        }]}
-      >
-        <PanGestureHandler onGestureEvent={gestureHandler} onHandlerStateChange={gestureHandler}>
-          <Animated.View style={styles.modalContent}>
-            <TouchableOpacity onPress={onClose} style={styles.closeButton}>
-              <FFText style={styles.closeButtonText}>Close</FFText>
-            </TouchableOpacity>
-            <View style={styles.content}>{children}</View>
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      {isVisible && (
+        <Animated.View
+          style={[styles.overlay, { backgroundColor: theme === 'light' ? 'rgba(0,0,0,0.5)' : 'rgba(255,255,255,0.5)' }]}
+          onTouchStart={handleOverlayPress} // Block interaction with the background
+        >
+          <Animated.View
+            style={[styles.modalContainer, animatedModalStyle, { backgroundColor: theme === 'light' ? '#fff' : '#333' }]}
+          >
+            <PanGestureHandler onGestureEvent={gestureHandler} onHandlerStateChange={gestureHandler}>
+              <Animated.View style={styles.modalContent}>
+                <TouchableOpacity onPress={onClose} style={styles.closeButton}>
+                  <FFText style={styles.closeButtonText}>Close</FFText>
+                </TouchableOpacity>
+                <View style={styles.content}>{children}</View>
+              </Animated.View>
+            </PanGestureHandler>
           </Animated.View>
-        </PanGestureHandler>
-      </Animated.View>
+        </Animated.View>
+      )}
     </GestureHandlerRootView>
   );
 };
 
 const styles = StyleSheet.create({
+  overlay: {
+    position: 'absolute',
+    top: -700,
+    left: -20,
+    right: -20,
+    bottom: 0,
+    zIndex: 9998,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
   modalContainer: {
-    
     position: 'absolute',
     left: 0,
     right: 0,
     bottom: 0,
     height: '80%', // Modal height
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
+    borderTopLeftRadius: 30,
+    borderTopRightRadius: 30,
     paddingTop: 20,
+    zIndex: 9999,
     paddingHorizontal: 20,
-
   },
   modalContent: {
     flex: 1,
-    
     justifyContent: 'flex-start',
   },
   closeButton: {
@@ -121,7 +140,6 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
   },
   content: {
-    
     marginTop: 20,
     flex: 1,
   },

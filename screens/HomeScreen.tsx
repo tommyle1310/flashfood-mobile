@@ -1,9 +1,8 @@
-import { View, Text, Button, TouchableOpacity } from "react-native";
+import { View, Text } from "react-native";
 import React, { useState } from "react";
-import { SafeAreaView } from "react-native-safe-area-context";
-import FFButton from "@/components/FFButton";
 import FFSafeAreaView from "@/components/FFSafeAreaView";
 import FFText from "@/components/FFText";
+import FFButton from "@/components/FFButton";
 import FFToggle from "@/components/FFToggle";
 import FFProgressBar from "@/components/FFProgressbar";
 import FFCircularProgressBar from "@/components/FFCircularProgressBar";
@@ -12,8 +11,8 @@ import FFModal from "@/components/FFModal";
 import SlideUpModal from "@/components/FFSlideUpModal";
 import FFBottomTab from "@/components/FFBottomTab";
 
-const index = () => {
-  const [currentScreen, setCurrentScreen] = useState(0);
+const HomeScreen = () => {
+    const [currentScreen, setCurrentScreen] = useState(0);
 
   const [modalVisible, setModalVisible] = useState(false);
 
@@ -82,9 +81,9 @@ const index = () => {
             </SlideUpModal>
         </View>
       </View>
-      <FFBottomTab />
+      {/* <FFBottomTab /> */}
     </FFSafeAreaView>
-  );
+)
 };
 
-export default index;
+export default HomeScreen;
