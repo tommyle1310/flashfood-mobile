@@ -48,7 +48,6 @@ const HomeScreen = () => {
           >
             open slide up modal
           </FFButton>
-          <FFToggle label="Switch Theme" initialChecked />
           <FFProgressBar
             label="Progress Bar"
             initialProgress={10}

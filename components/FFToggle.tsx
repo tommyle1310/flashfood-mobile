@@ -29,7 +29,7 @@ const FFToggle: React.FC<FFToggleProps> = ({ label, initialChecked = false, onCh
       <Switch
         value={isChecked}
         onValueChange={handleToggleChange}
-        trackColor={{ false: 'gray', true: 'blue' }}
+        trackColor={{ false: 'gray', true: '#63c550' }}
         thumbColor={isChecked ? '#fff' : '#f4f3f4'}
       />
     </View>

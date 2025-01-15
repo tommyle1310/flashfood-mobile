@@ -16,16 +16,17 @@ const FFButton: React.FC<{
   const [pressed, setPressed] = useState(false);
 
   // Define gradient colors for the light and dark theme
-  const gradientColors: readonly [string, string] =
-    theme === "light"
-      ? ["#ff7e5f", "#feb47b"] // Light theme gradient
-      : ["#6a11cb", "#2575fc"]; // Dark theme gradient
+const gradientColors: readonly [string, string] =
+  theme === "light"
+    ? ["#63c550", "#a3d98f"] // Light theme gradient with a softer lighter green
+    : ["#63c550", "#4a9e3e"]; // Dark theme gradient
 
-  // Darker color versions for the pressed effect (optional)
-  const darkenedGradientColors: readonly [string, string] =
-    theme === "light"
-      ? ["#e56c4a", "#d68f56"] // Darkened light theme gradient
-      : ["#4c0f91", "#1e59a3"]; // Darkened dark theme gradient
+// Darker color versions for the pressed effect (optional)
+const darkenedGradientColors: readonly [string, string] =
+  theme === "light"
+    ? ["#4d9c39", "#7dbf72"] // Darkened light theme gradient (slightly more muted)
+    : ["#4c9f3a", "#3e7c2a"]; // Darkened dark theme gradient (deeper green for contrast)
+
 
   return (
     <Pressable
