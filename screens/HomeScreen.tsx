@@ -30,9 +30,10 @@ const HomeScreen = () => {
     setIsModalSlideUpVisible(!isModalSlideUpVisible);
   };
   return (
+            <>
     <FFSafeAreaView>
-      <View className="flex flex-row gap-4 p-4 flex-1">
-        <View className="gap-4">
+      <View className="flex-col  gap-4 p-4 flex-1 ">
+        <View className="gap-4  flex-1">
           <FFText className="text-red-300 text-lg">open modal</FFText>
           <FFButton
             textClassName="text-black font-bold"
@@ -72,16 +73,24 @@ const HomeScreen = () => {
               content="This is an important message in the modal. You can close it by pressing the button below."
               onClose={handleCloseModal}
             />
-            <SlideUpModal
-              isVisible={isModalSlideUpVisible}
-              onClose={toggleModalSlideUp}
-            >
-              <FFText>This is a modal content!</FFText>
-            </SlideUpModal>
+           
         </View>
       </View>
       {/* <FFBottomTab /> */}
+      {/* <View className="bg-blue-300 h-20 w-full"></View> */}
+       
     </FFSafeAreaView>
+    {/* {
+isModalSlideUpVisible && */}
+      <SlideUpModal
+      isVisible={isModalSlideUpVisible}
+      onClose={toggleModalSlideUp}
+>
+  <FFText>This is a modal content!</FFText>
+</SlideUpModal>
+{/* } */}
+
+            </>
 )
 };
 

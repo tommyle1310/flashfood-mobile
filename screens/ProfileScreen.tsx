@@ -7,7 +7,7 @@ import FFToggle from "@/components/FFToggle";
 const ProfileScreen = () => {
   return (
     <FFSafeAreaView>
-      <View className="flex-col gap-4 p-4 flex-1">
+      <View className="flex-col gap-4 p-4 flex-1 ">
         <FFText>profile</FFText>
           <FFToggle label="Switch Theme" initialChecked />
 

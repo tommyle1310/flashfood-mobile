@@ -36,6 +36,7 @@ const FFSafeAreaView: React.FC<{
         >
           {children}
         </LinearGradient>
+        <StatusBar barStyle={"dark-content"}/>
       </SafeAreaView>
     </>
   );

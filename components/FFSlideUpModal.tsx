@@ -1,5 +1,5 @@
-import React, { useEffect } from 'react'; 
-import { View, TouchableOpacity, StyleSheet } from 'react-native';
+import React, { useEffect } from 'react';
+import { View, TouchableOpacity, StyleSheet, Dimensions } from 'react-native';
 import { GestureHandlerRootView, PanGestureHandler } from 'react-native-gesture-handler';
 import Animated, {
   Easing,
@@ -21,7 +21,8 @@ interface SlideUpModalProps {
 
 const SlideUpModal: React.FC<SlideUpModalProps> = ({ isVisible, onClose, children }) => {
   const { theme } = useTheme();
-  const translateY = useSharedValue(300); // Initially below the screen
+  const screenHeight = Dimensions.get('window').height;
+  const translateY = useSharedValue(screenHeight); // Initially off-screen
 
   useEffect(() => {
     if (isVisible) {
@@ -32,7 +33,7 @@ const SlideUpModal: React.FC<SlideUpModalProps> = ({ isVisible, onClose, childre
       });
     } else {
       // Animate modal sliding down when not visible
-      translateY.value = withTiming(300, {
+      translateY.value = withTiming(screenHeight, {
         duration: 300, // Smooth duration for closing
         easing: Easing.in(Easing.ease),
       });
@@ -77,52 +78,66 @@ const SlideUpModal: React.FC<SlideUpModalProps> = ({ isVisible, onClose, childre
     event.stopPropagation();
   };
 
+  // Only render the modal if it is visible
+  if (!isVisible) {
+    return null; // Don't render the modal if it's not visible
+  }
+
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
-      {isVisible && (
+      <Animated.View
+   style={[
+  styles.overlay,
+  {
+    backgroundColor: theme === 'light' ? 'rgba(255, 255, 255, 0.8)' : 'rgba(51, 51, 51, 0.8)', // Adjust the 0.5 for the level of transparency
+  },
+]}
+        onTouchStart={handleOverlayPress} // Block interaction with the background
+      >
         <Animated.View
-          style={[styles.overlay, { backgroundColor: theme === 'light' ? 'rgba(0,0,0,0.5)' : 'rgba(255,255,255,0.5)' }]}
-          onTouchStart={handleOverlayPress} // Block interaction with the background
+          style={[
+            styles.modalContainer,
+            animatedModalStyle,
+            { backgroundColor: theme === 'light' ? '#fff' : '#333' },
+          ]}
         >
-          <Animated.View
-            style={[styles.modalContainer, animatedModalStyle, { backgroundColor: theme === 'light' ? '#fff' : '#333' }]}
-          >
-            <PanGestureHandler onGestureEvent={gestureHandler} onHandlerStateChange={gestureHandler}>
-              <Animated.View style={styles.modalContent}>
-                <TouchableOpacity onPress={onClose} style={styles.closeButton}>
-                  <FFText style={styles.closeButtonText}>Close</FFText>
-                </TouchableOpacity>
-                <View style={styles.content}>{children}</View>
-              </Animated.View>
-            </PanGestureHandler>
-          </Animated.View>
+          <PanGestureHandler onGestureEvent={gestureHandler} onHandlerStateChange={gestureHandler}>
+            <Animated.View style={styles.modalContent}>
+              <TouchableOpacity onPress={onClose} style={styles.closeButton}>
+                <FFText style={styles.closeButtonText}>Close</FFText>
+              </TouchableOpacity>
+              <View style={styles.content}>{children}</View>
+            </Animated.View>
+          </PanGestureHandler>
         </Animated.View>
-      )}
+      </Animated.View>
     </GestureHandlerRootView>
   );
 };
 
 const styles = StyleSheet.create({
   overlay: {
-    position: 'absolute',
-    top: -700,
-    left: -20,
-    right: -20,
-    bottom: 0,
-    zIndex: 9998,
+    position: 'absolute',  // Positioned over the entire screen
+    top: -500,
+    left: 0,
+    right: 0,
+    height: 1000,
+    bottom: 0, // Ensure it covers the whole screen
     justifyContent: 'center',
     alignItems: 'center',
+    zIndex: 1000, // Ensure it's on top of everything
   },
   modalContainer: {
     position: 'absolute',
     left: 0,
     right: 0,
-    bottom: 0,
-    height: '80%', // Modal height
+    bottom: 0, // Modal starts from the bottom
+    height: '80%', // Modal height is now 80% of the screen height
+    backgroundColor: 'white',
     borderTopLeftRadius: 30,
     borderTopRightRadius: 30,
     paddingTop: 20,
-    zIndex: 9999,
+    zIndex: 9999, // Ensure it's on top of overlay
     paddingHorizontal: 20,
   },
   modalContent: {

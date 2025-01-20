@@ -7,9 +7,16 @@ import FFBadge from "@/components/FFBadge";
 const CartScreen = () => {
   return (
     <FFSafeAreaView>
-      <View className="flex gap-4 p-4 flex-1">
+      <View className="flex gap-4 p-4 flex-1 ">
         <FFText>cart</FFText>
-    <FFBadge title="In progress" backgroundColor="#e36abf" textColor="#fff"/>
+        {/* <View className="self-start"> */}
+
+        <FFBadge
+          title="In progress"
+          backgroundColor="#e36abf"
+          textColor="#fff"
+          />
+          {/* </View> */}
       </View>
     </FFSafeAreaView>
   );

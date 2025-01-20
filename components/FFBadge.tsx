@@ -22,6 +22,8 @@ const FFBadge: React.FC<FFBadgeProps> = ({ title, backgroundColor = "blue", roun
       style={{
         backgroundColor, 
         borderRadius: roundedMap[rounded], 
+        paddingHorizontal: 6,
+        paddingVertical: 4,
       }} 
       className="px-2 py-1 self-start"
     >
