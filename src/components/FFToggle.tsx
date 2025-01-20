@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { View, Text, Switch } from 'react-native';
 import FFText from './FFText'; // Assuming you have a custom text component for styling
-import { useTheme } from '@/hooks/useTheme'; // Import the custom useTheme hook
+import { useTheme } from '@/src/hooks/useTheme'; // Import the custom useTheme hook
 
 interface FFToggleProps {
   label: string;

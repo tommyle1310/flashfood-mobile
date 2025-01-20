@@ -1,10 +1,10 @@
 import React, { useEffect } from "react";
 import { Provider, useDispatch } from "react-redux";
-import store, { AppDispatch } from "@/store/store";
-import { loadTokenFromAsyncStorage } from "@/store/authSlice";
-import { ThemeProvider } from "@/hooks/useTheme";
-import AppNavigator from "@/navigation/AppNavigator";
-import FFSafeAreaView from "@/components/FFSafeAreaView";
+import store, { AppDispatch } from "@/src/store/store";
+import { loadTokenFromAsyncStorage } from "@/src/store/authSlice";
+import { ThemeProvider } from "@/src/hooks/useTheme";
+import AppNavigator from "@/src/navigation/AppNavigator";
+import FFSafeAreaView from "@/src/components/FFSafeAreaView";
 
 const RootLayout = () => {
   const dispatch = useDispatch<AppDispatch>();

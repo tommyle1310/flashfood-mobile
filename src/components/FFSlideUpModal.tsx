@@ -10,7 +10,7 @@ import Animated, {
   useAnimatedStyle,
   useAnimatedGestureHandler,
 } from 'react-native-reanimated';
-import { useTheme } from '@/hooks/useTheme';
+import { useTheme } from '@/src/hooks/useTheme';
 import FFText from './FFText';
 
 interface SlideUpModalProps {

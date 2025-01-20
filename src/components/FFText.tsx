@@ -1,4 +1,4 @@
-import { useTheme } from '@/hooks/useTheme';
+import { useTheme } from '@/src/hooks/useTheme';
 import React from 'react';
 import { Text, TextStyle } from 'react-native';
 

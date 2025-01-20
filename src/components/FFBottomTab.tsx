@@ -4,7 +4,7 @@ import FFText from "./FFText";
 import IconFontiso from "react-native-vector-icons/Fontisto";
 import IconIonicons from "react-native-vector-icons/Ionicons";
 import IconEntypo from "react-native-vector-icons/Entypo";
-import { useTheme } from "@/hooks/useTheme";
+import { useTheme } from "@/src/hooks/useTheme";
 
 type FFBottomTabProps = {
   currentScreen: number;

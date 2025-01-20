@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, Modal, Text, TouchableOpacity, StyleSheet } from 'react-native';
-import { useTheme } from '@/hooks/useTheme'; // Import the custom useTheme hook
+import { useTheme } from '@/src/hooks/useTheme'; // Import the custom useTheme hook
 import FFText from './FFText';
 
 interface FFModalProps {

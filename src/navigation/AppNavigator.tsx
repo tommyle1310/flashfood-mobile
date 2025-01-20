@@ -9,7 +9,7 @@ import OrdersScreen from "@/screens/OrdersScreen";
 import LoginScreen from "@/screens/Auth/LoginScreen";
 import SignupScreen from "@/screens/Auth/SignupScreen";
 import ProfileScreen from "@/screens/ProfileScreen";
-import FFBottomTab from "@/components/FFBottomTab";
+import FFBottomTab from "@/src/components/FFBottomTab";
 
 // Define the param list for the stack navigator
 export type RootStackParamList = {

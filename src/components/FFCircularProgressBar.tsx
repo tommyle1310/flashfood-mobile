@@ -1,4 +1,4 @@
-import { useTheme } from '@/hooks/useTheme';
+import { useTheme } from '@/src/hooks/useTheme';
 import React, { useState } from 'react';
 import { View } from 'react-native';
 import Svg, { Circle, Text as SvgText } from 'react-native-svg';

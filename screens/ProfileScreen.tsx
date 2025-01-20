@@ -1,12 +1,12 @@
 import { View,  } from "react-native";
 import React from "react";
-import FFSafeAreaView from "@/components/FFSafeAreaView";
-import FFText from "@/components/FFText";
-import FFToggle from "@/components/FFToggle";
-import FFButton from "@/components/FFButton";
+import FFSafeAreaView from "@/src/components/FFSafeAreaView";
+import FFText from "@/src/components/FFText";
+import FFToggle from "@/src/components/FFToggle";
+import FFButton from "@/src/components/FFButton";
 import { useNavigation } from "@react-navigation/native";
 import { StackNavigationProp } from "@react-navigation/stack";
-import { RootStackParamList } from "@/navigation/AppNavigator";
+import { RootStackParamList } from "@/src/navigation/AppNavigator";
 
 type LogoutSreenNavigationProp = StackNavigationProp<RootStackParamList, "Home">;
 

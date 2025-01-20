@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Pressable, View } from 'react-native';
 import Icon from 'react-native-vector-icons/FontAwesome';  // or another icon set
-import { useTheme } from '@/hooks/useTheme';
+import { useTheme } from '@/src/hooks/useTheme';
 
 interface FFIconWithBgProps {
   iconName: string; // Name of the icon

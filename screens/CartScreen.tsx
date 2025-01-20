@@ -1,8 +1,8 @@
 import { Text, View } from "react-native";
 import React from "react";
-import FFSafeAreaView from "@/components/FFSafeAreaView";
-import FFText from "@/components/FFText";
-import FFBadge from "@/components/FFBadge";
+import FFSafeAreaView from "@/src/components/FFSafeAreaView";
+import FFText from "@/src/components/FFText";
+import FFBadge from "@/src/components/FFBadge";
 
 const CartScreen = () => {
   return (
