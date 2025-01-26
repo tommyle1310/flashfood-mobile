@@ -64,6 +64,7 @@ const Login = () => {
             support_tickets: userData.support_tickets || [], // Ensure this is an array
             user_id: userData.user_id || "", // Default to empty string if not present
             user_type: userData.user_type || [], // Ensure this is an array
+            address: userData.address || [],
           })
         );
 

@@ -16,6 +16,10 @@ import axiosInstance from "@/src/utils/axiosConfig";
 import IconAntDesign from "react-native-vector-icons/AntDesign";
 import IconFeather from "react-native-vector-icons/Feather";
 import FFAvatar from "@/src/components/FFAvatar";
+import {
+  loadTokenFromAsyncStorage,
+  saveTokenToAsyncStorage,
+} from "@/src/store/authSlice";
 
 type FoodCategory = { _id: string; name: string; description: string };
 type Promotion = {
@@ -55,6 +59,10 @@ const HomeScreen = () => {
   const [listRestaurants, setListRestaurants] = useState<Restaurant[] | null>(
     null
   );
+  const [listFavoriteRestaurants, setListFavoriteRestaurants] = useState<
+    string[] | null
+  >(null);
+
   const globalState = useSelector((state: RootState) => state.auth);
   useEffect(() => {
     const fetchAllFoodCategories = async () => {
@@ -103,7 +111,73 @@ const HomeScreen = () => {
     }
   }, [selectedFoodCategories, listRestaurants]);
 
+  useEffect(() => {
+    setListFavoriteRestaurants(globalState?.favorite_restaurants);
+  }, [listFavoriteRestaurants, globalState, listRestaurants]);
+
   const renderedRestaurants = filteredRestaurants ?? listRestaurants ?? [];
+
+  const handleToggleFavorite = async (itemId: string) => {
+    // Update local state to toggle the favorite restaurant
+    setListFavoriteRestaurants((prevList) => {
+      const updatedList = prevList ? [...prevList] : [];
+      if (updatedList.includes(itemId)) {
+        return updatedList.filter((id) => id !== itemId); // Remove the item
+      } else {
+        updatedList.push(itemId); // Add the item
+        return updatedList;
+      }
+    });
+
+    try {
+      // Send the PATCH request to update the favorite restaurants on the server
+      const response = await axiosInstance.patch(
+        `/customers/favorite-restaurant/${globalState?.user_id}`,
+        {
+          favorite_restaurants: itemId, // Send only the ID of the restaurant as the payload
+        },
+        {
+          validateStatus: () => true,
+        }
+      );
+
+      const { EC, EM, data } = response.data;
+
+      if (EC === 0) {
+        console.log("Successfully updated favorites:", data);
+
+        // Provide fallback for potentially null properties
+        const updatedAppPreferences = globalState?.app_preferences ?? {}; // Fallback to empty object
+        const updatedFavoriteRestaurants =
+          globalState?.favorite_restaurants ?? []; // Fallback to empty array
+        const updatedAvatar = globalState?.avatar ?? { url: "", key: "" }; // Fallback to empty avatar
+        const updatedAddress = globalState?.address ?? []; // Fallback to empty array
+
+        // Update global state with the data and save to AsyncStorage
+        await dispatch(
+          saveTokenToAsyncStorage({
+            accessToken: globalState?.accessToken || "", // Default empty string if null
+            app_preferences: updatedAppPreferences, // Ensure it's always an object
+            email: globalState?.email || "", // Default empty string if null
+            preferred_category: globalState?.preferred_category ?? [], // Default empty array if null
+            favorite_restaurants: updatedFavoriteRestaurants, // Ensure it's always an array
+            favorite_items: globalState?.favorite_items ?? [], // Default empty array if null
+            avatar: updatedAvatar, // Ensure avatar is not null
+            support_tickets: globalState?.support_tickets ?? [], // Default empty array if null
+            user_id: globalState?.user_id || "", // Default empty string if null
+            user_type: globalState?.user_type ?? [], // Default empty array if null
+            address: updatedAddress, // Ensure address is always an array (empty array if null)
+          })
+        );
+      } else {
+        console.error("Request failed with error code:", EC);
+        console.error("Error message:", EM);
+      }
+    } catch (error) {
+      console.error("Error during API request:", error);
+    }
+  };
+
   return (
     <>
       <FFSafeAreaView>
@@ -111,13 +185,13 @@ const HomeScreen = () => {
           {/* top section */}
           <View className="flex-row justify-between items-center">
             <View className="flex-row items-center gap-2">
-              <FFAvatar size={50} />
+              <FFAvatar avatar={globalState?.avatar?.url} size={50} />
               <View className="">
-                <FFText>Tommy Shelby</FFText>
+                <FFText>{globalState?.email}</FFText>
                 <FFText
                   style={{ fontWeight: 400, fontSize: 12, color: "#bbb" }}
                 >
-                  102 Phan Huy It, Q.12, SG, VN
+                  {globalState?.address?.[0]?.title}
                 </FFText>
               </View>
             </View>
@@ -199,15 +273,13 @@ const HomeScreen = () => {
               </TouchableOpacity>
             </View>
             <ScrollView horizontal className="mt-2">
-              {(
-                (selectedFoodCategories && selectedFoodCategories?.length > 0
-                  ? renderedRestaurants
-                  : listRestaurants) ?? []
-              )?.length > 0 ? (
-                (selectedFoodCategories && selectedFoodCategories.length > 0
-                  ? renderedRestaurants
-                  : listRestaurants
-                )?.map((item) => (
+              {
+                // Ensure selectedFoodCategories and listRestaurants are not null/undefined
+                (
+                  (selectedFoodCategories && selectedFoodCategories.length > 0
+                    ? renderedRestaurants
+                    : listRestaurants) ?? []
+                ).map((item) => (
                   <Pressable
                     key={item._id}
                     className="p-2 rounded-lg shadow-md bg-white w-36 h-48 mr-2"
@@ -248,7 +320,8 @@ const HomeScreen = () => {
                       </View>
 
                       {/* Cart Icon */}
-                      <View
+                      <Pressable
+                        onPress={() => handleToggleFavorite(item._id)} // Assuming `item._id` is the restaurant ID
                         className="flex-row absolute items-center gap-1 top-1 right-1"
                         style={{
                           backgroundColor: "rgba(0, 0, 0, 0.3)", // Semi-transparent background
@@ -262,11 +335,19 @@ const HomeScreen = () => {
                         }}
                       >
                         <IconAntDesign
-                          name="hearto"
+                          name={
+                            listFavoriteRestaurants?.includes(item._id)
+                              ? "heart" // Filled heart for favorites
+                              : "hearto" // Empty heart for non-favorites
+                          }
                           size={16}
-                          color="#7dbf72"
+                          color={
+                            listFavoriteRestaurants?.includes(item._id)
+                              ? "#ff4d4d"
+                              : "#7dbf72"
+                          } // Red for favorite, green for non-favorite
                         />
-                      </View>
+                      </Pressable>
                     </ImageBackground>
 
                     <View className="h-1/3">
@@ -288,9 +369,13 @@ const HomeScreen = () => {
                     </View>
                   </Pressable>
                 ))
-              ) : (
-                <FFText>No restaurant found</FFText>
-              )}
+              }
+              {/* If no restaurants, show this message */}
+              {(
+                (selectedFoodCategories && selectedFoodCategories.length > 0
+                  ? renderedRestaurants
+                  : listRestaurants) ?? []
+              ).length === 0 && <FFText>No restaurant found</FFText>}
             </ScrollView>
           </View>
         </View>
