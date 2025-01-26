@@ -1,6 +1,9 @@
-import React, { useEffect } from 'react';
-import { View, TouchableOpacity, StyleSheet, Dimensions } from 'react-native';
-import { GestureHandlerRootView, PanGestureHandler } from 'react-native-gesture-handler';
+import React, { useEffect } from "react";
+import { View, TouchableOpacity, StyleSheet, Dimensions } from "react-native";
+import {
+  GestureHandlerRootView,
+  PanGestureHandler,
+} from "react-native-gesture-handler";
 import Animated, {
   Easing,
   useSharedValue,
@@ -9,9 +12,11 @@ import Animated, {
   runOnJS,
   useAnimatedStyle,
   useAnimatedGestureHandler,
-} from 'react-native-reanimated';
-import { useTheme } from '@/src/hooks/useTheme';
-import FFText from './FFText';
+} from "react-native-reanimated";
+import { useTheme } from "@/src/hooks/useTheme";
+import FFText from "./FFText";
+import IconIonicon from "react-native-vector-icons/Ionicons";
+
 
 interface SlideUpModalProps {
   isVisible: boolean;
@@ -19,9 +24,13 @@ interface SlideUpModalProps {
   children: React.ReactNode;
 }
 
-const SlideUpModal: React.FC<SlideUpModalProps> = ({ isVisible, onClose, children }) => {
+const SlideUpModal: React.FC<SlideUpModalProps> = ({
+  isVisible,
+  onClose,
+  children,
+}) => {
   const { theme } = useTheme();
-  const screenHeight = Dimensions.get('window').height;
+  const screenHeight = Dimensions.get("window").height;
   const translateY = useSharedValue(screenHeight); // Initially off-screen
 
   useEffect(() => {
@@ -68,7 +77,7 @@ const SlideUpModal: React.FC<SlideUpModalProps> = ({ isVisible, onClose, childre
   const animatedModalStyle = useAnimatedStyle(() => {
     return {
       transform: [{ translateY: translateY.value }],
-      zIndex: 9999,  // Ensure this modal is on top
+      zIndex: 9999, // Ensure this modal is on top
     };
   });
 
@@ -86,26 +95,32 @@ const SlideUpModal: React.FC<SlideUpModalProps> = ({ isVisible, onClose, childre
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <Animated.View
-   style={[
-  styles.overlay,
-  {
-    backgroundColor: theme === 'light' ? 'rgba(255, 255, 255, 0.8)' : 'rgba(51, 51, 51, 0.8)', // Adjust the 0.5 for the level of transparency
-  },
-]}
+        style={[
+          styles.overlay,
+          {
+            backgroundColor:
+              theme === "light"
+                ? "rgba(255, 255, 255, 0.8)"
+                : "rgba(51, 51, 51, 0.8)", // Adjust the 0.5 for the level of transparency
+          },
+        ]}
         onTouchStart={handleOverlayPress} // Block interaction with the background
       >
         <Animated.View
           style={[
             styles.modalContainer,
             animatedModalStyle,
-            { backgroundColor: theme === 'light' ? '#fff' : '#333' },
+            { backgroundColor: theme === "light" ? "#fff" : "#333" },
           ]}
         >
-          <PanGestureHandler onGestureEvent={gestureHandler} onHandlerStateChange={gestureHandler}>
+          <PanGestureHandler
+            onGestureEvent={gestureHandler}
+            onHandlerStateChange={gestureHandler}
+          >
             <Animated.View style={styles.modalContent}>
-              <TouchableOpacity onPress={onClose} style={styles.closeButton}>
-                <FFText style={styles.closeButtonText}>Close</FFText>
-              </TouchableOpacity>
+                    <TouchableOpacity onPress={onClose} style={styles.closeButton}>
+                            <IconIonicon name='close' style={{ color: 'white' }} size={16}/>
+                          </TouchableOpacity>
               <View style={styles.content}>{children}</View>
             </Animated.View>
           </PanGestureHandler>
@@ -117,42 +132,51 @@ const SlideUpModal: React.FC<SlideUpModalProps> = ({ isVisible, onClose, childre
 
 const styles = StyleSheet.create({
   overlay: {
-    position: 'absolute',  // Positioned over the entire screen
+    position: "absolute", // Positioned over the entire screen
     top: -500,
     left: 0,
     right: 0,
     height: 1000,
     bottom: 0, // Ensure it covers the whole screen
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
     zIndex: 1000, // Ensure it's on top of everything
   },
   modalContainer: {
-    position: 'absolute',
+    position: "absolute",
     left: 0,
     right: 0,
     bottom: 0, // Modal starts from the bottom
-    height: '80%', // Modal height is now 80% of the screen height
-    backgroundColor: 'white',
+    height: "80%", // Modal height is now 80% of the screen height
+    backgroundColor: "white",
     borderTopLeftRadius: 30,
     borderTopRightRadius: 30,
     paddingTop: 20,
     zIndex: 9999, // Ensure it's on top of overlay
     paddingHorizontal: 20,
+
+    // Shadow properties for iOS with green color
+    shadowColor: "rgba(0, 255, 0, 0.25)", // Green color with 25% opacity
+    shadowOffset: { width: 0, height: -5 }, // Shadow position
+    shadowOpacity: 1, // Opacity of the shadow
+    shadowRadius: 10, // How blurry the shadow is
+
+    // Shadow for Android (uses elevation)
+    elevation: 10, // Elevation for Android shadow
   },
   modalContent: {
     flex: 1,
-    justifyContent: 'flex-start',
+    justifyContent: "flex-start",
   },
   closeButton: {
-    alignSelf: 'flex-end',
-    backgroundColor: 'red',
-    padding: 10,
-    borderRadius: 5,
+    alignSelf: "flex-end",
+    backgroundColor: "red",
+    padding: 4,
+    borderRadius: 9999,
   },
   closeButtonText: {
-    color: 'white',
-    fontWeight: 'bold',
+    color: "white",
+    fontWeight: "bold",
   },
   content: {
     marginTop: 20,

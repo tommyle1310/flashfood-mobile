@@ -24,7 +24,7 @@ const FFText: React.FC<FFTextProps> = ({ children, style }) => {
   };
 
   return (
-    <Text style={combinedStyle}>
+    <Text style={{...combinedStyle}}>
       {children}
     </Text>
   );

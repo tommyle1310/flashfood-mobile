@@ -1,7 +1,8 @@
 import { createStackNavigator } from "@react-navigation/stack";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
-import { View } from "react-native";
-import { useState } from "react";
+import { View, Text } from "react-native";
+import { useSelector } from "react-redux"; // Import useSelector
+import { RootState } from "@/src/store/store"; // Import RootState from your store
 
 import CartScreen from "@/screens/CartScreen";
 import HomeScreen from "@/screens/HomeScreen";
@@ -10,6 +11,10 @@ import LoginScreen from "@/screens/Auth/LoginScreen";
 import SignupScreen from "@/screens/Auth/SignupScreen";
 import ProfileScreen from "@/screens/ProfileScreen";
 import FFBottomTab from "@/src/components/FFBottomTab";
+import { useEffect, useState } from "react";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { useDispatch } from "../store/types";
+import { loadTokenFromAsyncStorage } from "../store/authSlice";
 
 // Define the param list for the stack navigator
 export type RootStackParamList = {
@@ -62,13 +67,29 @@ const HomeTabs = () => {
   );
 };
 
-
-
-
 // Stack Navigator for Login, Signup, and Home screens
 const AppNavigator = () => {
+  const token = useSelector((state: RootState) => state.auth.accessToken); // Get token from Redux
+  const dispatch = useDispatch();
+
+  const [loading, setLoading] = useState(true); // Loading state to wait for token loading
+
+  // Load token from AsyncStorage when the app starts
+  useEffect(() => {
+    const loadToken = async () => {
+      await dispatch(loadTokenFromAsyncStorage());
+      setLoading(false); // Set loading to false after token is loaded
+    };
+    loadToken();
+  }, [dispatch]);
+
+  // If the token is still loading, show a blank screen or a loading spinner
+  if (loading) {
+    return null; // Or return a loading spinner here, e.g. <ActivityIndicator />
+  }
+
   return (
-    <Stack.Navigator initialRouteName="Login">
+    <Stack.Navigator initialRouteName={token ? "Home" : "Login"}>
       <Stack.Screen
         name="Login"
         options={{ headerShown: false }} // Disable header for Login screen
@@ -79,7 +100,6 @@ const AppNavigator = () => {
         options={{ headerShown: false }} // Disable header for Signup screen
         component={SignupScreen}
       />
-      {/* Home screen as part of the stack, with HomeTabs as its component */}
       <Stack.Screen
         name="Home"
         options={{ headerShown: false }} // Disable header for Home screen
@@ -88,5 +108,7 @@ const AppNavigator = () => {
     </Stack.Navigator>
   );
 };
+
+
 
 export default AppNavigator;

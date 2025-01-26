@@ -1,5 +1,5 @@
 // components/FFAuthForm.tsx
-import React, { useState } from "react";
+import React, { useRef, useState } from "react";
 import {
   View,
   Text,
@@ -11,20 +11,25 @@ import {
 import { LinearGradient } from "expo-linear-gradient";
 import IconIonicons from "react-native-vector-icons/Ionicons";
 
-
 type FFAuthFormProps = {
   isSignUp: boolean;
   onSubmit: (email: string, password: string) => void;
   navigation?: any; // Optional navigation prop, used only in SignUp for navigation,
-  error?: string
+  error?: string;
 };
 
-const FFAuthForm = ({ isSignUp, onSubmit, navigation, error }: FFAuthFormProps) => {
+const FFAuthForm = ({
+  isSignUp,
+  onSubmit,
+  navigation,
+  error,
+}: FFAuthFormProps) => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-   const [isPasswordVisible, setIsPasswordVisible] = useState(false); // State to toggle password visibility
+  const [isPasswordVisible, setIsPasswordVisible] = useState(false); // State to toggle password visibility
+    const passwordInputRef = useRef<TextInput>(null);
 
-   const togglePasswordVisibility = () => {
+  const togglePasswordVisibility = () => {
     setIsPasswordVisible((prevState) => !prevState);
   };
 
@@ -32,11 +37,15 @@ const FFAuthForm = ({ isSignUp, onSubmit, navigation, error }: FFAuthFormProps) 
     onSubmit(email, password);
   };
 
+   const handleInputContainerPress = () => {
+    if (passwordInputRef.current) {
+      passwordInputRef.current.focus();
+    }
+  };
+
   return (
     <View style={styles.container}>
-      <Text style={styles.headerText}>
-        {isSignUp ? "Sign Up" : "Login"}
-      </Text>
+      <Text style={styles.headerText}>{isSignUp ? "Sign Up" : "Login"}</Text>
 
       <View style={styles.switchAuthContainer}>
         <Text style={styles.switchAuthText}>
@@ -54,35 +63,54 @@ const FFAuthForm = ({ isSignUp, onSubmit, navigation, error }: FFAuthFormProps) 
       <View style={styles.inputContainer}>
         <Text style={styles.inputLabel}>Email</Text>
         <TextInput
+        autoCapitalize="none"
           placeholder="teole1310@gmail.com"
           value={email}
           onChangeText={setEmail}
-          style={{borderColor: error ? 'red': '#d1d1d1',...styles.inputField}}
+          style={{
+            borderColor: error ? "red" : "#d1d1d1",
+            ...styles.inputField,
+          }}
         />
         {error && <Text className="text-sm text-red-500">{error}</Text>}
       </View>
 
-    <View style={styles.inputContainer}>
+      <Pressable onPress={handleInputContainerPress} style={styles.inputContainer}>
         <Text style={styles.inputLabel}>Password</Text>
-        <View className='rounded-md' style={{...styles.passwordContainer,  flexDirection: "row", borderWidth: 1,  borderRadius: 8,
-    marginTop: 4,
-    alignItems: "center", borderColor: 'red'}}>
+        <View
+          className="rounded-md"
+          style={{
+            ...styles.passwordContainer,
+            flexDirection: "row",
+            borderWidth: 1,
+            borderRadius: 8,
+            marginTop: 4,
+            alignItems: "center",
+            borderColor: error ? "red" : "#ccc",
+          }}
+        >
           <TextInput
+             ref={passwordInputRef}
             placeholder="*******"
             value={password}
             className="px-4"
             onChangeText={setPassword}
             secureTextEntry={!isPasswordVisible} // Toggle based on state
-            style={{ borderColor: 'none',
-               }}
+            style={{ borderColor: "none"}}
           />
-          <TouchableOpacity onPress={togglePasswordVisibility} style={styles.iconButton}>
-              color="gray"
-            <IconIonicons  className="-mt-2"   name={isPasswordVisible ? "eye-off" : "eye"} size={20} />
+          <TouchableOpacity
+            onPress={togglePasswordVisibility}
+            style={styles.iconButton}
+          >
+            <IconIonicons
+              className="-mt-2"
+              name={isPasswordVisible ? "eye-off" : "eye"}
+              size={20}
+            />
           </TouchableOpacity>
         </View>
-        {error && <Text style={{ color: 'red', fontSize: 12 }}>{error}</Text>}
-      </View>
+        {error && <Text style={{ color: "red", fontSize: 12 }}>{error}</Text>}
+      </Pressable>
 
       <Pressable onPress={handleSubmit}>
         <LinearGradient
@@ -104,7 +132,7 @@ const styles = StyleSheet.create({
   container: {
     backgroundColor: "white",
     padding: 16,
-    borderRadius: 8,
+    borderRadius: 16,
     width: "90%",
     shadowColor: "#b5b3a1",
     shadowOpacity: 0.1,
@@ -123,7 +151,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     marginTop: 8,
   },
-    passwordContainer: {
+  passwordContainer: {
     flexDirection: "row",
     alignItems: "center",
   },
@@ -150,7 +178,7 @@ const styles = StyleSheet.create({
     color: "#333",
     marginTop: 4,
   },
-    iconButton: {
+  iconButton: {
     position: "absolute",
     right: 16,
     top: 16,

@@ -1,5 +1,5 @@
 import { View, Text } from "react-native";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import FFSafeAreaView from "@/src/components/FFSafeAreaView";
 import FFText from "@/src/components/FFText";
 import FFButton from "@/src/components/FFButton";
@@ -10,21 +10,34 @@ import FFIconWithBg from "@/src/components/FFIconWithBg";
 import FFModal from "@/src/components/FFModal";
 import SlideUpModal from "@/src/components/FFSlideUpModal";
 import FFBottomTab from "@/src/components/FFBottomTab";
-import { useSelector } from "@/src/store/types";
+import { useDispatch, useSelector } from "@/src/store/types";
 import { RootState } from "@/src/store/store";
+import axiosInstance from "@/src/utils/axiosConfig";
+import { decodeJWT } from "@/src/utils/functions";
 
 const HomeScreen = () => {
-  const accessToken = useSelector((state: RootState) => state.auth.accessToken);
-  const isAuthenticated = useSelector(
-    (state: RootState) => state.auth.isAuthenticated
-  );
+    const dispatch = useDispatch();
+  const quanteo = useSelector((state: RootState) => state.auth);
+  useEffect(() => {
+    const fetchAllRestaurants = async () => {
+           const response = await axiosInstance.get(
+        `/customers/restaurants/${quanteo.user_id}`,
+        {
+          // This will ensure axios does NOT reject on non-2xx status codes
+          validateStatus: () => true, // Always return true so axios doesn't throw on errors
+        }
+      );
 
-  if (isAuthenticated) {
-    console.log("User is authenticated with token:", accessToken);
-  } else {
-    console.log("User is not authenticated");
-  }
-
+      // Now you can safely access the EC field
+      const { EC, EM, data } = response.data; // Access EC, EM, and data
+      
+      if (EC === 0) {
+        console.log("res:", data);
+      }
+    }
+    fetchAllRestaurants()
+    
+  }, [quanteo])
   const [modalVisible, setModalVisible] = useState(false);
 
   const handleOpenModal = () => {
@@ -78,26 +91,21 @@ const HomeScreen = () => {
               size={30} // Icon size
               className="shadow-lg" // Optional additional styling using NativeWind
             />
-            <FFModal
-              visible={modalVisible}
-              title="Important Message"
-              content="This is an important message in the modal. You can close it by pressing the button below."
-              onClose={handleCloseModal}
-            />
+            <FFModal visible={modalVisible} onClose={handleCloseModal}>
+              <FFText>Hello world</FFText>
+            </FFModal>
           </View>
         </View>
         {/* <FFBottomTab /> */}
         {/* <View className="bg-blue-300 h-20 w-full"></View> */}
       </FFSafeAreaView>
-      {/* {
-isModalSlideUpVisible && */}
+
       <SlideUpModal
         isVisible={isModalSlideUpVisible}
         onClose={toggleModalSlideUp}
       >
         <FFText>This is a modal content!</FFText>
       </SlideUpModal>
-      {/* } */}
     </>
   );
 };

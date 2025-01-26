@@ -7,9 +7,14 @@ import { StackNavigationProp } from "@react-navigation/stack";
 import { RootStackParamList } from "@/src/navigation/AppNavigator"; // Make sure you have this path correct
 import { LinearGradient } from "expo-linear-gradient";
 import { useDispatch, useSelector } from "@/src/store/types";
-import { loadTokenFromAsyncStorage, setAuthState } from "@/src/store/authSlice";
+import {
+  loadTokenFromAsyncStorage,
+  saveTokenToAsyncStorage,
+  setAuthState,
+} from "@/src/store/authSlice";
 import axiosInstance from "@/src/utils/axiosConfig";
 import { RootState } from "@/src/store/store";
+import { decodeJWT } from "@/src/utils/functions";
 
 type LoginScreenNavigationProp = StackNavigationProp<
   RootStackParamList,
@@ -19,7 +24,7 @@ type LoginScreenNavigationProp = StackNavigationProp<
 const Login = () => {
   const navigation = useNavigation<LoginScreenNavigationProp>();
   const dispatch = useDispatch();
-  const [error, setError] = useState('')
+  const [error, setError] = useState("");
   const handleLoginSubmit = async (email: string, password: string) => {
     // Request body
     const requestBody = {
@@ -27,31 +32,63 @@ const Login = () => {
       password: password,
     };
 
-    // Make the POST request
-    const response = await axiosInstance.post("/auth/login", requestBody, {
-      // This will ensure axios does NOT reject on non-2xx status codes
-      validateStatus: () => true, // Always return true so axios doesn't throw on errors
-    });
+    try {
+      // Make the POST request
+      const response = await axiosInstance.post(
+        "/auth/login-customer",
+        requestBody,
+        {
+          // This will ensure axios does NOT reject on non-2xx status codes
+          validateStatus: () => true, // Always return true so axios doesn't throw on errors
+        }
+      );
 
-    // Now you can safely access the EC field
-    const { EC, EM } = response.data; // Access EC directly
+      // Now you can safely access the EC field
+      const { EC, EM, data } = response.data; // Access EC, EM, and data
 
+      if (EC === 0) {
+        // Success, decode the JWT token (assuming 'data.access_token' contains the JWT)
+        const userData = decodeJWT(data.access_token); // Decode JWT to get user data
+        console.log("Decoded user data:", userData);
 
-    if (EC === 0) {
-      // Success
-      console.log('check', response.data.data.access_token)
-      dispatch(setAuthState({ accessToken: response.data.data.access_token }));
+        // Dispatch the action to save the user data to AsyncStorage and Redux store
+        dispatch(
+          saveTokenToAsyncStorage({
+            accessToken: data.access_token, // Saving the actual access token
+            app_preferences: userData.app_preferences || {}, // Fallback to empty object if not present
+            email: userData.email || "", // Default to empty string if email is missing
+            preferred_category: userData.preferred_category || [], // Ensure this is an array
+            favorite_restaurants: userData.favorite_restaurants || [], // Ensure this is an array
+            favorite_items: userData.favorite_items || [], // Ensure this is an array
+            avatar: userData.avatar || null, // Use null if no avatar data is available
+            support_tickets: userData.support_tickets || [], // Ensure this is an array
+            user_id: userData.user_id || "", // Default to empty string if not present
+            user_type: userData.user_type || [], // Ensure this is an array
+          })
+        );
 
-      // Navigate to home or another screen
-      navigation.navigate("Home");
-    } else {
-      // Handle error based on EC (optional)
-      setError(EM)
+        // Navigate to home or another screen
+        navigation.navigate("Home");
+      } else {
+        // Handle error based on EC (optional)
+        setError(EM); // Show error message if EC is non-zero
+      }
+    } catch (error) {
+      console.error("Login failed:", error);
+      setError("An unexpected error occurred during login."); // Provide a generic error message if the request fails
     }
   };
 
+  const accessToken = useSelector((state: RootState) => state.auth.accessToken);
+  const isAuthenticated = useSelector(
+    (state: RootState) => state.auth.isAuthenticated
+  );
 
-  
+  if (isAuthenticated) {
+    console.log("User is authenticated with token:", accessToken);
+  } else {
+    console.log("User is not authenticated");
+  }
 
   return (
     <FFSafeAreaView>
