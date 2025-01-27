@@ -10,38 +10,63 @@ import OrdersScreen from "@/screens/OrdersScreen";
 import LoginScreen from "@/screens/Auth/LoginScreen";
 import SignupScreen from "@/screens/Auth/SignupScreen";
 import ProfileScreen from "@/screens/ProfileScreen";
-import FFBottomTab from "@/src/components/FFBottomTab";
+import RestaurantDetail from "@/screens/RestaurantDetailScreen"; // Import RestaurantDetail
+import FFBottomTab from "@/src/components/FFBottomTab"; // Import FFBottomTab
 import { useEffect, useState } from "react";
-import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useDispatch } from "../store/types";
 import { loadTokenFromAsyncStorage } from "../store/authSlice";
 
-// Define the param list for the stack navigator
+// Root stack param list for Login, Signup, and Home
 export type RootStackParamList = {
   Login: undefined;
   Signup: undefined;
   Home: undefined;
 };
 
-// Define the param list for the bottom tab navigator
-export type RootTabParamList = {
-  Home: undefined;
+// HomeTabs param list (HomeStack, Orders, Cart, Profile)
+export type HomeTabsParamList = {
+  HomeStack: undefined; // HomeStack should be the only screen in HomeTabs
   Orders: undefined;
   Cart: undefined;
   Profile: undefined;
 };
 
-const Stack = createStackNavigator<RootStackParamList>();
-const Tab = createBottomTabNavigator<RootTabParamList>();
+// HomeStack param list (HomeScreen, RestaurantDetail)
+export type HomeStackParamList = {
+  Home: undefined;
+  RestaurantDetail: { restaurantId: string }; // Param to pass to RestaurantDetail
+};
 
-// Tab Navigator for the Home screen
+const Stack = createStackNavigator<RootStackParamList>();
+const Tab = createBottomTabNavigator<HomeTabsParamList>(); // Now includes HomeStack only
+const HomeStack = createStackNavigator<HomeStackParamList>(); // Stack for Home and RestaurantDetail
+
+// Stack Navigator for Home, including RestaurantDetail
+const HomeStackScreen = () => {
+  return (
+    <HomeStack.Navigator>
+      <HomeStack.Screen
+        options={{ headerShown: false }}
+        name="Home"
+        component={HomeScreen}
+      />
+      <HomeStack.Screen
+        options={{ headerShown: false }}
+        name="RestaurantDetail"
+        component={RestaurantDetail}
+      />
+    </HomeStack.Navigator>
+  );
+};
+
+// Tab Navigator for the Home screen with FFBottomTab
 const HomeTabs = () => {
   const [currentScreen, setCurrentScreen] = useState(0); // Track the selected screen
 
   let content;
   switch (currentScreen) {
     case 0:
-      content = <HomeScreen />;
+      content = <HomeStackScreen />;
       break;
     case 1:
       content = <OrdersScreen />;
@@ -53,7 +78,7 @@ const HomeTabs = () => {
       content = <ProfileScreen />;
       break;
     default:
-      content = <HomeScreen />;
+      content = <HomeStackScreen />;
   }
 
   return (
@@ -62,7 +87,10 @@ const HomeTabs = () => {
       {content}
 
       {/* Render the custom bottom tab */}
-      <FFBottomTab currentScreen={currentScreen} setCurrentScreen={setCurrentScreen} />
+      <FFBottomTab
+        currentScreen={currentScreen}
+        setCurrentScreen={setCurrentScreen}
+      />
     </View>
   );
 };
@@ -103,12 +131,10 @@ const AppNavigator = () => {
       <Stack.Screen
         name="Home"
         options={{ headerShown: false }} // Disable header for Home screen
-        component={HomeTabs}
+        component={HomeTabs} // HomeTabs now contains the HomeStack with RestaurantDetail
       />
     </Stack.Navigator>
   );
 };
-
-
 
 export default AppNavigator;
