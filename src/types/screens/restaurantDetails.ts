@@ -45,3 +45,41 @@ export interface Props_MenuItem {
     updated_at: number;
   }[];
 }
+
+export interface Avatar {
+  key: string;
+  url: string;
+}
+
+export interface MenuItemVariant {
+  __v: number;
+  _id: string;
+  availability: boolean;
+  created_at: number;
+  default_restaurant_notes: string[]; // You can adjust this type if you need specific structure for notes
+  menu_id: string;
+  price: number;
+  updated_at: number;
+  variant: string;
+}
+
+export interface MenuItem {
+  __v: number;
+  _id: string;
+  availability: boolean;
+  avatar: Avatar;
+  category: string[]; // Category IDs for this menu item
+  created_at: number;
+  name: string;
+  price: number;
+  purchase_count: number;
+  restaurant_id: string;
+  suggest_notes: string[]; // Notes for the menu item (adjust as needed)
+  updated_at: number;
+  variants: string[]; // List of variant IDs
+}
+
+export interface MenuItemProps {
+  menuItem: MenuItem;
+  variants: MenuItemVariant[];
+}

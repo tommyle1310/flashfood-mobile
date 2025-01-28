@@ -1,14 +1,12 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
-// Define the types of state we will use in this slice
 interface AuthState {
   accessToken: string | null;
   isAuthenticated: boolean;
   email: string | null;
   app_preferences: object | null;
   preferred_category: string[];
-  favorite_restaurants: string[];
   favorite_items: string[];
   avatar: {
     url: string;
@@ -29,7 +27,7 @@ interface AuthState {
     postal_code: number;
     title: string;
     __v: number;
-  }> | null; // Adding the address field to the state
+  }> | null;
 }
 
 // Initialize the state
@@ -40,7 +38,6 @@ const initialState: AuthState = {
   address: null,
   app_preferences: {},
   preferred_category: [],
-  favorite_restaurants: [],
   favorite_items: [],
   avatar: null,
   support_tickets: [],
@@ -55,15 +52,12 @@ export const loadTokenFromAsyncStorage = createAsyncThunk(
     const app_preferences = await AsyncStorage.getItem("app_preferences");
     const email = await AsyncStorage.getItem("email");
     const preferred_category = await AsyncStorage.getItem("preferred_category");
-    const favorite_restaurants = await AsyncStorage.getItem(
-      "favorite_restaurants"
-    );
     const favorite_items = await AsyncStorage.getItem("favorite_items");
     const avatar = await AsyncStorage.getItem("avatar");
     const support_tickets = await AsyncStorage.getItem("support_tickets");
     const user_id = await AsyncStorage.getItem("user_id");
     const user_type = await AsyncStorage.getItem("user_type");
-    const address = await AsyncStorage.getItem("address"); // Fetch address from AsyncStorage
+    const address = await AsyncStorage.getItem("address");
 
     return {
       accessToken,
@@ -72,15 +66,12 @@ export const loadTokenFromAsyncStorage = createAsyncThunk(
       preferred_category: preferred_category
         ? JSON.parse(preferred_category)
         : [],
-      favorite_restaurants: favorite_restaurants
-        ? JSON.parse(favorite_restaurants)
-        : [],
       favorite_items: favorite_items ? JSON.parse(favorite_items) : [],
       avatar: avatar ? JSON.parse(avatar) : null,
       support_tickets: support_tickets ? JSON.parse(support_tickets) : [],
       user_id,
       user_type: user_type ? JSON.parse(user_type) : [],
-      address: address ? JSON.parse(address) : [], // Parse address if it exists
+      address: address ? JSON.parse(address) : [],
     };
   }
 );
@@ -93,7 +84,6 @@ export const saveTokenToAsyncStorage = createAsyncThunk(
     app_preferences: object;
     email: string;
     preferred_category: string[];
-    favorite_restaurants: string[];
     favorite_items: string[];
     avatar: { url: string; key: string };
     support_tickets: any[];
@@ -111,7 +101,17 @@ export const saveTokenToAsyncStorage = createAsyncThunk(
       postal_code: number;
       title: string;
       __v: number;
-    }> | null; // Include address in the data parameter
+    }> | null;
+    cart_items: Array<{
+      _id: string;
+      customer_id: string;
+      item_id: string;
+      quantity: number;
+      price_at_time_of_addition: number;
+      created_at: number;
+      updated_at: number;
+      __v: number;
+    }> | null;
   }) => {
     await AsyncStorage.setItem("accessToken", data.accessToken);
     await AsyncStorage.setItem(
@@ -122,10 +122,6 @@ export const saveTokenToAsyncStorage = createAsyncThunk(
     await AsyncStorage.setItem(
       "preferred_category",
       JSON.stringify(data.preferred_category)
-    );
-    await AsyncStorage.setItem(
-      "favorite_restaurants",
-      JSON.stringify(data.favorite_restaurants)
     );
     await AsyncStorage.setItem(
       "favorite_items",
@@ -153,7 +149,6 @@ export const logout = createAsyncThunk(
     await AsyncStorage.removeItem("app_preferences");
     await AsyncStorage.removeItem("email");
     await AsyncStorage.removeItem("preferred_category");
-    await AsyncStorage.removeItem("favorite_restaurants");
     await AsyncStorage.removeItem("favorite_items");
     await AsyncStorage.removeItem("avatar");
     await AsyncStorage.removeItem("support_tickets");
@@ -175,7 +170,6 @@ const authSlice = createSlice({
         app_preferences,
         email,
         preferred_category,
-        favorite_restaurants,
         favorite_items,
         avatar,
         support_tickets,
@@ -188,7 +182,6 @@ const authSlice = createSlice({
       state.app_preferences = app_preferences;
       state.email = email;
       state.preferred_category = preferred_category;
-      state.favorite_restaurants = favorite_restaurants;
       state.favorite_items = favorite_items;
       state.avatar = avatar;
       state.support_tickets = support_tickets;
@@ -196,13 +189,13 @@ const authSlice = createSlice({
       state.user_type = user_type;
       state.address = address; // Set the address in the state
     },
+
     clearAuthState: (state) => {
       state.accessToken = null;
       state.isAuthenticated = false;
       state.app_preferences = {};
       state.email = null;
       state.preferred_category = [];
-      state.favorite_restaurants = [];
       state.favorite_items = [];
       state.avatar = null;
       state.support_tickets = [];
@@ -219,7 +212,6 @@ const authSlice = createSlice({
           app_preferences,
           email,
           preferred_category,
-          favorite_restaurants,
           favorite_items,
           avatar,
           support_tickets,
@@ -234,7 +226,6 @@ const authSlice = createSlice({
           state.app_preferences = app_preferences;
           state.email = email;
           state.preferred_category = preferred_category;
-          state.favorite_restaurants = favorite_restaurants;
           state.favorite_items = favorite_items;
           state.avatar = avatar;
           state.support_tickets = support_tickets;
@@ -251,9 +242,9 @@ const authSlice = createSlice({
           app_preferences,
           email,
           preferred_category,
-          favorite_restaurants,
           favorite_items,
           avatar,
+          cart_items,
           support_tickets,
           user_id,
           user_type,
@@ -265,7 +256,6 @@ const authSlice = createSlice({
         state.app_preferences = app_preferences;
         state.email = email;
         state.preferred_category = preferred_category;
-        state.favorite_restaurants = favorite_restaurants;
         state.favorite_items = favorite_items;
         state.avatar = avatar;
         state.support_tickets = support_tickets;
@@ -279,7 +269,6 @@ const authSlice = createSlice({
         state.app_preferences = {};
         state.email = null;
         state.preferred_category = [];
-        state.favorite_restaurants = [];
         state.favorite_items = [];
         state.avatar = null;
         state.support_tickets = [];

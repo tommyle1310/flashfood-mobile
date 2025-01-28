@@ -14,8 +14,8 @@ import axiosInstance from "@/src/utils/axiosConfig";
 import IconAntDesign from "react-native-vector-icons/AntDesign";
 import IconFeather from "react-native-vector-icons/Feather";
 import FFAvatar from "@/src/components/FFAvatar";
-import { saveTokenToAsyncStorage } from "@/src/store/authSlice";
 import {
+  loadCartItemsFromAsyncStorage,
   loadFavoriteRestaurantsFromAsyncStorage,
   saveFavoriteRestaurantsToAsyncStorage,
   toggleFavoriteRestaurant,
@@ -73,15 +73,18 @@ const HomeScreen = () => {
     null
   );
 
+  const [isLoading, setIsLoading] = useState(true);
+
   // Global State
   const listFavoriteRestaurants = useSelector(
     (state: RootState) => state.userPreference.favorite_restaurants
   );
   const globalState = useSelector((state: RootState) => state.auth);
 
-  // Fetch data on component mount
   useEffect(() => {
     const fetchData = async () => {
+      console.log("lot vao");
+
       try {
         const [foodCategoriesResponse, restaurantsResponse] = await Promise.all(
           [
@@ -99,9 +102,15 @@ const HomeScreen = () => {
         }
       } catch (error) {
         console.error("Error fetching data:", error);
+      } finally {
+        setIsLoading(false); // Stop loading when fetching completes
       }
     };
-    fetchData();
+
+    // Only fetch data if globalState.user_id is available and not already loading
+    if (globalState.user_id && isLoading) {
+      fetchData();
+    }
   }, [globalState.user_id]);
 
   // Filter restaurants when categories or restaurants change
@@ -134,9 +143,7 @@ const HomeScreen = () => {
       if (response.data.EC === 0) {
         dispatch(toggleFavoriteRestaurant(restaurantId));
         await dispatch(
-          saveFavoriteRestaurantsToAsyncStorage(
-            globalState.favorite_restaurants
-          )
+          saveFavoriteRestaurantsToAsyncStorage(listFavoriteRestaurants)
         );
       }
     } catch (error) {
@@ -144,28 +151,20 @@ const HomeScreen = () => {
     }
   };
 
-  // Save global state to AsyncStorage
   useEffect(() => {
-    const stateToSave = {
-      accessToken: globalState.accessToken || "",
-      app_preferences: globalState.app_preferences || {},
-      email: globalState.email || "",
-      preferred_category: globalState.preferred_category || [],
-      favorite_restaurants: listFavoriteRestaurants || [],
-      favorite_items: globalState.favorite_items || [],
-      avatar: globalState.avatar || { url: "", key: "" },
-      support_tickets: globalState.support_tickets || [],
-      user_id: globalState.user_id || "",
-      user_type: globalState.user_type || [],
-      address: globalState.address || [],
-    };
+    // Only dispatch the action to save favorite_restaurants if the list has changed
+    if (listFavoriteRestaurants.length > 0) {
+      // Dispatch the action to save the updated favorite restaurants to AsyncStorage
+      dispatch(saveFavoriteRestaurantsToAsyncStorage(listFavoriteRestaurants));
+    }
+  }, [listFavoriteRestaurants, dispatch]); // This depends on listFavoriteRestaurants
 
-    dispatch(saveTokenToAsyncStorage(stateToSave));
-  }, [listFavoriteRestaurants, globalState, dispatch]);
-
-  // Render the list of restaurants (filtered or all)
   const renderedRestaurants =
     filteredRestaurants?.length > 0 ? filteredRestaurants : listRestaurants;
+
+  if (isLoading) {
+    return <FFText>Loading...</FFText>; // Or your custom loading spinner
+  }
 
   return (
     <FFSafeAreaView>

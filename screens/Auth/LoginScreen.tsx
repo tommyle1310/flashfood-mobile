@@ -15,6 +15,10 @@ import {
 import axiosInstance from "@/src/utils/axiosConfig";
 import { RootState } from "@/src/store/store";
 import { decodeJWT } from "@/src/utils/functions";
+import {
+  saveCartItemsToAsyncStorage,
+  saveFavoriteRestaurantsToAsyncStorage,
+} from "@/src/store/userPreferenceSlice";
 
 type LoginScreenNavigationProp = StackNavigationProp<
   RootStackParamList,
@@ -49,7 +53,6 @@ const Login = () => {
       if (EC === 0) {
         // Success, decode the JWT token (assuming 'data.access_token' contains the JWT)
         const userData = decodeJWT(data.access_token); // Decode JWT to get user data
-        console.log("Decoded user data:", userData);
 
         // Dispatch the action to save the user data to AsyncStorage and Redux store
         dispatch(
@@ -58,17 +61,21 @@ const Login = () => {
             app_preferences: userData.app_preferences || {}, // Fallback to empty object if not present
             email: userData.email || "", // Default to empty string if email is missing
             preferred_category: userData.preferred_category || [], // Ensure this is an array
-            favorite_restaurants: userData.favorite_restaurants || [], // Ensure this is an array
             favorite_items: userData.favorite_items || [], // Ensure this is an array
             avatar: userData.avatar || null, // Use null if no avatar data is available
             support_tickets: userData.support_tickets || [], // Ensure this is an array
             user_id: userData.user_id || "", // Default to empty string if not present
             user_type: userData.user_type || [], // Ensure this is an array
             address: userData.address || [],
+            cart_items: userData.cart_items || [],
           })
         );
+        dispatch(
+          saveFavoriteRestaurantsToAsyncStorage(userData.favorite_restaurants)
+        );
 
-        // Navigate to home or another screen
+        dispatch(saveCartItemsToAsyncStorage(userData.cart_items));
+
         navigation.navigate("Home");
       } else {
         // Handle error based on EC (optional)
@@ -86,7 +93,7 @@ const Login = () => {
   );
 
   if (isAuthenticated) {
-    console.log("User is authenticated with token:", accessToken);
+    // console.log("User is authenticated with token:", accessToken);
   } else {
     console.log("User is not authenticated");
   }

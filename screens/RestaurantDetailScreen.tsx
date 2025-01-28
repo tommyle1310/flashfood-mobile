@@ -2,6 +2,7 @@ import {
   ImageBackground,
   Pressable,
   ScrollView,
+  TextInput,
   TouchableOpacity,
   View,
 } from "react-native";
@@ -15,12 +16,19 @@ import IconAntDesign from "react-native-vector-icons/AntDesign";
 import FFBadge from "@/src/components/FFBadge";
 import axiosInstance from "@/src/utils/axiosConfig";
 import {
+  MenuItemProps,
   Props_MenuItem,
   Props_RestaurantDetails,
 } from "@/src/types/screens/restaurantDetails";
 import FFText from "@/src/components/FFText";
-import { useSelector } from "@/src/store/types";
+import { useDispatch, useSelector } from "@/src/store/types";
 import { RootState } from "@/src/store/store";
+import SlideUpModal from "@/src/components/FFSlideUpModal";
+import FFButton from "@/src/components/FFButton";
+import {
+  addItemToCart,
+  loadCartItemsFromAsyncStorage,
+} from "@/src/store/userPreferenceSlice";
 
 // Correct the typing for useRoute
 type RestaurantDetailRouteProp = RouteProp<
@@ -44,7 +52,14 @@ const RestaurantDetail = () => {
     useState<Props_RestaurantDetails>();
   const [restaurantMenuItem, setRestaurantMenuItem] =
     useState<Props_MenuItem[]>();
-
+  const [isShowSlideUpModal, setIsShowSlideUpModal] = useState<boolean>(false);
+  const [selectedMenuItem, setSelectedMenuItem] = useState<string | null>(null);
+  const [modalData, setModalData] = useState<MenuItemProps>();
+  const [selectedVariant, setSeletedVariant] = useState<any>(null);
+  const [totalPrice, setTotalPrice] = useState<number>(0);
+  const [quantity, setQuantity] = useState<number>(1);
+  const [itemPrice, setItemPrice] = useState<number | null>(0);
+  const user_id = useSelector((state: RootState) => state.auth.user_id);
   useEffect(() => {
     const fetchRestaurantDetails = async () => {
       const response = await axiosInstance.get(`/restaurants/${restaurantId}`);
@@ -66,6 +81,60 @@ const RestaurantDetail = () => {
     fetchRestaurantDetails();
     fetchMenu();
   }, [restaurantId]);
+  useEffect(() => {
+    if (modalData?.menuItem?.price) {
+      setItemPrice(modalData?.menuItem?.price);
+    }
+  }, [modalData]);
+
+  // Update totalPrice when itemPrice or quantity or selectedVariant changes
+  useEffect(() => {
+    // If there's a selected variant, use its price, else fallback to itemPrice
+    const priceToUse = selectedVariant?.price ?? itemPrice;
+    if (quantity && priceToUse) {
+      setTotalPrice(quantity * priceToUse);
+    }
+  }, [quantity, itemPrice, selectedVariant?.price]);
+  const dispatch = useDispatch();
+
+  useEffect(() => {
+    const fetchMenuItemDetails = async () => {
+      const response = await axiosInstance.get(
+        `/menu-items/${selectedMenuItem}`
+      );
+      const { EC, EM, data } = response.data;
+      if (EC === 0) {
+        setModalData(data);
+      }
+    };
+    if (isShowSlideUpModal) {
+      fetchMenuItemDetails();
+    }
+  }, [isShowSlideUpModal]);
+  const handleAddToCart = async () => {
+    console.log("chec totak", totalPrice);
+
+    const response = await axiosInstance.post(
+      `/customers/cart-items/${user_id}`,
+      {
+        item_id: selectedMenuItem,
+        quantity,
+        price_at_time_of_addition: totalPrice,
+        variant_id: selectedVariant?._id,
+      }
+    );
+    const { EC, EM, data } = response.data;
+    if (EC === 0) {
+      dispatch(addItemToCart(data.item_id));
+    }
+  };
+  useEffect(() => {
+    dispatch(loadCartItemsFromAsyncStorage());
+  }, [dispatch]);
+  const listCartItem = useSelector(
+    (state: RootState) => state.userPreference.cart_items
+  );
+  // console.log("check", listCartItem?.length);
 
   return (
     <FFSafeAreaView>
@@ -105,8 +174,8 @@ const RestaurantDetail = () => {
                 imageStyle={{ borderRadius: 8 }}
               ></ImageBackground>
             </View>
-            {/* some badges */}
             <View className="p-4 bg-gray-100 -mt-4 rounded-t-2xl flex-1 gap-4">
+              {/* some badges */}
               <View className="flex-row justify-between items-center">
                 <FFBadge
                   title="Popular"
@@ -191,8 +260,14 @@ const RestaurantDetail = () => {
                     <FFText fontSize="lg" colorLight="#59bf47" fontWeight="600">
                       ${item.price}
                     </FFText>
-                    <Pressable className="p-4 -bottom-2 right-0 absolute rounded-md bg-green-500 self-end items-center justify-center">
-                      <IconFeather name="plus" color="#fff" />
+                    <Pressable
+                      onPress={() => {
+                        setIsShowSlideUpModal(true);
+                        setSelectedMenuItem(item._id);
+                      }}
+                      className="p-1 -bottom-2 right-0 absolute rounded-md bg-green-500 self-end items-center justify-center"
+                    >
+                      <IconFeather name="plus" color="#fff" size={20} />
                     </Pressable>
                   </View>
                 </Pressable>
@@ -201,6 +276,101 @@ const RestaurantDetail = () => {
           </View>
         </ScrollView>
       </View>
+
+      {/* slide up modal */}
+      <SlideUpModal
+        isVisible={isShowSlideUpModal}
+        onClose={() => {
+          setIsShowSlideUpModal(false);
+          setSeletedVariant(null);
+        }}
+      >
+        <FFText style={{ textAlign: "center" }} fontSize="lg">
+          Add To cart{" "}
+        </FFText>
+        <View className="flex-row items-center gap-2 rounded-lg">
+          <View className="w-1/4">
+            <ImageBackground
+              source={{
+                uri: modalData?.menuItem?.avatar?.url,
+              }}
+              style={{
+                borderRadius: 10,
+                width: "100%", // Set width to 18% of the parent container
+                height: undefined, // Let the height be determined by aspectRatio
+                aspectRatio: 1, // Maintain a 1:1 ratio (square)
+                backgroundColor: "gray", // Set background color
+              }}
+              imageStyle={{ borderRadius: 8 }}
+            ></ImageBackground>
+          </View>
+          <View className="flex-1 relative ">
+            <FFText>{modalData?.menuItem?.name}</FFText>
+            <FFText fontSize="sm" colorLight="#bbb" fontWeight="400">
+              {modalData?.menuItem?.purchase_count} sold
+            </FFText>
+            <FFText fontSize="lg" colorLight="#59bf47" fontWeight="600">
+              ${totalPrice}
+            </FFText>
+            <View className="absolute right-2 bottom-0 flex-row">
+              {/* Minus Button */}
+              <Pressable
+                onPress={() => {
+                  if (quantity > 1) {
+                    setQuantity((prev) => prev - 1);
+                  }
+                }}
+                className="p-1 rounded-md border-green-500 border self-end items-center justify-center"
+              >
+                <IconFeather name="minus" color="#4d9c39" size={20} />
+              </Pressable>
+              <TextInput
+                className="items-center top-2 mx-2 justify-center"
+                value={`${quantity}`}
+                onChangeText={() => {}}
+              />
+
+              {/* Plus Button */}
+              <Pressable
+                onPress={() => {
+                  setIsShowSlideUpModal(true);
+                  setQuantity((prev) => prev + 1);
+                }}
+                className="p-1  rounded-md bg-green-500 self-end items-center justify-center"
+              >
+                <IconFeather name="plus" color="#fff" size={20} />
+              </Pressable>
+            </View>
+          </View>
+        </View>
+        <View className="h-1/2 ">
+          <ScrollView className="my-4 ">
+            {modalData?.variants &&
+              modalData?.variants.length > 0 &&
+              modalData?.variants.map((item) => (
+                <Pressable
+                  onPress={() => {
+                    setSeletedVariant(item);
+                    setItemPrice(item?.price);
+                  }}
+                  className={`gap-4  p-4 ${
+                    selectedVariant?._id === item._id
+                      ? "bg-white border-green-600 border-2"
+                      : "bg-gray-100"
+                  } rounded-lg my-2`}
+                  key={item._id}
+                >
+                  <FFText style={{ textAlign: "left" }}>
+                    {item?.variant} - ${item?.price}
+                  </FFText>
+                </Pressable>
+              ))}
+          </ScrollView>
+        </View>
+        <FFButton onPress={handleAddToCart} isLinear className="w-full">
+          <FFText style={{ color: "#fff" }}>Add to Cart</FFText>
+        </FFButton>
+      </SlideUpModal>
     </FFSafeAreaView>
   );
 };
