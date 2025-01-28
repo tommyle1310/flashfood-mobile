@@ -83,8 +83,6 @@ const HomeScreen = () => {
 
   useEffect(() => {
     const fetchData = async () => {
-      console.log("lot vao");
-
       try {
         const [foodCategoriesResponse, restaurantsResponse] = await Promise.all(
           [

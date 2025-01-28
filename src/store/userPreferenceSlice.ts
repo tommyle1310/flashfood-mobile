@@ -2,14 +2,30 @@ import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
 // Define the types of state we will use in this slice
-interface CartItem {
+export interface CartItem {
   _id: string;
   customer_id: string;
-  item_id: string;
+  item: {
+    _id: string; // Unique identifier for the item
+    avatar: { url: string; key: string };
+    availability: boolean;
+    category: string[];
+    name: string;
+    purchase_count: number;
+    price: number;
+    variants: { variant: string; price: string; _id: string }[];
+  };
   quantity: number;
   price_at_time_of_addition: number;
   created_at: number;
   updated_at: number;
+  avatar: { url: string; key: string };
+  restaurant: {
+    avatar: { url: string; key: string };
+    _id: string;
+    owner_id: string;
+    restaurant_name: string;
+  };
   __v: number;
 }
 
@@ -87,24 +103,40 @@ const userPreferenceSlice = createSlice({
     addItemToCart: (state, action) => {
       const newItem = action.payload;
 
-      // Check if the item already exists in the cart by comparing _id
+      // Check if the item already exists in the cart by comparing the item's unique identifier (_id)
       const existingItem = state.cart_items.find(
-        (item) => item.item_id === newItem
+        (item) => item._id === newItem._id
       );
 
       if (existingItem) {
-        // If the item already exists, do nothing (or you can update the quantity or other properties if needed)
-        return;
+        const pricePerItem =
+          newItem.price_at_time_of_addition / newItem.quantity;
+
+        // Update the quantity (final quantity will be existing quantity + the quantity from the payload)
+        existingItem.quantity += newItem.quantity;
+
+        // Calculate the final price based on the final quantity
+        existingItem.price_at_time_of_addition =
+          pricePerItem * existingItem.quantity;
       } else {
-        // If the item doesn't exist, add it to the cart
-        state.cart_items.push(newItem);
+        // Calculate the price per item (price_at_time_of_addition / quantity from payload)
+        const pricePerItem =
+          newItem.price_at_time_of_addition / newItem.quantity;
+
+        // Add the item to the cart with the final price based on the final quantity
+        state.cart_items.push({
+          ...newItem,
+          price_at_time_of_addition: pricePerItem * newItem.quantity, // Calculate the total price based on the quantity
+        });
       }
     },
 
     removeItemFromCart: (state, action) => {
       const itemId = action.payload;
+      // Remove the item from cart based on its unique identifier (_id)
       state.cart_items = state.cart_items.filter((item) => item._id !== itemId);
     },
+
     updateItemQuantity: (state, action) => {
       const { itemId, quantity } = action.payload;
       const item = state.cart_items.find((item) => item._id === itemId);
@@ -118,22 +150,13 @@ const userPreferenceSlice = createSlice({
       .addCase(
         loadFavoriteRestaurantsFromAsyncStorage.fulfilled,
         (state, action) => {
-          // Ensure favorite restaurants are correctly loaded into state
           state.favorite_restaurants = action.payload;
         }
       )
-      .addCase(
-        saveFavoriteRestaurantsToAsyncStorage.fulfilled,
-        (state, action) => {}
-      )
       .addCase(loadCartItemsFromAsyncStorage.fulfilled, (state, action) => {
-        // Ensure cart items are correctly loaded into state
         state.cart_items = action.payload;
       })
-      .addCase(saveCartItemsToAsyncStorage.fulfilled, (state, action) => {
-        // Ensure we're saving the correct list
-        console.log("Cart items saved to AsyncStorage:", action.payload);
-      });
+      .addCase(saveCartItemsToAsyncStorage.fulfilled, (state, action) => {});
   },
 });
 

@@ -28,6 +28,7 @@ import FFButton from "@/src/components/FFButton";
 import {
   addItemToCart,
   loadCartItemsFromAsyncStorage,
+  saveCartItemsToAsyncStorage,
 } from "@/src/store/userPreferenceSlice";
 
 // Correct the typing for useRoute
@@ -111,9 +112,10 @@ const RestaurantDetail = () => {
       fetchMenuItemDetails();
     }
   }, [isShowSlideUpModal]);
+  const listCartItem = useSelector(
+    (state: RootState) => state.userPreference.cart_items
+  );
   const handleAddToCart = async () => {
-    console.log("chec totak", totalPrice);
-
     const response = await axiosInstance.post(
       `/customers/cart-items/${user_id}`,
       {
@@ -123,18 +125,29 @@ const RestaurantDetail = () => {
         variant_id: selectedVariant?._id,
       }
     );
+
     const { EC, EM, data } = response.data;
     if (EC === 0) {
-      dispatch(addItemToCart(data.item_id));
+      // Dispatch addItemToCart to add item to Redux state
+      dispatch(
+        addItemToCart({
+          ...data,
+          quantity,
+          price_at_time_of_addition: totalPrice,
+        })
+      );
+      // Save updated cart items to AsyncStorage
     }
   };
   useEffect(() => {
     dispatch(loadCartItemsFromAsyncStorage());
   }, [dispatch]);
-  const listCartItem = useSelector(
-    (state: RootState) => state.userPreference.cart_items
-  );
-  // console.log("check", listCartItem?.length);
+
+  useEffect(() => {
+    dispatch(saveCartItemsToAsyncStorage(listCartItem));
+  }, [listCartItem]);
+
+  console.log("check", listCartItem);
 
   return (
     <FFSafeAreaView>
