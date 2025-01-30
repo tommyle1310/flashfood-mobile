@@ -2,20 +2,19 @@ import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
 // Define the types of state we will use in this slice
+export interface Variant {
+  variant_id: string;
+  variant_name: string;
+  quantity: number;
+  variant_price_at_time_of_addition: number;
+  _id: string;
+}
+
 export interface CartItem {
   _id: string;
   customer_id: string;
-  item: {
-    _id: string; // Unique identifier for the item
-    avatar: { url: string; key: string };
-    availability: boolean;
-    category: string[];
-    name: string;
-    purchase_count: number;
-    price: number;
-    variants: { variant: string; price: string; _id: string }[];
-  };
-  quantity: number;
+  item_id: string;
+  variants: Variant[];
   price_at_time_of_addition: number;
   created_at: number;
   updated_at: number;
@@ -100,6 +99,7 @@ const userPreferenceSlice = createSlice({
         );
       }
     },
+
     addItemToCart: (state, action) => {
       const newItem = action.payload;
 
@@ -109,24 +109,46 @@ const userPreferenceSlice = createSlice({
       );
 
       if (existingItem) {
-        const pricePerItem =
-          newItem.price_at_time_of_addition / newItem.quantity;
+        // Loop over the variants to find the existing variant and update the quantity and price accordingly
+        newItem.variants.forEach((newVariant: any) => {
+          const existingVariant = existingItem.variants.find(
+            (variant) => variant.variant_id === newVariant.variant_id
+          );
 
-        // Update the quantity (final quantity will be existing quantity + the quantity from the payload)
-        existingItem.quantity += newItem.quantity;
+          if (existingVariant) {
+            // If the variant exists, update its quantity
+            existingVariant.quantity += newVariant.quantity;
+            // Recalculate the price for the updated quantity (based on the price for each variant)
+            existingVariant.variant_price_at_time_of_addition =
+              newVariant.variant_price_at_time_of_addition *
+              existingVariant.quantity;
+          } else {
+            // If the variant doesn't exist in the existing item, add it to the variants array
+            existingItem.variants.push({
+              ...newVariant,
+              variant_price_at_time_of_addition:
+                newVariant.variant_price_at_time_of_addition *
+                newVariant.quantity,
+            });
+          }
+        });
 
-        // Calculate the final price based on the final quantity
-        existingItem.price_at_time_of_addition =
-          pricePerItem * existingItem.quantity;
+        // Recalculate the total price for the cart item based on the updated variants
+        existingItem.price_at_time_of_addition = existingItem.variants.reduce(
+          (totalPrice, variant) =>
+            totalPrice + variant.variant_price_at_time_of_addition,
+          0
+        );
       } else {
-        // Calculate the price per item (price_at_time_of_addition / quantity from payload)
-        const pricePerItem =
-          newItem.price_at_time_of_addition / newItem.quantity;
-
-        // Add the item to the cart with the final price based on the final quantity
+        // If the item doesn't exist in the cart, add it as a new item
         state.cart_items.push({
           ...newItem,
-          price_at_time_of_addition: pricePerItem * newItem.quantity, // Calculate the total price based on the quantity
+          price_at_time_of_addition: newItem.variants.reduce(
+            (totalPrice: number, variant: any) =>
+              totalPrice +
+              variant.variant_price_at_time_of_addition * variant.quantity,
+            0
+          ),
         });
       }
     },
@@ -138,10 +160,27 @@ const userPreferenceSlice = createSlice({
     },
 
     updateItemQuantity: (state, action) => {
-      const { itemId, quantity } = action.payload;
+      const { itemId, variantId, quantity } = action.payload;
+
       const item = state.cart_items.find((item) => item._id === itemId);
       if (item) {
-        item.quantity = quantity;
+        const variant = item.variants.find(
+          (variant) => variant.variant_id === variantId
+        );
+        if (variant) {
+          // Update the variant quantity
+          variant.quantity = quantity;
+          // Recalculate the price for the updated quantity
+          variant.variant_price_at_time_of_addition =
+            variant.variant_price_at_time_of_addition * quantity;
+        }
+
+        // Recalculate the total price for the cart item based on the updated variants
+        item.price_at_time_of_addition = item.variants.reduce(
+          (totalPrice, variant) =>
+            totalPrice + variant.variant_price_at_time_of_addition,
+          0
+        );
       }
     },
   },

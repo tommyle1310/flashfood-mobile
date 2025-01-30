@@ -147,8 +147,6 @@ const RestaurantDetail = () => {
     dispatch(saveCartItemsToAsyncStorage(listCartItem));
   }, [listCartItem]);
 
-  console.log("check", listCartItem);
-
   return (
     <FFSafeAreaView>
       <View style={{ flex: 1, position: "relative" }}>

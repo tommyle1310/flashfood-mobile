@@ -3,6 +3,9 @@ import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { View, Text } from "react-native";
 import { useSelector } from "react-redux"; // Import useSelector
 import { RootState } from "@/src/store/store"; // Import RootState from your store
+import { useEffect, useState } from "react";
+import { useDispatch } from "../store/types";
+import { loadTokenFromAsyncStorage } from "../store/authSlice";
 
 import CartScreen from "@/screens/CartScreen";
 import HomeScreen from "@/screens/HomeScreen";
@@ -11,10 +14,6 @@ import LoginScreen from "@/screens/Auth/LoginScreen";
 import SignupScreen from "@/screens/Auth/SignupScreen";
 import ProfileScreen from "@/screens/ProfileScreen";
 import RestaurantDetail from "@/screens/RestaurantDetailScreen"; // Import RestaurantDetail
-import FFBottomTab from "@/src/components/FFBottomTab"; // Import FFBottomTab
-import { useEffect, useState } from "react";
-import { useDispatch } from "../store/types";
-import { loadTokenFromAsyncStorage } from "../store/authSlice";
 
 // Root stack param list for Login, Signup, and Home
 export type RootStackParamList = {
@@ -23,25 +22,25 @@ export type RootStackParamList = {
   Home: undefined;
 };
 
-// HomeTabs param list (HomeStack, Orders, Cart, Profile)
+// Define HomeStackParamList clearly with the screen and params
+export type HomeStackParamList = {
+  Home: undefined;
+  RestaurantDetail: { restaurantId: string }; // Param for RestaurantDetail
+};
+
+// Update HomeTabsParamList to accept navigation to a screen in HomeStack
 export type HomeTabsParamList = {
-  HomeStack: undefined; // HomeStack should be the only screen in HomeTabs
+  HomeStack: { screen: keyof HomeStackParamList; params: any } | undefined;
   Orders: undefined;
   Cart: undefined;
   Profile: undefined;
 };
 
-// HomeStack param list (HomeScreen, RestaurantDetail)
-export type HomeStackParamList = {
-  Home: undefined;
-  RestaurantDetail: { restaurantId: string }; // Param to pass to RestaurantDetail
-};
-
 const Stack = createStackNavigator<RootStackParamList>();
 const Tab = createBottomTabNavigator<HomeTabsParamList>(); // Now includes HomeStack only
-const HomeStack = createStackNavigator<HomeStackParamList>(); // Stack for Home and RestaurantDetail
 
-// Stack Navigator for Home, including RestaurantDetail
+const HomeStack = createStackNavigator<HomeStackParamList>();
+
 const HomeStackScreen = () => {
   return (
     <HomeStack.Navigator>
@@ -59,79 +58,64 @@ const HomeStackScreen = () => {
   );
 };
 
-// Tab Navigator for the Home screen with FFBottomTab
-const HomeTabs = () => {
-  const [currentScreen, setCurrentScreen] = useState(0); // Track the selected screen
+const HomeTabs = () => (
+  <Tab.Navigator>
+    <Tab.Screen
+      options={{ headerShown: false }}
+      name="HomeStack"
+      component={HomeStackScreen}
+    />
+    <Tab.Screen
+      options={{ headerShown: false }}
+      name="Orders"
+      component={OrdersScreen}
+    />
+    <Tab.Screen
+      options={{ headerShown: false }}
+      name="Cart"
+      component={CartScreen}
+    />
+    <Tab.Screen
+      options={{ headerShown: false }}
+      name="Profile"
+      component={ProfileScreen}
+    />
+  </Tab.Navigator>
+);
 
-  let content;
-  switch (currentScreen) {
-    case 0:
-      content = <HomeStackScreen />;
-      break;
-    case 1:
-      content = <OrdersScreen />;
-      break;
-    case 2:
-      content = <CartScreen />;
-      break;
-    case 3:
-      content = <ProfileScreen />;
-      break;
-    default:
-      content = <HomeStackScreen />;
-  }
-
-  return (
-    <View style={{ flex: 1 }}>
-      {/* Render the screen content */}
-      {content}
-
-      {/* Render the custom bottom tab */}
-      <FFBottomTab
-        currentScreen={currentScreen}
-        setCurrentScreen={setCurrentScreen}
-      />
-    </View>
-  );
-};
-
-// Stack Navigator for Login, Signup, and Home screens
 const AppNavigator = () => {
-  const token = useSelector((state: RootState) => state.auth.accessToken); // Get token from Redux
+  const token = useSelector((state: RootState) => state.auth.accessToken);
   const dispatch = useDispatch();
+  const [loading, setLoading] = useState(true);
 
-  const [loading, setLoading] = useState(true); // Loading state to wait for token loading
-
-  // Load token from AsyncStorage when the app starts
   useEffect(() => {
     const loadToken = async () => {
       await dispatch(loadTokenFromAsyncStorage());
-      setLoading(false); // Set loading to false after token is loaded
+      setLoading(false);
     };
     loadToken();
   }, [dispatch]);
 
-  // If the token is still loading, show a blank screen or a loading spinner
   if (loading) {
-    return null; // Or return a loading spinner here, e.g. <ActivityIndicator />
+    return null;
   }
 
   return (
     <Stack.Navigator initialRouteName={token ? "Home" : "Login"}>
       <Stack.Screen
         name="Login"
-        options={{ headerShown: false }} // Disable header for Login screen
+        options={{ headerShown: false }}
         component={LoginScreen}
       />
       <Stack.Screen
         name="Signup"
-        options={{ headerShown: false }} // Disable header for Signup screen
+        options={{ headerShown: false }}
         component={SignupScreen}
       />
       <Stack.Screen
         name="Home"
-        options={{ headerShown: false }} // Disable header for Home screen
-        component={HomeTabs} // HomeTabs now contains the HomeStack with RestaurantDetail
+        options={{ headerShown: false }}
+        component={HomeTabs}
       />
     </Stack.Navigator>
   );
