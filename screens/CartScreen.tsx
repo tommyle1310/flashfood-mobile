@@ -1,7 +1,10 @@
 import React, { useEffect, useState } from "react";
 import {
+  FlatList,
+  Image,
   ImageBackground,
   Pressable,
+  StyleSheet,
   Text,
   TextInput,
   View,
@@ -24,6 +27,10 @@ import {
   HomeStackParamList,
 } from "@/src/navigation/AppNavigator";
 
+interface GroupedCartList {
+  [restaurantId: string]: CartItem[];
+}
+
 type CartScreenNavigationProp = CompositeNavigationProp<
   BottomTabNavigationProp<HomeTabsParamList, "Cart">,
   StackNavigationProp<HomeStackParamList>
@@ -31,8 +38,7 @@ type CartScreenNavigationProp = CompositeNavigationProp<
 
 const CartScreen = () => {
   const navigation = useNavigation<CartScreenNavigationProp>();
-
-  const [listItem, setListItem] = useState<Record<string, CartItem[]>>({});
+  const [groupedCartList, setGroupedCartList] = useState<GroupedCartList>({});
 
   const dispatch = useDispatch();
   useEffect(() => {
@@ -43,21 +49,6 @@ const CartScreen = () => {
     (state: RootState) => state.userPreference.cart_items
   );
 
-  // useEffect(() => {
-  //   const groupedItems = cartList.reduce((acc: any, item) => {
-  //     const restaurantId = item.restaurant._id;
-  //     if (restaurantId) {
-  //       if (!acc[restaurantId]) {
-  //         acc[restaurantId] = [];
-  //       }
-  //       acc[restaurantId].push(item);
-  //     }
-  //     return acc;
-  //   }, {});
-
-  //   setListItem(groupedItems);
-  // }, [cartList]);
-
   const handleNavigateToRestaurant = (restaurantId: string) => {
     navigation.navigate("HomeStack", {
       screen: "RestaurantDetail",
@@ -66,144 +57,143 @@ const CartScreen = () => {
   };
   console.log("check", cartList);
 
+  useEffect(() => {
+    const groupByRestaurant = (cartList: CartItem[]): GroupedCartList => {
+      return cartList.reduce((grouped, cartItem) => {
+        const restaurantId = cartItem.item.restaurantDetails._id;
+        // If the restaurant ID doesn't exist in the grouped object, create an array for it
+        if (!grouped[restaurantId]) {
+          grouped[restaurantId] = [];
+        }
+        // Push the current cart item into the respective restaurant's group
+        grouped[restaurantId].push(cartItem);
+        return grouped;
+      }, {} as GroupedCartList); // Explicitly cast to GroupedCartList
+    };
+
+    // Group the cartList and update the state
+    const grouped = groupByRestaurant(cartList);
+    setGroupedCartList(grouped);
+  }, [cartList]);
+  // console.log("check ", cartList);
+
   return (
     <FFSafeAreaView>
-      <View className="flex gap-4 p-4 flex-1">
-        {Object.entries(listItem).map(([restaurantId, items]) => (
-          <View key={restaurantId}>
-            <FFText>{items[0]?.restaurant?.restaurant_name}</FFText>
-            {/* {items.map((item: CartItem) => (
-              <View className="my-2" key={item._id}>
-                {item.item.variants && item.item.variants.length > 0 ? (
-                  <View className="bg-gray-200 p-3 rounded-lg">
-                    {item.item.variants.map((variant, index) => (
-                      <View
-                        className="flex-row items-center gap-2 rounded-lg my-1"
-                        key={index}
-                      >
-                        <Pressable
-                          className="w-1/4"
-                          onPress={() =>
-                            handleNavigateToRestaurant(item.restaurant._id)
-                          }
-                        >
-                          <ImageBackground
-                            source={{
-                              uri: item.item.avatar.url,
-                            }}
-                            style={{
-                              borderRadius: 10,
-                              width: "100%",
-                              height: undefined,
-                              aspectRatio: 1,
-                              backgroundColor: "gray",
-                            }}
-                            imageStyle={{ borderRadius: 8 }}
-                          />
-                        </Pressable>
-                        <View className="flex-1 relative">
-                          <FFText>{item.item.name}</FFText>
-                          <FFText
-                            fontSize="sm"
-                            colorLight="red"
-                            fontWeight="400"
-                          >
-                            {variant.variant}
-                          </FFText>
-                          <FFText
-                            fontSize="lg"
-                            colorLight="#59bf47"
-                            fontWeight="600"
-                          >
-                            ${item.price_at_time_of_addition}
-                          </FFText>
-                          <View className="absolute right-2 bottom-0 flex-row">
-                            <Pressable
-                              onPress={() => {}}
-                              className="p-1 rounded-md border-green-500 border self-end items-center justify-center"
-                            >
-                              <IconFeather
-                                name="minus"
-                                color="#4d9c39"
-                                size={20}
-                              />
-                            </Pressable>
-                            <TextInput
-                              className="items-center top-2 mx-2 justify-center"
-                              value={`${item.quantity}`}
-                              onChangeText={() => {}}
-                            />
-                            <Pressable
-                              onPress={() => {}}
-                              className="p-1 rounded-md bg-green-500 self-end items-center justify-center"
-                            >
-                              <IconFeather name="plus" color="#fff" size={20} />
-                            </Pressable>
-                          </View>
+      <View className="flex-1 p-4 gap-4">
+        <FlatList
+          data={Object.keys(groupedCartList)}
+          renderItem={({ item }) => {
+            const restaurantItems = groupedCartList[item];
+            const restaurant = restaurantItems[0].item.restaurantDetails;
+
+            return (
+              <View className="mb-5 p-4 border border-gray-300 rounded-xl bg-gray-50">
+                <View className="flex-row items-center gap-2">
+                  <Image
+                    source={{ uri: restaurant.avatar.url }}
+                    className="w-8 h-8 rounded-full mb-2"
+                  />
+                  <Text className="text-sm font-semibold mb-2">
+                    {restaurant.restaurant_name}
+                  </Text>
+                </View>
+
+                <FlatList
+                  data={restaurantItems}
+                  renderItem={({ item }) => {
+                    console.log("check item", item.variants);
+
+                    const cartItem = item;
+                    return (
+                      <View className="flex-row items-center mb-3 py-2 border-b border-gray-200">
+                        <Image
+                          source={{ uri: cartItem.item.avatar.url }}
+                          className="w-12 h-12 rounded-full mr-4"
+                        />
+                        <View className="flex-1">
+                          <Text className="font-semibold">
+                            {cartItem.item.name}
+                          </Text>
+
+                          {/* Loop through variants to get price and quantity */}
+                          {cartItem.variants.map((variant, index) => (
+                            <View key={variant._id} className="mb-1">
+                              <Text className="text-xs text-gray-600">
+                                {variant.variant_name} - $
+                                {variant.variant_price_at_time_of_addition.toFixed(
+                                  2
+                                )}
+                              </Text>
+                              <Text className="text-xs text-gray-500 mt-1">
+                                Quantity: {variant.quantity}
+                              </Text>
+                            </View>
+                          ))}
                         </View>
                       </View>
-                    ))}
-                  </View>
-                ) : (
-                  <View className="flex-row items-center gap-2 rounded-lg">
-                    <Pressable
-                      className="w-1/4"
-                      onPress={() =>
-                        handleNavigateToRestaurant(item.restaurant._id)
-                      }
-                    >
-                      <ImageBackground
-                        source={{
-                          uri: item.item.avatar.url,
-                        }}
-                        style={{
-                          borderRadius: 10,
-                          width: "100%",
-                          height: undefined,
-                          aspectRatio: 1,
-                          backgroundColor: "gray",
-                        }}
-                        imageStyle={{ borderRadius: 8 }}
-                      />
-                    </Pressable>
-                    <View className="flex-1 relative">
-                      <FFText>{item.item.name}</FFText>
-                      <FFText
-                        fontSize="lg"
-                        colorLight="#59bf47"
-                        fontWeight="600"
-                      >
-                        ${item.price_at_time_of_addition}
-                      </FFText>
-                      <View className="absolute right-2 bottom-0 flex-row">
-                        <Pressable
-                          onPress={() => {}}
-                          className="p-1 rounded-md border-green-500 border self-end items-center justify-center"
-                        >
-                          <IconFeather name="minus" color="#4d9c39" size={20} />
-                        </Pressable>
-                        <TextInput
-                          className="items-center top-2 mx-2 justify-center"
-                          value={`${item.quantity}`}
-                          onChangeText={() => {}}
-                        />
-                        <Pressable
-                          onPress={() => {}}
-                          className="p-1 rounded-md bg-green-500 self-end items-center justify-center"
-                        >
-                          <IconFeather name="plus" color="#fff" size={20} />
-                        </Pressable>
-                      </View>
-                    </View>
-                  </View>
-                )}
+                    );
+                  }}
+                  keyExtractor={(item) => item._id}
+                />
               </View>
-            ))} */}
-          </View>
-        ))}
+            );
+          }}
+          keyExtractor={(item) => item}
+        />
       </View>
     </FFSafeAreaView>
   );
 };
+
+const styles = StyleSheet.create({
+  restaurantContainer: {
+    padding: 10,
+    flexDirection: "row",
+    borderWidth: 1,
+    borderColor: "#ccc",
+    borderRadius: 8,
+    backgroundColor: "#f9f9f9",
+  },
+  restaurantAvatar: {
+    width: 40,
+    height: 40,
+    borderRadius: 30,
+    marginBottom: 10,
+  },
+  restaurantName: {
+    fontSize: 18,
+    fontWeight: "bold",
+    marginBottom: 10,
+  },
+  cartItemContainer: {
+    flexDirection: "row",
+    marginBottom: 10,
+    paddingVertical: 10,
+    borderBottomWidth: 1,
+    borderColor: "#ddd",
+  },
+  itemAvatar: {
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    marginRight: 10,
+  },
+  itemDetails: {
+    flex: 1,
+  },
+  itemName: {
+    fontSize: 16,
+    fontWeight: "600",
+  },
+  itemPrice: {
+    fontSize: 14,
+    color: "#888",
+    marginVertical: 5,
+  },
+  itemQuantity: {
+    fontSize: 12,
+    color: "#555",
+  },
+});
 
 export default CartScreen;
