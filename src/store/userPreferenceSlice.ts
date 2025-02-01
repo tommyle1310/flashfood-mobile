@@ -131,11 +131,13 @@ const userPreferenceSlice = createSlice({
           );
 
           if (existingVariant) {
+            console.log("check fall hrere", newVariant);
+
             // If the variant exists, update its quantity
             existingVariant.quantity += newVariant.quantity;
+            existingVariant.quantity =
+              +newVariant.variant_price_at_time_of_addition;
           } else {
-            console.log("check dog", newVariant);
-
             // If the variant doesn't exist in the existing item, add it to the variants array
             existingItem.variants.push(newVariant);
           }

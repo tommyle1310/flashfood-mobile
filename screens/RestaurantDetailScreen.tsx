@@ -128,15 +128,19 @@ const RestaurantDetail = () => {
     const { EC, EM, data } = response.data;
 
     if (EC === 0) {
-      console.log("cehck", {
-        ...data,
-      });
-
       dispatch(
         addItemToCart({
           _id: data._id,
           customer_id: user_id,
-          variants: [{ variant_id: selectedVariant?._id, quantity }],
+          variants: [
+            {
+              variant_id: selectedVariant?._id,
+              quantity,
+              variant_name: data.variants[0].variant_name,
+              variant_price_at_time_of_addition:
+                data.variants[0].variant_price_at_time_of_addition,
+            },
+          ],
           item: {
             // avatar: { url: data.avatar.url, key: data.avatar.key },
             _id: data.item_id,

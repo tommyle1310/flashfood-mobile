@@ -17,6 +17,7 @@ import { RootState } from "@/src/store/store";
 import {
   CartItem,
   loadCartItemsFromAsyncStorage,
+  Variant,
 } from "@/src/store/userPreferenceSlice";
 import { useNavigation } from "@react-navigation/native";
 import { CompositeNavigationProp } from "@react-navigation/native";
@@ -26,6 +27,9 @@ import {
   HomeTabsParamList,
   HomeStackParamList,
 } from "@/src/navigation/AppNavigator";
+import RestaurantDetail from "./RestaurantDetailScreen";
+import FFModal from "@/src/components/FFModal";
+import FFButton from "@/src/components/FFButton";
 
 interface GroupedCartList {
   [restaurantId: string]: CartItem[];
@@ -39,6 +43,27 @@ type CartScreenNavigationProp = CompositeNavigationProp<
 const CartScreen = () => {
   const navigation = useNavigation<CartScreenNavigationProp>();
   const [groupedCartList, setGroupedCartList] = useState<GroupedCartList>({});
+  const [selectedVariants, setSelectedVariants] = useState<Variant[]>([]);
+  const [selectedRestaurant, setSelectedRestaurant] = useState<{
+    _id: string;
+    restaurant_name: string;
+    avatar: {
+      url: string;
+      key: string;
+    };
+  }>({
+    _id: "",
+    restaurant_name: "",
+    avatar: {
+      url: "",
+      key: "",
+    },
+  });
+  const [isShowModal, setIsShowModal] = useState<boolean>(false);
+  const [isShowSubmitBtn, setIsShowSubmitBtn] = useState<boolean>(false);
+  const [expandedRestaurantId, setExpandedRestaurantId] = useState<
+    string | null
+  >(null);
 
   const dispatch = useDispatch();
   useEffect(() => {
@@ -48,13 +73,6 @@ const CartScreen = () => {
   const cartList = useSelector(
     (state: RootState) => state.userPreference.cart_items
   );
-
-  const handleNavigateToRestaurant = (restaurantId: string) => {
-    navigation.navigate("HomeStack", {
-      screen: "RestaurantDetail",
-      params: { restaurantId },
-    });
-  };
 
   useEffect(() => {
     const groupByRestaurant = (cartList: CartItem[]): GroupedCartList => {
@@ -74,23 +92,89 @@ const CartScreen = () => {
     const grouped = groupByRestaurant(cartList);
     setGroupedCartList(grouped);
   }, [cartList]);
-  // console.log("check ", cartList);
+
+  const handleSelectVariants = (
+    variant: Variant,
+    restaurant: {
+      _id: string;
+      restaurant_name: string;
+      avatar: {
+        url: string;
+        key: string;
+      };
+    }
+  ) => {
+    const newVariants = [...selectedVariants]; // Create a new array to avoid mutation
+
+    // Check if the variant is already selected
+    if (selectedVariants.some((item) => item._id === variant._id)) {
+      // If it's selected, remove it (filter out the variant by _id)
+      setSelectedVariants(
+        newVariants.filter((item) => item._id !== variant._id)
+      );
+      setSelectedRestaurant({
+        _id: "",
+        restaurant_name: "",
+        avatar: {
+          url: "",
+          key: "",
+        },
+      });
+      return;
+    }
+
+    // If the variant is not selected, add it to the array
+    newVariants.push(variant);
+    setSelectedVariants(newVariants); // Update the state
+    setSelectedRestaurant({
+      _id: restaurant._id,
+      avatar: { url: restaurant.avatar.url, key: restaurant.avatar.key },
+      restaurant_name: restaurant.restaurant_name,
+    });
+  };
+
+  const handleToggleAccordion = (restaurantId: string) => {
+    setExpandedRestaurantId((prevId) =>
+      prevId === restaurantId ? null : restaurantId
+    );
+  };
+
+  useEffect(() => {
+    if (selectedRestaurant._id || selectedVariants.length > 0) {
+      setIsShowSubmitBtn(true);
+    } else {
+      setIsShowSubmitBtn(false);
+    }
+  }, [selectedRestaurant, selectedVariants]);
+
+  const handleSubmitCheckout = () => {
+    console.log("cehck", selectedRestaurant, selectedVariants);
+  };
 
   return (
     <FFSafeAreaView>
       <View className="flex-1 p-4 gap-4">
         <FlatList
+          keyExtractor={(item) => item} // This is fine if the keys of groupedCartList are unique
           data={Object.keys(groupedCartList)}
           renderItem={({ item }) => {
             const restaurantItems = groupedCartList[item];
             const restaurant = restaurantItems[0].item.restaurantDetails;
 
             return (
-              <View className="mb-5 p-4 border border-gray-300 rounded-xl bg-gray-50">
+              <View
+                className={`mb-5 p-4 border border-gray-300 rounded-xl ${
+                  selectedRestaurant._id === "" ||
+                  selectedRestaurant._id ===
+                    restaurantItems[0].item.restaurantDetails._id
+                    ? "bg-white"
+                    : "bg-gray-300"
+                }`}
+              >
                 <View className="flex-row items-center gap-2">
                   <Image
                     source={{ uri: restaurant.avatar.url }}
-                    className="w-8 h-8 rounded-full mb-2"
+                    className="w-8 h-8 rounded-xl self-end mb-2"
                   />
                   <Text className="text-sm font-semibold mb-2">
                     {restaurant.restaurant_name}
@@ -101,103 +185,121 @@ const CartScreen = () => {
                   data={restaurantItems}
                   renderItem={({ item }) => {
                     const cartItem = item;
+                    const restaurantDetails = cartItem?.item?.restaurantDetails;
+                    const isExpanded =
+                      expandedRestaurantId === restaurantDetails._id;
                     return (
-                      <View className="flex-row items-center mb-3 py-2 border-b border-gray-200">
-                        <Image
-                          source={{ uri: cartItem.item.avatar.url }}
-                          className="w-12 h-12 rounded-full mr-4"
-                        />
-                        <View className="flex-1">
-                          <Text className="font-semibold">
-                            {cartItem.item.name}
-                          </Text>
+                      <View className="mb-3 py-2 gap-4 border-b border-gray-200">
+                        <Pressable
+                          onPress={() =>
+                            handleToggleAccordion(restaurantDetails._id)
+                          }
+                          className="flex-row items-center justify-between"
+                        >
+                          <View className="flex-row items-center gap-2">
+                            <Image
+                              source={{ uri: cartItem?.item?.avatar?.url }}
+                              className="w-12 h-12 rounded-full mr-4 bg-gray-400"
+                            />
+                            <FFText>{cartItem.item.name}</FFText>
+                          </View>
+                          <IconFeather
+                            size={20}
+                            name={isExpanded ? "chevron-up" : "chevron-down"}
+                          />
+                        </Pressable>
+                        {isExpanded && (
+                          <View className="flex-1">
+                            {cartItem.variants.map((variant, index) => {
+                              return (
+                                <Pressable
+                                  onPress={() => {
+                                    const { _id } = selectedRestaurant;
 
-                          {/* Loop through variants to get price and quantity */}
-                          {cartItem.variants.map((variant, index) => {
-                            console.log(
-                              "cechk ",
-                              variant?.variant_price_at_time_of_addition
-                            );
-
-                            return (
-                              <View key={variant._id} className="mb-1">
-                                <Text className="text-xs text-gray-600">
-                                  {variant.variant_name} - $
-                                  {variant?.variant_price_at_time_of_addition?.toFixed(
-                                    2
-                                  )}
-                                </Text>
-                                <Text className="text-xs text-gray-500 mt-1">
-                                  Quantity: {variant.quantity}
-                                </Text>
-                              </View>
-                            );
-                          })}
-                        </View>
+                                    // Check if selectedRestaurant._id is empty or matches the restaurant item ID
+                                    if (
+                                      _id === "" ||
+                                      _id ===
+                                        restaurantItems[0].item
+                                          .restaurantDetails._id
+                                    ) {
+                                      handleSelectVariants(
+                                        variant,
+                                        restaurantItems[0].item
+                                          .restaurantDetails
+                                      );
+                                    } else {
+                                      setIsShowModal(true);
+                                    }
+                                  }}
+                                  key={variant._id + index} // Use a combination of _id and index to ensure uniqueness
+                                  className={`
+                                            mb-1 p-2 rounded-lg
+                                            ${
+                                              selectedVariants.some(
+                                                (item) =>
+                                                  item.variant_id ===
+                                                  variant.variant_id
+                                              )
+                                                ? "bg-green-50 border-green-400 border"
+                                                : "border border-gray-200"
+                                            }
+                                          `}
+                                >
+                                  <FFText
+                                    fontWeight="400"
+                                    style={{ color: "#888" }}
+                                  >
+                                    {variant.variant_name}
+                                  </FFText>
+                                  <View className="flex-row items-center justify-between">
+                                    <FFText
+                                      style={{ color: "#4d9c39", marginTop: 1 }}
+                                    >
+                                      $
+                                      {
+                                        +(
+                                          +variant?.variant_price_at_time_of_addition?.toFixed(
+                                            2
+                                          ) * +variant.quantity
+                                        ).toFixed(2)
+                                      }
+                                    </FFText>
+                                    <FFText
+                                      fontWeight="400"
+                                      style={{ color: "#4d9c39", marginTop: 1 }}
+                                    >
+                                      {variant.quantity}
+                                    </FFText>
+                                  </View>
+                                </Pressable>
+                              );
+                            })}
+                          </View>
+                        )}
                       </View>
                     );
                   }}
-                  keyExtractor={(item) => item._id}
+                  keyExtractor={(item) => item._id} // Ensure unique key for each variant
                 />
               </View>
             );
           }}
-          keyExtractor={(item) => item}
         />
+        {isShowSubmitBtn && (
+          <FFButton onPress={handleSubmitCheckout} className="w-full" isLinear>
+            Check Out
+          </FFButton>
+        )}
       </View>
+      <FFModal visible={isShowModal} onClose={() => setIsShowModal(false)}>
+        <FFText fontSize="md" fontWeight="400" style={{ color: "#aaa" }}>
+          Oops. Flashfood only allow selecting items of an restaurant at a
+          time.😣
+        </FFText>
+      </FFModal>
     </FFSafeAreaView>
   );
 };
-
-const styles = StyleSheet.create({
-  restaurantContainer: {
-    padding: 10,
-    flexDirection: "row",
-    borderWidth: 1,
-    borderColor: "#ccc",
-    borderRadius: 8,
-    backgroundColor: "#f9f9f9",
-  },
-  restaurantAvatar: {
-    width: 40,
-    height: 40,
-    borderRadius: 30,
-    marginBottom: 10,
-  },
-  restaurantName: {
-    fontSize: 18,
-    fontWeight: "bold",
-    marginBottom: 10,
-  },
-  cartItemContainer: {
-    flexDirection: "row",
-    marginBottom: 10,
-    paddingVertical: 10,
-    borderBottomWidth: 1,
-    borderColor: "#ddd",
-  },
-  itemAvatar: {
-    width: 50,
-    height: 50,
-    borderRadius: 25,
-    marginRight: 10,
-  },
-  itemDetails: {
-    flex: 1,
-  },
-  itemName: {
-    fontSize: 16,
-    fontWeight: "600",
-  },
-  itemPrice: {
-    fontSize: 14,
-    color: "#888",
-    marginVertical: 5,
-  },
-  itemQuantity: {
-    fontSize: 12,
-    color: "#555",
-  },
-});
 
 export default CartScreen;
