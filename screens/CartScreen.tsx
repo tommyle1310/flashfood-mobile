@@ -55,7 +55,6 @@ const CartScreen = () => {
       params: { restaurantId },
     });
   };
-  console.log("check", cartList);
 
   useEffect(() => {
     const groupByRestaurant = (cartList: CartItem[]): GroupedCartList => {
@@ -101,8 +100,6 @@ const CartScreen = () => {
                 <FlatList
                   data={restaurantItems}
                   renderItem={({ item }) => {
-                    console.log("check item", item.variants);
-
                     const cartItem = item;
                     return (
                       <View className="flex-row items-center mb-3 py-2 border-b border-gray-200">
@@ -116,19 +113,26 @@ const CartScreen = () => {
                           </Text>
 
                           {/* Loop through variants to get price and quantity */}
-                          {cartItem.variants.map((variant, index) => (
-                            <View key={variant._id} className="mb-1">
-                              <Text className="text-xs text-gray-600">
-                                {variant.variant_name} - $
-                                {variant.variant_price_at_time_of_addition.toFixed(
-                                  2
-                                )}
-                              </Text>
-                              <Text className="text-xs text-gray-500 mt-1">
-                                Quantity: {variant.quantity}
-                              </Text>
-                            </View>
-                          ))}
+                          {cartItem.variants.map((variant, index) => {
+                            console.log(
+                              "cechk ",
+                              variant?.variant_price_at_time_of_addition
+                            );
+
+                            return (
+                              <View key={variant._id} className="mb-1">
+                                <Text className="text-xs text-gray-600">
+                                  {variant.variant_name} - $
+                                  {variant?.variant_price_at_time_of_addition?.toFixed(
+                                    2
+                                  )}
+                                </Text>
+                                <Text className="text-xs text-gray-500 mt-1">
+                                  Quantity: {variant.quantity}
+                                </Text>
+                              </View>
+                            );
+                          })}
                         </View>
                       </View>
                     );

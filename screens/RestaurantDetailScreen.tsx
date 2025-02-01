@@ -115,28 +115,49 @@ const RestaurantDetail = () => {
   const listCartItem = useSelector(
     (state: RootState) => state.userPreference.cart_items
   );
+
   const handleAddToCart = async () => {
     const response = await axiosInstance.post(
       `/customers/cart-items/${user_id}`,
       {
         item_id: selectedMenuItem,
-        quantity,
-        price_at_time_of_addition: totalPrice,
-        variant_id: selectedVariant?._id,
+        variants: [{ variant_id: selectedVariant?._id, quantity }],
       }
     );
 
     const { EC, EM, data } = response.data;
+
     if (EC === 0) {
-      // Dispatch addItemToCart to add item to Redux state
+      console.log("cehck", {
+        ...data,
+      });
+
       dispatch(
         addItemToCart({
-          ...data,
-          quantity,
-          price_at_time_of_addition: totalPrice,
+          _id: data._id,
+          customer_id: user_id,
+          variants: [{ variant_id: selectedVariant?._id, quantity }],
+          item: {
+            // avatar: { url: data.avatar.url, key: data.avatar.key },
+            _id: data.item_id,
+            restaurant_id: data.restaurant_id,
+            restaurantDetails: {
+              _id: restaurantId,
+              restaurant_name: restaurantDetails?.restaurant_name,
+              avatar: {
+                url: restaurantDetails?.avatar.url,
+                key: restaurantDetails?.avatar.key,
+              },
+            },
+            name: modalData?.menuItem.name,
+            description: "",
+            category: modalData?.menuItem.category,
+            availability: true,
+            suggest_notes: modalData?.menuItem.suggest_notes,
+            purchase_count: 1,
+          },
         })
       );
-      // Save updated cart items to AsyncStorage
     }
   };
   useEffect(() => {
@@ -269,7 +290,7 @@ const RestaurantDetail = () => {
                       {item.purchased_count ?? "0"} sold
                     </FFText>
                     <FFText fontSize="lg" colorLight="#59bf47" fontWeight="600">
-                      ${item.price}
+                      ${item?.variants?.[0]?.price}
                     </FFText>
                     <Pressable
                       onPress={() => {

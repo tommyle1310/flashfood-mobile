@@ -34,26 +34,12 @@ export interface CartItem {
     created_at: number;
     updated_at: number;
     purchase_count: number;
-  };
-  restaurantDetails: {
-    avatar: { url: string; key: string };
-    _id: string;
-    owner_id: string;
-    restaurant_name: string;
-    contact_email: {
-      title: string;
-      is_default: boolean;
-      email: string;
-      _id: string;
-    }[];
-    contact_phone: string[];
-    address: string;
-    description: string;
-    created_at: number;
-    updated_at: number;
-    __v: number;
-    promotions: string[];
-    specialize_in: string[];
+    discount: {
+      discount_type: "FIXED" | "PERCENTAGE";
+      discount_value: number;
+      start_date: number;
+      end_date: number;
+    } | null;
   };
 }
 
@@ -148,6 +134,8 @@ const userPreferenceSlice = createSlice({
             // If the variant exists, update its quantity
             existingVariant.quantity += newVariant.quantity;
           } else {
+            console.log("check dog", newVariant);
+
             // If the variant doesn't exist in the existing item, add it to the variants array
             existingItem.variants.push(newVariant);
           }
