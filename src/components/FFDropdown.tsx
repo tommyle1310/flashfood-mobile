@@ -51,7 +51,7 @@ const FFDropdown: React.FC<FFDropdownProps> = ({
         ]}
         onPress={toggleDropdown}
       >
-        <FFText style={[styles.selectedText, textStyle]}>
+        <FFText style={{ ...styles.selectedText, ...textStyle }}>
           {selectedOption ? selectedOption : placeholder}
         </FFText>
       </TouchableOpacity>
@@ -129,8 +129,6 @@ const styles = StyleSheet.create({
   option: {
     paddingVertical: 12,
     paddingHorizontal: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: "#ddd",
   },
   optionText: {
     fontSize: 16,

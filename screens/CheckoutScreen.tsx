@@ -22,14 +22,14 @@ const CheckoutScreen = () => {
   const route = useRoute<CheckoutRouteProps>();
 
   const { orderItem } = route.params;
-  console.log("cehck haha ", orderItem.order_items[0].item.avatar.url);
+  console.log("cehck haha ", orderItem.order_items[0].item.name);
   const tabContent = [
     <OrderSummary orderItem={orderItem} />,
     <View className="flex-1 gap-4">
-      <View>
+      <View className="gap-1">
         <FFText fontSize="sm">Payment Method</FFText>
         <FFDropdown
-          options={["Option 1", "Option 2", "Option 3"]}
+          options={["FWallet", "COD"]}
           selectedOption={selected}
           onSelect={handleSelect}
           placeholder="Select an option"

@@ -38,6 +38,7 @@ const FFTab: React.FC<TabProps> = ({ tabTitles, tabContent }) => {
             <FFText
               fontSize="sm"
               style={{
+                textAlign: "center",
                 color:
                   activeTab === index
                     ? "#63c550"
