@@ -20,15 +20,8 @@ import {
   Variant,
 } from "@/src/store/userPreferenceSlice";
 import { useNavigation } from "@react-navigation/native";
-import { CompositeNavigationProp } from "@react-navigation/native";
-import { BottomTabNavigationProp } from "@react-navigation/bottom-tabs";
 import { StackNavigationProp } from "@react-navigation/stack";
-import {
-  HomeTabsParamList,
-  HomeStackParamList,
-  RootStackParamList,
-} from "@/src/navigation/AppNavigator";
-import RestaurantDetail from "./RestaurantDetailScreen";
+import { HomeTabsParamList } from "@/src/navigation/AppNavigator";
 import FFModal from "@/src/components/FFModal";
 import FFButton from "@/src/components/FFButton";
 import {
@@ -73,7 +66,7 @@ const CartScreen = () => {
       restaurant_note: "SOS restaurant",
       order_time: new Date().getTime(),
     };
-    // console.log("cehck menu item", orderData.order_items[0].item.item._id);
+    console.log("cehck menu item", orderData?.order_items?.[0]?.quantity);
 
     navigation.navigate("HomeStack", {
       screen: "Checkout",
