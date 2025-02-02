@@ -6,6 +6,7 @@ export interface Variant {
   variant_id: string;
   variant_name: string;
   quantity: number;
+  item: { _id: string; avatar: { url: string; key: string }; name: string };
   _id: string;
   variant_price_at_time_of_addition: number; // Price for each variant
 }
@@ -20,11 +21,13 @@ export interface CartItem {
   item: {
     avatar: { url: string; key: string };
     _id: string;
+    item_id: string;
     restaurant_id: string;
     restaurantDetails: {
       _id: string;
       restaurant_name: string;
       avatar: { url: string; key: string };
+      address: string;
     };
     name: string;
     description: string;

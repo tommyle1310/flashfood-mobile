@@ -1,8 +1,8 @@
 import { createStackNavigator } from "@react-navigation/stack";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { View, Text } from "react-native";
-import { useSelector } from "react-redux"; // Import useSelector
-import { RootState } from "@/src/store/store"; // Import RootState from your store
+import { useSelector } from "react-redux";
+import { RootState } from "@/src/store/store";
 import { useEffect, useState } from "react";
 import { useDispatch } from "../store/types";
 import { loadTokenFromAsyncStorage } from "../store/authSlice";
@@ -13,7 +13,9 @@ import OrdersScreen from "@/screens/OrdersScreen";
 import LoginScreen from "@/screens/Auth/LoginScreen";
 import SignupScreen from "@/screens/Auth/SignupScreen";
 import ProfileScreen from "@/screens/ProfileScreen";
-import RestaurantDetail from "@/screens/RestaurantDetailScreen"; // Import RestaurantDetail
+import RestaurantDetail from "@/screens/RestaurantDetailScreen";
+import CheckoutScreen from "@/screens/CheckoutScreen"; // Import CheckoutScreen
+import { Order } from "../types/Orders";
 
 // Root stack param list for Login, Signup, and Home
 export type RootStackParamList = {
@@ -26,9 +28,9 @@ export type RootStackParamList = {
 export type HomeStackParamList = {
   Home: undefined;
   RestaurantDetail: { restaurantId: string }; // Param for RestaurantDetail
+  Checkout: { orderItem: Order }; // Add Checkout screen to stack
 };
 
-// Update HomeTabsParamList to accept navigation to a screen in HomeStack
 export type HomeTabsParamList = {
   HomeStack: { screen: keyof HomeStackParamList; params: any } | undefined;
   Orders: undefined;
@@ -37,7 +39,7 @@ export type HomeTabsParamList = {
 };
 
 const Stack = createStackNavigator<RootStackParamList>();
-const Tab = createBottomTabNavigator<HomeTabsParamList>(); // Now includes HomeStack only
+const Tab = createBottomTabNavigator<HomeTabsParamList>();
 
 const HomeStack = createStackNavigator<HomeStackParamList>();
 
@@ -53,6 +55,11 @@ const HomeStackScreen = () => {
         options={{ headerShown: false }}
         name="RestaurantDetail"
         component={RestaurantDetail}
+      />
+      <HomeStack.Screen
+        options={{ headerShown: false }}
+        name="Checkout"
+        component={CheckoutScreen} // Add Checkout screen here
       />
     </HomeStack.Navigator>
   );

@@ -26,22 +26,61 @@ import { StackNavigationProp } from "@react-navigation/stack";
 import {
   HomeTabsParamList,
   HomeStackParamList,
+  RootStackParamList,
 } from "@/src/navigation/AppNavigator";
 import RestaurantDetail from "./RestaurantDetailScreen";
 import FFModal from "@/src/components/FFModal";
 import FFButton from "@/src/components/FFButton";
+import {
+  Enum_PaymentMethod,
+  Enum_PaymentStatus,
+  Enum_TrackingInfo,
+  Order,
+} from "@/src/types/Orders";
 
 interface GroupedCartList {
   [restaurantId: string]: CartItem[];
 }
 
-type CartScreenNavigationProp = CompositeNavigationProp<
-  BottomTabNavigationProp<HomeTabsParamList, "Cart">,
-  StackNavigationProp<HomeStackParamList>
->;
+type CartScreenNavigationProp = StackNavigationProp<HomeTabsParamList, "Cart">;
 
 const CartScreen = () => {
   const navigation = useNavigation<CartScreenNavigationProp>();
+  const handleSubmitCheckout = () => {
+    const totalAmount = selectedVariants.reduce((total, item) => {
+      const itemTotal = item.variant_price_at_time_of_addition * item.quantity;
+      return total + itemTotal;
+    }, 0);
+
+    const orderData: Order = {
+      customer_id: user_id,
+      restaurant_id: selectedRestaurant._id,
+      customer_location: address?.[0]?._id,
+      restaurant_location: selectedRestaurant.address,
+      status: Enum_PaymentStatus.PENDING,
+      payment_method: Enum_PaymentMethod.FWallet,
+      total_amount: totalAmount,
+      order_items: selectedVariants.map((item) => ({
+        item: item.item,
+        item_id: item._id, /// fiix this shit
+        name: item.variant_name,
+        quantity: item.quantity,
+        price_at_time_of_order: item.variant_price_at_time_of_addition,
+        variant_id: item.variant_id,
+      })),
+      tracking_info: Enum_TrackingInfo.ORDER_PLACED,
+      customer_note: "SOS customer",
+      restaurant_note: "SOS restaurant",
+      order_time: new Date().getTime(),
+    };
+    // console.log("cehck menu item", orderData.order_items[0].item.item._id);
+
+    navigation.navigate("HomeStack", {
+      screen: "Checkout",
+      params: { orderItem: orderData },
+    });
+  };
+
   const [groupedCartList, setGroupedCartList] = useState<GroupedCartList>({});
   const [selectedVariants, setSelectedVariants] = useState<Variant[]>([]);
   const [selectedRestaurant, setSelectedRestaurant] = useState<{
@@ -51,6 +90,7 @@ const CartScreen = () => {
       url: string;
       key: string;
     };
+    address: string;
   }>({
     _id: "",
     restaurant_name: "",
@@ -58,12 +98,14 @@ const CartScreen = () => {
       url: "",
       key: "",
     },
+    address: "",
   });
   const [isShowModal, setIsShowModal] = useState<boolean>(false);
   const [isShowSubmitBtn, setIsShowSubmitBtn] = useState<boolean>(false);
   const [expandedRestaurantId, setExpandedRestaurantId] = useState<
     string | null
   >(null);
+  const { user_id, address } = useSelector((state: RootState) => state.auth);
 
   const dispatch = useDispatch();
   useEffect(() => {
@@ -98,19 +140,25 @@ const CartScreen = () => {
     restaurant: {
       _id: string;
       restaurant_name: string;
+      address: string;
       avatar: {
         url: string;
         key: string;
       };
-    }
+    },
+    menuItem: CartItem
   ) => {
     const newVariants = [...selectedVariants]; // Create a new array to avoid mutation
 
-    // Check if the variant is already selected
-    if (selectedVariants.some((item) => item._id === variant._id)) {
+    // Add the item_id to the variant
+    const variantWithItemId = { ...variant, item: menuItem.item };
+    // console.log("cehck vasr", menuItem.item.item_id);
+
+    // Check if the variant (with item_id) is already selected
+    if (selectedVariants.some((item) => item._id === variantWithItemId._id)) {
       // If it's selected, remove it (filter out the variant by _id)
       setSelectedVariants(
-        newVariants.filter((item) => item._id !== variant._id)
+        newVariants.filter((item) => item._id !== variantWithItemId._id)
       );
       setSelectedRestaurant({
         _id: "",
@@ -119,19 +167,24 @@ const CartScreen = () => {
           url: "",
           key: "",
         },
+        address: "",
       });
       return;
     }
 
     // If the variant is not selected, add it to the array
-    newVariants.push(variant);
-    setSelectedVariants(newVariants); // Update the state
+    newVariants.push(variantWithItemId);
+    setSelectedVariants(newVariants); // Update the selectedVariants state
+
+    // Update the restaurant selection
     setSelectedRestaurant({
       _id: restaurant._id,
       avatar: { url: restaurant.avatar.url, key: restaurant.avatar.key },
       restaurant_name: restaurant.restaurant_name,
+      address: restaurant.address,
     });
   };
+  // console.log("checsaasdsafask", selectedVariants[0]);
 
   const handleToggleAccordion = (restaurantId: string) => {
     setExpandedRestaurantId((prevId) =>
@@ -146,10 +199,6 @@ const CartScreen = () => {
       setIsShowSubmitBtn(false);
     }
   }, [selectedRestaurant, selectedVariants]);
-
-  const handleSubmitCheckout = () => {
-    console.log("cehck", selectedRestaurant, selectedVariants);
-  };
 
   return (
     <FFSafeAreaView>
@@ -226,7 +275,8 @@ const CartScreen = () => {
                                       handleSelectVariants(
                                         variant,
                                         restaurantItems[0].item
-                                          .restaurantDetails
+                                          .restaurantDetails,
+                                        cartItem
                                       );
                                     } else {
                                       setIsShowModal(true);

@@ -46,6 +46,7 @@ const RestaurantDetail = () => {
   const listFavoriteRestaurants = useSelector(
     (state: RootState) => state.userPreference.favorite_restaurants
   );
+  const user_id = useSelector((state: RootState) => state.auth.user_id);
 
   const route = useRoute<RestaurantDetailRouteProp>();
   const { restaurantId } = route.params;
@@ -60,7 +61,6 @@ const RestaurantDetail = () => {
   const [totalPrice, setTotalPrice] = useState<number>(0);
   const [quantity, setQuantity] = useState<number>(1);
   const [itemPrice, setItemPrice] = useState<number | null>(0);
-  const user_id = useSelector((state: RootState) => state.auth.user_id);
   useEffect(() => {
     const fetchRestaurantDetails = async () => {
       const response = await axiosInstance.get(`/restaurants/${restaurantId}`);
