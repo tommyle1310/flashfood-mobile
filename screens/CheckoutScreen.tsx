@@ -1,20 +1,9 @@
-import {
-  View,
-  Text,
-  Pressable,
-  TouchableOpacity,
-  ScrollView,
-} from "react-native";
+import { View } from "react-native";
 import React, { useState } from "react";
 import { RouteProp, useNavigation, useRoute } from "@react-navigation/native";
 import FFTab from "@/src/components/FFTab";
-import FFText from "@/src/components/FFText";
 import FFSafeAreaView from "@/src/components/FFSafeAreaView";
-import FFAvatar from "@/src/components/FFAvatar";
-import IconIonicons from "react-native-vector-icons/Ionicons";
 import OrderSummary from "@/src/components/screens/Checkout/OrderSummary";
-import FFDropdown from "@/src/components/FFDropdown";
-import FFButton from "@/src/components/FFButton";
 import OrderConfirmation from "@/src/components/screens/Checkout/OrderConfirmation";
 import PaymentInformation from "@/src/components/screens/Checkout/PaymentInformation";
 import { useSelector } from "@/src/store/types";
@@ -24,6 +13,7 @@ import FFModal from "@/src/components/FFModal";
 import axiosInstance from "@/src/utils/axiosConfig";
 import ModalStatusCheckout from "@/src/components/screens/Checkout/ModalStatusCheckout";
 import { MainStackParamList } from "@/src/navigation/AppNavigator";
+import FFScreenTopSection from "@/src/components/FFScreenTopSection";
 
 type CheckoutRouteProps = RouteProp<MainStackParamList, "Checkout">;
 
@@ -111,33 +101,23 @@ const CheckoutScreen = () => {
 
   return (
     <FFSafeAreaView>
-      <View className="flex-1">
-        <View className="px-4 pt-4 items-center relative">
-          <TouchableOpacity
-            className="absolute left-4 top-4"
-            onPress={() => navigation.goBack()}
-          >
-            <IconIonicons name="chevron-back" size={24} />
-          </TouchableOpacity>
-          <FFText fontSize="lg">Check Out</FFText>
-        </View>
-        <View className="flex-1 p-4">
-          <FFTab
-            tabTitles={[
-              "Order Summary",
-              "Payment Information",
-              "Order Confirmation",
-            ]}
-            tabContent={tabContent}
-          />
-        </View>
-        <FFModal
-          visible={isShowModalStatusCheckout}
-          onClose={() => setIsShowModalStatusCheckout(false)}
-        >
-          <ModalStatusCheckout modalContentType={modalContentType} />
-        </FFModal>
+      <FFScreenTopSection title="Check Out" navigation={navigation} />
+      <View className="flex-1 p-4">
+        <FFTab
+          tabTitles={[
+            "Order Summary",
+            "Payment Information",
+            "Order Confirmation",
+          ]}
+          tabContent={tabContent}
+        />
       </View>
+      <FFModal
+        visible={isShowModalStatusCheckout}
+        onClose={() => setIsShowModalStatusCheckout(false)}
+      >
+        <ModalStatusCheckout modalContentType={modalContentType} />
+      </FFModal>
     </FFSafeAreaView>
   );
 };

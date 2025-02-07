@@ -22,6 +22,7 @@ import { Order } from "../types/Orders";
 // Import your custom FFBottomTab
 import FFBottomTab from "../components/FFBottomTab";
 import { useNavigation } from "@react-navigation/native";
+import ProfileScreen from "@/screens/ProfileScreen";
 
 // Root stack param list for Login and Signup
 export type RootStackParamList = {
@@ -43,6 +44,7 @@ export type MainStackParamList = {
   BottomTabs: BottomTabParamList;
   RestaurantDetail: { restaurantId: string }; // Param for RestaurantDetail
   Checkout: { orderItem: Order }; // Add Checkout screen to stack
+  Profile: undefined; // Add Checkout screen to stack
 };
 
 // Create the root stack and bottom tab stack
@@ -68,6 +70,11 @@ const MainStackScreen = () => {
         options={{ headerShown: false }}
         name="Checkout"
         component={CheckoutScreen} // For handling checkout screen
+      />
+      <MainStack.Screen
+        options={{ headerShown: false }}
+        name="Profile"
+        component={ProfileScreen} // For handling checkout screen
       />
     </MainStack.Navigator>
   );

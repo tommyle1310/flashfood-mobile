@@ -12,8 +12,8 @@ import { logout } from "@/src/store/authSlice";
 import IconIonicons from "react-native-vector-icons/Ionicons";
 import { LinearGradient } from "expo-linear-gradient";
 import FFAvatar from "@/src/components/FFAvatar";
-import { Data_screen_Setting } from "@/src/data/screens/Settings";
 import { RootState } from "@/src/store/store";
+import useSettingData from "@/src/data/screens/Settings";
 
 type LogoutSreenNavigationProp = StackNavigationProp<
   RootStackParamList,
@@ -26,6 +26,8 @@ const SettingsScreen = () => {
   const { user_id, address, avatar } = useSelector(
     (state: RootState) => state.auth
   );
+  const { "Account Settings": data_account_setting, More: data_more } =
+    useSettingData();
 
   return (
     <FFSafeAreaView>
@@ -64,8 +66,9 @@ const SettingsScreen = () => {
             <FFText fontWeight="400" style={{ color: "#aaa" }}>
               Account Settings
             </FFText>
-            {Data_screen_Setting["Account Settings"].map((item) => (
+            {data_account_setting.map((item) => (
               <Pressable
+                onPress={() => item.onPress()}
                 key={item.title}
                 className="flex-row items-center justify-between py-2"
               >
@@ -78,7 +81,7 @@ const SettingsScreen = () => {
             <FFText fontWeight="400" style={{ color: "#aaa" }}>
               Account Settings
             </FFText>
-            {Data_screen_Setting["More"].map((item) => (
+            {data_more.map((item) => (
               <Pressable
                 key={item.title}
                 className="flex-row items-center justify-between py-2"

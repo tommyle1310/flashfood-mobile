@@ -22,11 +22,7 @@ import {
 } from "@/src/store/userPreferenceSlice";
 import { useNavigation } from "@react-navigation/native";
 import { StackNavigationProp } from "@react-navigation/stack";
-import {
-  HomeStackParamList,
-  HomeTabsParamList,
-  RootStackParamList,
-} from "@/src/navigation/AppNavigator";
+import { MainStackParamList } from "@/src/navigation/AppNavigator";
 
 // Type Definitions
 type FoodCategory = { _id: string; name: string; description: string };
@@ -53,8 +49,8 @@ type Restaurant = {
 };
 
 type HomeRestaurantSreenNavigationProp = StackNavigationProp<
-  HomeStackParamList,
-  "Home"
+  MainStackParamList,
+  "BottomTabs"
 >;
 
 const HomeScreen = () => {
