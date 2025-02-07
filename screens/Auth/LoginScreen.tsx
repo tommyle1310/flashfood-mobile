@@ -55,6 +55,7 @@ const Login = () => {
         const userData = decodeJWT(data.access_token); // Decode JWT to get user data
 
         // Dispatch the action to save the user data to AsyncStorage and Redux store
+
         dispatch(
           saveTokenToAsyncStorage({
             accessToken: data.access_token, // Saving the actual access token
@@ -76,7 +77,7 @@ const Login = () => {
 
         dispatch(saveCartItemsToAsyncStorage(userData.cart_items));
 
-        navigation.navigate("Home");
+        navigation.navigate("MainStack");
       } else {
         // Handle error based on EC (optional)
         setError(EM); // Show error message if EC is non-zero

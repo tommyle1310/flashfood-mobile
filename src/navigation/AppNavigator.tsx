@@ -1,9 +1,11 @@
+import React, { useEffect, useState } from "react";
 import { createStackNavigator } from "@react-navigation/stack";
-import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
-import { View, Text } from "react-native";
+import {
+  BottomTabNavigationProp,
+  createBottomTabNavigator,
+} from "@react-navigation/bottom-tabs"; // Import BottomTabNavigator
 import { useSelector } from "react-redux";
 import { RootState } from "@/src/store/store";
-import { useEffect, useState } from "react";
 import { useDispatch } from "../store/types";
 import { loadTokenFromAsyncStorage } from "../store/authSlice";
 
@@ -12,83 +14,99 @@ import HomeScreen from "@/screens/HomeScreen";
 import OrdersScreen from "@/screens/OrdersScreen";
 import LoginScreen from "@/screens/Auth/LoginScreen";
 import SignupScreen from "@/screens/Auth/SignupScreen";
-import ProfileScreen from "@/screens/ProfileScreen";
+import SettingsScreen from "@/screens/SettingsScreen";
 import RestaurantDetail from "@/screens/RestaurantDetailScreen";
 import CheckoutScreen from "@/screens/CheckoutScreen"; // Import CheckoutScreen
 import { Order } from "../types/Orders";
 
-// Root stack param list for Login, Signup, and Home
+// Import your custom FFBottomTab
+import FFBottomTab from "../components/FFBottomTab";
+import { useNavigation } from "@react-navigation/native";
+
+// Root stack param list for Login and Signup
 export type RootStackParamList = {
   Login: undefined;
   Signup: undefined;
-  Home: undefined;
+  MainStack: undefined;
 };
 
-// Define HomeStackParamList clearly with the screen and params
-export type HomeStackParamList = {
+// Define the BottomTabParamList for the BottomTabNavigator
+export type BottomTabParamList = {
   Home: undefined;
+  Orders: undefined;
+  Cart: undefined;
+  Settings: undefined;
+};
+
+// Define the MainStackParamList for BottomTabs and ContentStacks
+export type MainStackParamList = {
+  BottomTabs: BottomTabParamList;
   RestaurantDetail: { restaurantId: string }; // Param for RestaurantDetail
   Checkout: { orderItem: Order }; // Add Checkout screen to stack
 };
 
-export type HomeTabsParamList = {
-  HomeStack: { screen: keyof HomeStackParamList; params: any } | undefined;
-  Orders: undefined;
-  Cart: undefined;
-  Profile: undefined;
-};
+// Create the root stack and bottom tab stack
+const RootStack = createStackNavigator<RootStackParamList>(); // Root stack for Login, Signup, and MainStack
+const MainStack = createStackNavigator<MainStackParamList>(); // Create MainStack with MainStackParamList
+const BottomTab = createBottomTabNavigator(); // Create a BottomTabNavigator
 
-const Stack = createStackNavigator<RootStackParamList>();
-const Tab = createBottomTabNavigator<HomeTabsParamList>();
-
-const HomeStack = createStackNavigator<HomeStackParamList>();
-
-const HomeStackScreen = () => {
+// MainStack to include BottomTabs and ContentStacks (RestaurantDetail, Checkout)
+const MainStackScreen = () => {
   return (
-    <HomeStack.Navigator>
-      <HomeStack.Screen
+    <MainStack.Navigator>
+      <MainStack.Screen
         options={{ headerShown: false }}
-        name="Home"
-        component={HomeScreen}
+        name="BottomTabs"
+        component={BottomTabs} // The BottomTabs navigator
       />
-      <HomeStack.Screen
+      <MainStack.Screen
         options={{ headerShown: false }}
         name="RestaurantDetail"
-        component={RestaurantDetail}
+        component={RestaurantDetail} // For handling restaurant details
       />
-      <HomeStack.Screen
+      <MainStack.Screen
         options={{ headerShown: false }}
         name="Checkout"
-        component={CheckoutScreen} // Add Checkout screen here
+        component={CheckoutScreen} // For handling checkout screen
       />
-    </HomeStack.Navigator>
+    </MainStack.Navigator>
   );
 };
 
-const HomeTabs = () => (
-  <Tab.Navigator>
-    <Tab.Screen
-      options={{ headerShown: false }}
-      name="HomeStack"
-      component={HomeStackScreen}
-    />
-    <Tab.Screen
-      options={{ headerShown: false }}
-      name="Orders"
-      component={OrdersScreen}
-    />
-    <Tab.Screen
-      options={{ headerShown: false }}
-      name="Cart"
-      component={CartScreen}
-    />
-    <Tab.Screen
-      options={{ headerShown: false }}
-      name="Profile"
-      component={ProfileScreen}
-    />
-  </Tab.Navigator>
-);
+type BottomNavigationProp = BottomTabNavigationProp<BottomTabParamList>;
+
+// BottomTabs with FFBottomTab
+const BottomTabs = () => {
+  const [currentScreen, setCurrentScreen] = useState(0); // Track the current tab index
+
+  // Use useNavigation with the correct type for BottomTab navigation
+  const navigation = useNavigation<BottomNavigationProp>();
+
+  const renderedScreen = () => {
+    switch (currentScreen) {
+      case 0:
+        return <HomeScreen />;
+      case 1:
+        return <OrdersScreen />;
+      case 2:
+        return <CartScreen />;
+      case 3:
+        return <SettingsScreen />;
+      default:
+        return <HomeScreen />;
+    }
+  };
+
+  return (
+    <>
+      {renderedScreen()}
+      <FFBottomTab
+        currentScreen={currentScreen}
+        setCurrentScreen={setCurrentScreen}
+      />
+    </>
+  );
+};
 
 const AppNavigator = () => {
   const token = useSelector((state: RootState) => state.auth.accessToken);
@@ -104,27 +122,27 @@ const AppNavigator = () => {
   }, [dispatch]);
 
   if (loading) {
-    return null;
+    return null; // Loading state, can show a loading spinner if needed
   }
 
   return (
-    <Stack.Navigator initialRouteName={token ? "Home" : "Login"}>
-      <Stack.Screen
+    <RootStack.Navigator initialRouteName={token ? "MainStack" : "Login"}>
+      <RootStack.Screen
         name="Login"
         options={{ headerShown: false }}
         component={LoginScreen}
       />
-      <Stack.Screen
+      <RootStack.Screen
         name="Signup"
         options={{ headerShown: false }}
         component={SignupScreen}
       />
-      <Stack.Screen
-        name="Home"
+      <RootStack.Screen
+        name="MainStack"
         options={{ headerShown: false }}
-        component={HomeTabs}
+        component={MainStackScreen} // Now the MainRootStack contains BottomTabs and ContentRootStacks
       />
-    </Stack.Navigator>
+    </RootStack.Navigator>
   );
 };
 

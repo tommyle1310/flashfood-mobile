@@ -13,7 +13,7 @@ const FFTab: React.FC<TabProps> = ({ tabTitles, tabContent }) => {
   const { theme } = useTheme(); // Assuming theme context/hook
 
   return (
-    <View className="w-full">
+    <View className="flex-1">
       {/* Tab Headers */}
       <View
         style={{
@@ -57,7 +57,7 @@ const FFTab: React.FC<TabProps> = ({ tabTitles, tabContent }) => {
       <View
         style={{
           padding: 10,
-          height: "92%",
+          height: "90%",
           borderBottomLeftRadius: activeTab === 0 ? 24 : 16, // Dynamically change border radius for the first tab
           borderBottomRightRadius: activeTab === 0 ? 24 : 16, // Dynamically change border radius for the first tab
           backgroundColor: theme === "light" ? "white" : "black", // Dynamic background color

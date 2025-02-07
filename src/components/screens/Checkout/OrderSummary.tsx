@@ -65,11 +65,11 @@ const OrderSummary = ({
                 onPress={() => {}}
                 key={item.variant_id}
               >
-                <View className="relative bg-red-300">
+                <View className="relative rounded-full">
                   <FFAvatar
                     rounded="sm"
                     size={50}
-                    avatar={item.item.avatar.url}
+                    avatar={item?.item?.avatar?.url ?? ""}
                   />
                   <FFText
                     style={{

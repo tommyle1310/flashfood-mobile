@@ -8,6 +8,9 @@ import { useTheme } from "@/src/hooks/useTheme";
 import { useDispatch, useSelector } from "../store/types";
 import { RootState } from "../store/store";
 import { loadCartItemsFromAsyncStorage } from "../store/userPreferenceSlice";
+import { useNavigation } from "@react-navigation/native";
+import { BottomTabNavigationProp } from "@react-navigation/bottom-tabs";
+import { BottomTabParamList } from "../navigation/AppNavigator";
 
 type FFBottomTabProps = {
   currentScreen: number;
@@ -18,18 +21,22 @@ const TAB_ITEMS = [
   { icon: <IconFontiso name="home" size={20} />, label: "Home" },
   { icon: <IconIonicons name="receipt-outline" size={20} />, label: "Orders" },
   { icon: <IconEntypo name="shopping-cart" size={20} />, label: "Cart" },
-  { icon: <IconFontiso name="user-secret" size={20} />, label: "Profile" },
+  { icon: <IconFontiso name="user-secret" size={20} />, label: "Settings" },
 ];
 
 const FFBottomTab: React.FC<FFBottomTabProps> = ({
   currentScreen,
   setCurrentScreen,
 }) => {
+  const navigation =
+    useNavigation<BottomTabNavigationProp<BottomTabParamList>>();
   const { theme } = useTheme();
   const dispatch = useDispatch();
+
   useEffect(() => {
     dispatch(loadCartItemsFromAsyncStorage());
   }, [dispatch]);
+
   const listCartItem = useSelector(
     (state: RootState) => state.userPreference.cart_items
   );
@@ -52,12 +59,16 @@ const FFBottomTab: React.FC<FFBottomTabProps> = ({
     { icon, label }: (typeof TAB_ITEMS)[0]
   ) => {
     const isSelected = currentScreen === index;
+    const paramLabel = label as "Home" | "Orders" | "Cart" | "Settings";
+    const handlePress = () => {
+      setCurrentScreen(index); // Update the active tab state
+    };
 
     return (
       <TouchableOpacity
         key={index}
         style={[styles.button, getButtonStyle(isSelected)]}
-        onPress={() => setCurrentScreen(index)}
+        onPress={handlePress}
       >
         {index === 2 && listCartItem.length > 0 && (
           <View

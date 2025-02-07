@@ -10,7 +10,6 @@ import React, { useEffect, useState } from "react";
 import FFSafeAreaView from "@/src/components/FFSafeAreaView";
 import { RouteProp, useNavigation, useRoute } from "@react-navigation/native";
 import { StackNavigationProp } from "@react-navigation/stack";
-import { HomeStackParamList } from "@/src/navigation/AppNavigator";
 import IconFeather from "react-native-vector-icons/Feather";
 import IconAntDesign from "react-native-vector-icons/AntDesign";
 import FFBadge from "@/src/components/FFBadge";
@@ -30,17 +29,18 @@ import {
   loadCartItemsFromAsyncStorage,
   saveCartItemsToAsyncStorage,
 } from "@/src/store/userPreferenceSlice";
+import { MainStackParamList } from "@/src/navigation/AppNavigator";
 
 // Correct the typing for useRoute
 type RestaurantDetailRouteProp = RouteProp<
-  HomeStackParamList,
+  MainStackParamList,
   "RestaurantDetail"
 >;
 
 const RestaurantDetail = () => {
   const navigation =
     useNavigation<
-      StackNavigationProp<HomeStackParamList, "RestaurantDetail">
+      StackNavigationProp<MainStackParamList, "RestaurantDetail">
     >();
 
   const listFavoriteRestaurants = useSelector(
@@ -128,6 +128,8 @@ const RestaurantDetail = () => {
     const { EC, EM, data } = response.data;
 
     if (EC === 0) {
+      console.log("cehck ", data);
+
       dispatch(
         addItemToCart({
           _id: data._id,
@@ -136,13 +138,16 @@ const RestaurantDetail = () => {
             {
               variant_id: selectedVariant?._id,
               quantity,
-              variant_name: data.variants[0].variant_name,
+              variant_name: selectedVariant?.variant,
               variant_price_at_time_of_addition:
                 data.variants[0].variant_price_at_time_of_addition,
             },
           ],
           item: {
-            // avatar: { url: data.avatar.url, key: data.avatar.key },
+            avatar: {
+              url: modalData?.menuItem?.avatar?.url,
+              key: modalData?.menuItem?.avatar?.key,
+            },
             _id: data.item_id,
             restaurant_id: data.restaurant_id,
             restaurantDetails: {
@@ -177,7 +182,7 @@ const RestaurantDetail = () => {
       <View style={{ flex: 1, position: "relative" }}>
         {/* Fixed Back Button */}
         <TouchableOpacity
-          onPress={() => navigation.navigate("Home")}
+          onPress={() => navigation.goBack()}
           style={{
             position: "absolute",
             top: 20,
@@ -346,7 +351,7 @@ const RestaurantDetail = () => {
               {modalData?.menuItem?.purchase_count} sold
             </FFText>
             <FFText fontSize="lg" colorLight="#59bf47" fontWeight="600">
-              ${totalPrice}
+              ${totalPrice.toFixed(2)}
             </FFText>
             <View className="absolute right-2 bottom-0 flex-row">
               {/* Minus Button */}

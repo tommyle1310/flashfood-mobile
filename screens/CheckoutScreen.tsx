@@ -1,12 +1,17 @@
-import { View, Text, Pressable, TouchableOpacity } from "react-native";
+import {
+  View,
+  Text,
+  Pressable,
+  TouchableOpacity,
+  ScrollView,
+} from "react-native";
 import React, { useState } from "react";
-import { RouteProp, useRoute } from "@react-navigation/native";
-import { HomeStackParamList } from "@/src/navigation/AppNavigator";
+import { RouteProp, useNavigation, useRoute } from "@react-navigation/native";
 import FFTab from "@/src/components/FFTab";
 import FFText from "@/src/components/FFText";
 import FFSafeAreaView from "@/src/components/FFSafeAreaView";
 import FFAvatar from "@/src/components/FFAvatar";
-import IconAntDesign from "react-native-vector-icons/AntDesign";
+import IconIonicons from "react-native-vector-icons/Ionicons";
 import OrderSummary from "@/src/components/screens/Checkout/OrderSummary";
 import FFDropdown from "@/src/components/FFDropdown";
 import FFButton from "@/src/components/FFButton";
@@ -18,8 +23,9 @@ import { DELIVERY_FEE, SERVICE_FEE } from "@/src/utils/constants";
 import FFModal from "@/src/components/FFModal";
 import axiosInstance from "@/src/utils/axiosConfig";
 import ModalStatusCheckout from "@/src/components/screens/Checkout/ModalStatusCheckout";
+import { MainStackParamList } from "@/src/navigation/AppNavigator";
 
-type CheckoutRouteProps = RouteProp<HomeStackParamList, "Checkout">;
+type CheckoutRouteProps = RouteProp<MainStackParamList, "Checkout">;
 
 const CheckoutScreen = () => {
   const route = useRoute<CheckoutRouteProps>();
@@ -29,7 +35,7 @@ const CheckoutScreen = () => {
   const [modalContentType, setModalContentType] = useState<
     "SUCCESS" | "ERROR" | "WARNING"
   >("ERROR"); // Default can be "SUCCESS"
-
+  const navigation = useNavigation();
   const [deliveryFee, setDeliveryFee] = useState<number>(DELIVERY_FEE);
   const [serviceFee, setServiceFee] = useState<number>(SERVICE_FEE);
   const [totalAmount, setTotalAmount] = useState<number>(0);
@@ -47,7 +53,7 @@ const CheckoutScreen = () => {
   };
 
   const handlePlaceOrder = async () => {
-    if (!selectedPaymentMethod || !globalState?.address?.[0]._id) {
+    if (!selectedPaymentMethod || !selectedAddress) {
       setIsShowModalStatusCheckout(true);
       setModalContentType("ERROR");
       return;
@@ -73,12 +79,15 @@ const CheckoutScreen = () => {
       // This will ensure axios does NOT reject on non-2xx status codes
       validateStatus: () => true, // Always return true so axios doesn't throw on errors
     });
-    console.log("cehck", response.data);
 
     const { EC, EM, data } = response.data;
     if (EC === 0) {
       setIsShowModalStatusCheckout(true);
       setModalContentType("SUCCESS");
+    } else {
+      setIsShowModalStatusCheckout(true);
+      setModalContentType("ERROR");
+      console.log("cehck", response.data);
     }
   };
 
@@ -102,8 +111,17 @@ const CheckoutScreen = () => {
 
   return (
     <FFSafeAreaView>
-      <View className="flex-1 p-4">
-        <View className="flex-1 ">
+      <View className="flex-1">
+        <View className="px-4 pt-4 items-center relative">
+          <TouchableOpacity
+            className="absolute left-4 top-4"
+            onPress={() => navigation.goBack()}
+          >
+            <IconIonicons name="chevron-back" size={24} />
+          </TouchableOpacity>
+          <FFText fontSize="lg">Check Out</FFText>
+        </View>
+        <View className="flex-1 p-4">
           <FFTab
             tabTitles={[
               "Order Summary",
@@ -113,13 +131,13 @@ const CheckoutScreen = () => {
             tabContent={tabContent}
           />
         </View>
+        <FFModal
+          visible={isShowModalStatusCheckout}
+          onClose={() => setIsShowModalStatusCheckout(false)}
+        >
+          <ModalStatusCheckout modalContentType={modalContentType} />
+        </FFModal>
       </View>
-      <FFModal
-        visible={isShowModalStatusCheckout}
-        onClose={() => setIsShowModalStatusCheckout(false)}
-      >
-        <ModalStatusCheckout modalContentType={modalContentType} />
-      </FFModal>
     </FFSafeAreaView>
   );
 };
