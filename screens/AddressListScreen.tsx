@@ -16,35 +16,53 @@ import {
   setDefaultAddress,
   setDefaultAddressInStorage,
 } from "@/src/store/authSlice";
+import axiosInstance from "@/src/utils/axiosConfig";
 
 type AddressListSreenNavigationProp = StackNavigationProp<
   MainStackParamList,
   "BottomTabs"
 >;
 
+interface Props_Address {
+  location: {
+    lon: number;
+    lat: number;
+  };
+  _id: string;
+  street: string;
+  city: string;
+  nationality: string;
+  is_default: boolean;
+  created_at: number;
+  updated_at: number;
+  postal_code: number;
+  title: string;
+  __v: number;
+}
+
 const AddressListScreen = () => {
   const navigation = useNavigation<AddressListSreenNavigationProp>();
-  const { address } = useSelector((state: RootState) => state.auth);
+  const { address, user_id } = useSelector((state: RootState) => state.auth);
   const dispatch = useDispatch();
-  const handleSelectAddress = (item: {
-    location: {
-      lon: number;
-      lat: number;
-    };
-    _id: string;
-    street: string;
-    city: string;
-    nationality: string;
-    is_default: boolean;
-    created_at: number;
-    updated_at: number;
-    postal_code: number;
-    title: string;
-    __v: number;
-  }) => {
+  const handleSelectAddress = async (item: Props_Address) => {
     console.log("check ", item);
-    dispatch(setDefaultAddress(item));
-    dispatch(setDefaultAddressInStorage(item));
+    const response = await axiosInstance.patch(
+      `/customers/address/${user_id}/${item._id}`,
+      {
+        // This will ensure axios does NOT reject on non-2xx status codes
+        validateStatus: () => true, // Always return true so axios doesn't throw on errors
+      }
+    );
+    console.log("check responseda", response.data);
+
+    // Now you can safely access the EC field
+    const { EC, EM, data } = response.data;
+    if (EC === 0) {
+      dispatch(setDefaultAddress(item));
+      dispatch(setDefaultAddressInStorage(item));
+    } else {
+      console.log("st h wrnt wrong");
+    }
   };
   console.log("cehck address", address);
 
@@ -56,6 +74,7 @@ const AddressListScreen = () => {
           <Pressable
             onPress={() => handleSelectAddress(item)}
             key={item._id}
+            style={{ borderColor: item.is_default ? "#63c550" : "#aaa" }}
             className="rounded-lg border flex-row items-center p-2"
           >
             <View className="flex-1 ">

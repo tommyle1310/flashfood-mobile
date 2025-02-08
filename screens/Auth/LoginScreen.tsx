@@ -68,7 +68,7 @@ const Login = () => {
             user_id: userData.user_id || "", // Default to empty string if not present
             user_type: userData.user_type || [], // Ensure this is an array
             address: userData.address || [],
-            cart_items: userData.cart_items || [],
+            // cart_items: userData.cart_items || [],
           })
         );
         dispatch(
