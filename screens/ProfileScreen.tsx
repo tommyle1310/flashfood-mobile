@@ -1,15 +1,11 @@
 import { TouchableOpacity, View } from "react-native";
 import React, { useEffect, useState } from "react";
 import FFSafeAreaView from "@/src/components/FFSafeAreaView";
-import FFText from "@/src/components/FFText";
 import FFScreenTopSection from "@/src/components/FFScreenTopSection";
 import { StackNavigationProp } from "@react-navigation/stack";
 import { MainStackParamList } from "@/src/navigation/AppNavigator";
 import { useNavigation } from "@react-navigation/native";
-import FFAvatar from "@/src/components/FFAvatar";
-import IconFontAwesome5 from "react-native-vector-icons/FontAwesome5";
 import ReadonlyProfileComponents from "@/src/components/screens/Profile/ReadonlyProfileComponents";
-import FFInputControl from "@/src/components/FFInputControl";
 import { useSelector } from "@/src/store/types";
 import { RootState } from "@/src/store/store";
 import axiosInstance from "@/src/utils/axiosConfig";
@@ -63,7 +59,6 @@ const ProfileScreen = () => {
       is_verified: false,
     },
   });
-  const {} = profileData;
   useEffect(() => {
     const fetchProfileData = async () => {
       const response = await axiosInstance.get(`/customers/${user_id}`);

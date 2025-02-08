@@ -102,16 +102,6 @@ export const saveTokenToAsyncStorage = createAsyncThunk(
       title: string;
       __v: number;
     }> | null;
-    cart_items: Array<{
-      _id: string;
-      customer_id: string;
-      item_id: string;
-      quantity: number;
-      price_at_time_of_addition: number;
-      created_at: number;
-      updated_at: number;
-      __v: number;
-    }> | null;
   }) => {
     await AsyncStorage.setItem("accessToken", data.accessToken);
     await AsyncStorage.setItem(
@@ -148,6 +138,39 @@ export const setAvatarInAsyncStorage = createAsyncThunk(
   }
 );
 
+// Set default address in AsyncStorage
+export const setDefaultAddressInStorage = createAsyncThunk(
+  "auth/setDefaultAddressInStorage",
+  async (
+    address: {
+      location: { lon: number; lat: number };
+      _id: string;
+      street: string;
+      city: string;
+      nationality: string;
+      is_default: boolean;
+      created_at: number;
+      updated_at: number;
+      postal_code: number;
+      title: string;
+      __v: number;
+    },
+    { dispatch }
+  ) => {
+    try {
+      // Save the address to AsyncStorage
+      await AsyncStorage.setItem("@defaultAddress", JSON.stringify(address));
+
+      // Dispatch action to update the Redux store with the new address
+      dispatch(setDefaultAddress(address)); // You can dispatch the existing setDefaultAddress action here
+      return address; // Returning the address to be used in the extraReducers if necessary
+    } catch (error) {
+      console.error("Error saving default address to AsyncStorage:", error);
+      throw error; // Throw error to be caught in the extraReducer if needed
+    }
+  }
+);
+
 // Define the AsyncThunk for logging out
 export const logout = createAsyncThunk(
   "auth/logout",
@@ -165,6 +188,16 @@ export const logout = createAsyncThunk(
 
     // Dispatch the clearAuthState action to update the Redux store
     dispatch(clearAuthState());
+  }
+);
+
+// New async thunk for updating address in state
+export const updateAddressInState = createAsyncThunk(
+  "auth/updateAddressInState",
+  async (address: any, { dispatch }) => {
+    await AsyncStorage.setItem("address", JSON.stringify(address));
+    dispatch(setDefaultAddress(address));
+    return address;
   }
 );
 
@@ -195,7 +228,7 @@ const authSlice = createSlice({
       state.support_tickets = support_tickets;
       state.user_id = user_id;
       state.user_type = user_type;
-      state.address = address; // Set the address in the state
+      state.address = address; // Set the address
     },
 
     clearAuthState: (state) => {
@@ -209,11 +242,33 @@ const authSlice = createSlice({
       state.support_tickets = [];
       state.user_id = null;
       state.user_type = [];
-      state.address = []; // Clear the address from the state
+      state.address = []; // Clear address on logout
     },
     setAvatar: (state, action) => {
       const { url, key } = action.payload;
       state.avatar = { url, key }; // Update avatar state
+    },
+    setDefaultAddress: (state, action) => {
+      const updatedAddress = action.payload;
+
+      // If the address array exists
+      if (state.address) {
+        // First, set all existing addresses with `is_default` to false
+        state.address = state.address.map((address) => {
+          if (address.is_default) {
+            return { ...address, is_default: false }; // Set existing default to false
+          }
+          return address;
+        });
+
+        // Now, find the address from the payload and set `is_default: true`
+        state.address = state.address.map((address) => {
+          if (address._id === updatedAddress._id) {
+            return { ...address, is_default: true }; // Set selected address as default
+          }
+          return address;
+        });
+      }
     },
   },
   extraReducers: (builder) => {
@@ -256,7 +311,6 @@ const authSlice = createSlice({
           preferred_category,
           favorite_items,
           avatar,
-          cart_items,
           support_tickets,
           user_id,
           user_type,
@@ -286,15 +340,23 @@ const authSlice = createSlice({
         state.support_tickets = [];
         state.user_id = null;
         state.user_type = [];
-        state.address = []; // Clear the address on logout
+        state.address = []; // Clear address on logout
       })
-      .addCase(setAvatarInAsyncStorage.fulfilled, (state, action) => {
-        const { url, key } = action.payload;
-        state.avatar = { url, key }; // Update avatar state after storing in AsyncStorage
+      .addCase(updateAddressInState.fulfilled, (state, action) => {
+        const updatedAddress = action.payload;
+
+        // Ensure state.address is always an array, even if it was null
+        state.address = (state.address || []).map((address) => {
+          if (address._id === updatedAddress._id) {
+            return { ...address, is_default: true };
+          }
+          return { ...address, is_default: false };
+        });
       });
   },
 });
 
-export const { setAuthState, clearAuthState, setAvatar } = authSlice.actions;
+export const { setAuthState, clearAuthState, setAvatar, setDefaultAddress } =
+  authSlice.actions;
 
 export default authSlice.reducer;

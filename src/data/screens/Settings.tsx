@@ -29,6 +29,13 @@ const useSettingData = () => {
         },
       },
       {
+        title: "Address",
+        rightIcon: <IconIonicons name="chevron-forward-outline" size={20} />,
+        onPress: () => {
+          navigation.navigate("AddressList");
+        },
+      },
+      {
         title: "Payment Method",
         rightIcon: <IconIonicons name="chevron-forward-outline" size={20} />,
         onPress: () => {
