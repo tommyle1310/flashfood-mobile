@@ -3,16 +3,20 @@ import React from "react";
 import FFAvatar from "../../FFAvatar";
 import FFText from "../../FFText";
 import IconFontAwesome5 from "react-native-vector-icons/FontAwesome5";
+import { useSelector } from "@/src/store/types";
+import { RootState } from "@/src/store/store";
 
 const ReadonlyProfileComponents = ({
   toggleStatus,
 }: {
   toggleStatus: () => void;
 }) => {
+  const { user_id, avatar } = useSelector((state: RootState) => state.auth);
+
   return (
     <View className="bg-white rounded-xl border gap-2 border-gray-200 p-4">
       <View className="flex-row justify-between gap-4">
-        <FFAvatar />
+        <FFAvatar avatar={avatar?.url} />
         <View className="flex-1">
           <FFText fontSize="lg">Tommy Teo</FFText>
           <FFText fontWeight="400" style={{ color: "#aaa" }}>
@@ -31,7 +35,7 @@ const ReadonlyProfileComponents = ({
             alignItems: "center", // Horizontally center the content
           }}
         >
-          <IconFontAwesome5 name="user-edit" size={10} color="#222" />
+          <IconFontAwesome5 name="user-edit" size={10} color="#eee" />
         </TouchableOpacity>
       </View>
       <View className="flex-row gap-2 items-center">

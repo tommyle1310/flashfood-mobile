@@ -96,7 +96,6 @@ const ProfileScreen = () => {
       setLastName(lastNameState);
     }
   }, [profileData]);
-  console.log("check prof dat", profileData);
 
   return (
     <FFSafeAreaView>

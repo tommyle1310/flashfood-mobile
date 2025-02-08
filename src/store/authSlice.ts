@@ -140,6 +140,14 @@ export const saveTokenToAsyncStorage = createAsyncThunk(
   }
 );
 
+export const setAvatarInAsyncStorage = createAsyncThunk(
+  "auth/setAvatarInAsyncStorage",
+  async (avatar: { url: string; key: string }) => {
+    await AsyncStorage.setItem("avatar", JSON.stringify(avatar));
+    return avatar;
+  }
+);
+
 // Define the AsyncThunk for logging out
 export const logout = createAsyncThunk(
   "auth/logout",
@@ -202,6 +210,10 @@ const authSlice = createSlice({
       state.user_id = null;
       state.user_type = [];
       state.address = []; // Clear the address from the state
+    },
+    setAvatar: (state, action) => {
+      const { url, key } = action.payload;
+      state.avatar = { url, key }; // Update avatar state
     },
   },
   extraReducers: (builder) => {
@@ -275,10 +287,14 @@ const authSlice = createSlice({
         state.user_id = null;
         state.user_type = [];
         state.address = []; // Clear the address on logout
+      })
+      .addCase(setAvatarInAsyncStorage.fulfilled, (state, action) => {
+        const { url, key } = action.payload;
+        state.avatar = { url, key }; // Update avatar state after storing in AsyncStorage
       });
   },
 });
 
-export const { setAuthState, clearAuthState } = authSlice.actions;
+export const { setAuthState, clearAuthState, setAvatar } = authSlice.actions;
 
 export default authSlice.reducer;
