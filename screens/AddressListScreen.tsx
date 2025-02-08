@@ -1,4 +1,4 @@
-import { View, Text, Pressable } from "react-native";
+import { View, Text, Pressable, TouchableOpacity } from "react-native";
 import React from "react";
 import FFSafeAreaView from "@/src/components/FFSafeAreaView";
 import FFScreenTopSection from "@/src/components/FFScreenTopSection";
@@ -45,7 +45,6 @@ const AddressListScreen = () => {
   const { address, user_id } = useSelector((state: RootState) => state.auth);
   const dispatch = useDispatch();
   const handleSelectAddress = async (item: Props_Address) => {
-    console.log("check ", item);
     const response = await axiosInstance.patch(
       `/customers/address/${user_id}/${item._id}`,
       {
@@ -53,7 +52,6 @@ const AddressListScreen = () => {
         validateStatus: () => true, // Always return true so axios doesn't throw on errors
       }
     );
-    console.log("check responseda", response.data);
 
     // Now you can safely access the EC field
     const { EC, EM, data } = response.data;
@@ -64,12 +62,11 @@ const AddressListScreen = () => {
       console.log("st h wrnt wrong");
     }
   };
-  console.log("cehck address", address);
 
   return (
     <FFSafeAreaView>
       <FFScreenTopSection navigation={navigation} title="Address List" />
-      <View className="p-4">
+      <View className="p-4 gap-2 mt-8">
         {address?.map((item) => (
           <Pressable
             onPress={() => handleSelectAddress(item)}
@@ -96,7 +93,11 @@ const AddressListScreen = () => {
                 className="self-end mr-1"
               />
               <View className="gap-2 flex-row items-center justify-center">
-                <IconFeather name="edit" size={18} className="" />
+                <TouchableOpacity
+                  onPress={() => navigation.navigate("AddressDetails")}
+                >
+                  <IconFeather name="edit" size={18} className="" />
+                </TouchableOpacity>
                 <IconMaterialIcons name="delete-outline" size={26} />
               </View>
             </View>

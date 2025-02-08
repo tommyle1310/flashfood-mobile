@@ -55,7 +55,7 @@ const SettingsScreen = () => {
       </LinearGradient>
       <View className="relative w-full flex-1 -mb-20">
         <View
-          className="absolute h-full rounded-t-2xl shadow-md flex-1 bg-white w-11/12 -top-20"
+          className="absolute h-full rounded-t-2xl shadow-md flex-1 bg-white w-11/12 pb-20 -top-20"
           style={{ left: "50%", transform: [{ translateX: "-50%" }] }}
         >
           <View className="flex-row items-center gap-4 p-4 border-b border-b-gray-200">
