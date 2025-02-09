@@ -1,4 +1,4 @@
-import { Pressable, View } from "react-native";
+import { Pressable, ScrollView, StyleSheet, View } from "react-native";
 import React from "react";
 import FFSafeAreaView from "@/src/components/FFSafeAreaView";
 import FFText from "@/src/components/FFText";
@@ -31,80 +31,149 @@ const SettingsScreen = () => {
 
   return (
     <FFSafeAreaView>
-      <LinearGradient
-        colors={["#63c550", "#a3d98f"]} // Always use a gradient
-        start={[0, 0]}
-        end={[1, 0]}
-        style={{
-          paddingHorizontal: 12,
-          paddingVertical: 24,
-          borderBottomLeftRadius: 16, // Apply borderRadius directly on the LinearGradient
-          borderBottomRightRadius: 16, // Apply borderRadius directly on the LinearGradient
-          height: 160,
-          shadowColor: "#000",
-          shadowOffset: { width: 0, height: 2 },
-          shadowOpacity: 0.1,
-          shadowRadius: 3,
-          elevation: 5,
-        }}
-      >
-        <View className="flex-row items-center gap-1">
-          <IconIonicons name="settings" color={"#fff"} size={24} />
-          <FFText style={{ color: "#fff", fontSize: 24 }}>Settings</FFText>
-        </View>
-      </LinearGradient>
-      <View className="relative w-full flex-1 -mb-20">
-        <View
-          className="absolute h-full rounded-t-2xl shadow-md flex-1 bg-white w-11/12 pb-20 -top-20"
-          style={{ left: "50%", transform: [{ translateX: "-50%" }] }}
-        >
-          <View className="flex-row items-center gap-4 p-4 border-b border-b-gray-200">
-            <FFAvatar size={40} avatar={avatar?.url} />
-            <FFText>Tommy Bua</FFText>
+      <View style={styles.container}>
+        <ScrollView contentContainerStyle={styles.scrollContainer}>
+          {/* Header Gradient Section */}
+          <LinearGradient
+            colors={["#63c550", "#a3d98f"]}
+            start={[0, 0]}
+            end={[1, 0]}
+            style={styles.headerGradient}
+          >
+            <View style={styles.headerContent}>
+              <IconIonicons name="settings" color={"#fff"} size={24} />
+              <FFText style={styles.headerText}>Settings</FFText>
+            </View>
+          </LinearGradient>
+
+          {/* Main Content Section */}
+          <View style={styles.contentWrapper}>
+            <View style={styles.contentContainer}>
+              {/* Profile Section */}
+              <View style={styles.profileSection}>
+                <FFAvatar size={40} avatar={avatar?.url} />
+                <FFText>Tommy Bua</FFText>
+              </View>
+
+              {/* Account Settings Section */}
+              <View style={styles.settingsSection}>
+                <FFText style={styles.sectionTitle}>Account Settings</FFText>
+                {data_account_setting.map((item) => (
+                  <Pressable
+                    onPress={() => item.onPress()}
+                    key={item.title}
+                    style={styles.optionItem}
+                  >
+                    <FFText>{item.title}</FFText>
+                    {item.rightIcon}
+                  </Pressable>
+                ))}
+              </View>
+
+              {/* More Settings Section */}
+              <View style={styles.settingsSection}>
+                <FFText style={styles.sectionTitle}>More Settings</FFText>
+                {data_more.map((item) => (
+                  <Pressable key={item.title} style={styles.optionItem}>
+                    <FFText>{item.title}</FFText>
+                    {item.rightIcon}
+                  </Pressable>
+                ))}
+
+                {/* Log Out Button */}
+                <FFButton
+                  onPress={() => {
+                    dispatch(logout());
+                    navigation.navigate("Login");
+                  }}
+                  className="w-full"
+                  variant="danger"
+                >
+                  Log Out
+                </FFButton>
+              </View>
+            </View>
           </View>
-          <View className="gap-4 p-4 border-b border-b-gray-200">
-            <FFText fontWeight="400" style={{ color: "#aaa" }}>
-              Account Settings
-            </FFText>
-            {data_account_setting.map((item) => (
-              <Pressable
-                onPress={() => item.onPress()}
-                key={item.title}
-                className="flex-row items-center justify-between py-2"
-              >
-                <FFText>{item.title}</FFText>
-                {item.rightIcon}
-              </Pressable>
-            ))}
-          </View>
-          <View className="gap-4 p-4 border-b-gray-200">
-            <FFText fontWeight="400" style={{ color: "#aaa" }}>
-              Account Settings
-            </FFText>
-            {data_more.map((item) => (
-              <Pressable
-                key={item.title}
-                className="flex-row items-center justify-between py-2"
-              >
-                <FFText>{item.title}</FFText>
-                {item.rightIcon}
-              </Pressable>
-            ))}
-            <FFButton
-              onPress={() => {
-                dispatch(logout());
-                navigation.navigate("Login");
-              }}
-              className="w-full"
-              variant="danger"
-            >
-              Log Out
-            </FFButton>
-          </View>
-        </View>
+        </ScrollView>
       </View>
     </FFSafeAreaView>
   );
 };
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: "#f9f9f9", // Background color for the container
+  },
+  scrollContainer: {
+    flexGrow: 1,
+    paddingBottom: 100, // Ensuring content has padding at the bottom
+  },
+  headerGradient: {
+    paddingHorizontal: 12,
+    paddingVertical: 24,
+    borderBottomLeftRadius: 16,
+    borderBottomRightRadius: 16,
+    height: 160,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 3,
+    elevation: 5,
+  },
+  headerContent: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+  },
+  headerText: {
+    color: "#fff",
+    fontSize: 24,
+  },
+  contentWrapper: {
+    marginTop: -60, // Ensuring content is visible when scrolled up
+    alignItems: "center",
+  },
+  contentContainer: {
+    width: "90%",
+    paddingBottom: 60,
+    borderRadius: 16,
+    backgroundColor: "#fff",
+    paddingTop: 24,
+    paddingHorizontal: 16,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 3,
+    elevation: 5,
+  },
+  profileSection: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+    paddingBottom: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: "#ddd",
+  },
+  settingsSection: {
+    marginTop: 16,
+  },
+  sectionTitle: {
+    fontWeight: "400",
+    color: "#aaa",
+    marginBottom: 8,
+  },
+  optionItem: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: "#f0f0f0",
+  },
+  logoutButton: {
+    marginTop: 24,
+    width: "100%",
+  },
+});
 
 export default SettingsScreen;
