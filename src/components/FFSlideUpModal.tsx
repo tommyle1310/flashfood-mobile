@@ -17,7 +17,6 @@ import { useTheme } from "@/src/hooks/useTheme";
 import FFText from "./FFText";
 import IconIonicon from "react-native-vector-icons/Ionicons";
 
-
 interface SlideUpModalProps {
   isVisible: boolean;
   onClose: () => void;
@@ -118,9 +117,13 @@ const SlideUpModal: React.FC<SlideUpModalProps> = ({
             onHandlerStateChange={gestureHandler}
           >
             <Animated.View style={styles.modalContent}>
-                    <TouchableOpacity onPress={onClose} style={styles.closeButton}>
-                            <IconIonicon name='close' style={{ color: 'white' }} size={16}/>
-                          </TouchableOpacity>
+              <TouchableOpacity onPress={onClose} style={styles.closeButton}>
+                <IconIonicon
+                  name="close"
+                  style={{ color: "white" }}
+                  size={16}
+                />
+              </TouchableOpacity>
               <View style={styles.content}>{children}</View>
             </Animated.View>
           </PanGestureHandler>

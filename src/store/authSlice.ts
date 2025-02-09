@@ -16,7 +16,7 @@ interface AuthState {
   user_id: string | null;
   user_type: string[] | null;
   address: Array<{
-    location: { lon: number; lat: number };
+    location: { lng: number; lat: number };
     _id: string;
     street: string;
     city: string;
@@ -26,7 +26,6 @@ interface AuthState {
     updated_at: number;
     postal_code: number;
     title: string;
-    __v: number;
   }> | null;
 }
 
@@ -90,7 +89,7 @@ export const saveTokenToAsyncStorage = createAsyncThunk(
     user_id: string;
     user_type: string[];
     address: Array<{
-      location: { lon: number; lat: number };
+      location: { lng: number; lat: number };
       _id: string;
       street: string;
       city: string;
@@ -100,7 +99,6 @@ export const saveTokenToAsyncStorage = createAsyncThunk(
       updated_at: number;
       postal_code: number;
       title: string;
-      __v: number;
     }> | null;
   }) => {
     await AsyncStorage.setItem("accessToken", data.accessToken);
@@ -143,7 +141,7 @@ export const setDefaultAddressInStorage = createAsyncThunk(
   "auth/setDefaultAddressInStorage",
   async (
     address: {
-      location: { lon: number; lat: number };
+      location: { lng: number; lat: number };
       _id: string;
       street: string;
       city: string;
@@ -153,7 +151,6 @@ export const setDefaultAddressInStorage = createAsyncThunk(
       updated_at: number;
       postal_code: number;
       title: string;
-      __v: number;
     },
     { dispatch }
   ) => {
@@ -198,6 +195,46 @@ export const updateAddressInState = createAsyncThunk(
     await AsyncStorage.setItem("address", JSON.stringify(address));
     dispatch(setDefaultAddress(address));
     return address;
+  }
+);
+
+export const updateSingleAddress = createAsyncThunk(
+  "auth/updateSingleAddress",
+  async (
+    updatedAddress: {
+      location: { lng: number; lat: number };
+      _id: string;
+      street: string;
+      city: string;
+      nationality: string;
+      is_default: boolean;
+      created_at: number;
+      updated_at: number;
+      postal_code: number;
+      title: string;
+    },
+    { getState }
+  ) => {
+    try {
+      // Get current state
+      const state: any = getState();
+      const currentAddresses = state.auth.address || [];
+
+      // Update the specific address in the array
+      console.log("check addres apyload", updatedAddress);
+
+      const updatedAddresses = currentAddresses.map((addr: any) =>
+        addr._id === updatedAddress._id ? updatedAddress : addr
+      );
+
+      // Save to AsyncStorage
+      await AsyncStorage.setItem("address", JSON.stringify(updatedAddresses));
+
+      return updatedAddress;
+    } catch (error) {
+      console.error("Error updating address:", error);
+      throw error;
+    }
   }
 );
 
@@ -352,6 +389,14 @@ const authSlice = createSlice({
           }
           return { ...address, is_default: false };
         });
+      })
+      .addCase(updateSingleAddress.fulfilled, (state, action) => {
+        const updatedAddress = action.payload;
+        if (state.address) {
+          state.address = state.address.map((address) =>
+            address._id === updatedAddress._id ? updatedAddress : address
+          );
+        }
       });
   },
 });

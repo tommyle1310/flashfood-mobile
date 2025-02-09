@@ -172,7 +172,7 @@ const HomeScreen = () => {
               <FFText
                 style={{ fontWeight: "400", fontSize: 12, color: "#bbb" }}
               >
-                {globalState?.address?.[0]?.title}
+                {globalState?.address?.find((item) => item.is_default)?.title}
               </FFText>
             </View>
           </View>

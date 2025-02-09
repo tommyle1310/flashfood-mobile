@@ -402,7 +402,11 @@ const RestaurantDetail = () => {
                   key={item._id}
                 >
                   <FFText style={{ textAlign: "left" }}>
-                    {item?.variant} - ${item?.price}
+                    {item?.variant} - ${item?.price} Lorem ipsum dolor sit amet,
+                    consectetur adipisicing elit. Non, quia recusandae,
+                    architecto laboriosam quis nostrum culpa molestiae
+                    cupiditate atque at sequi repellat explicabo natus quos,
+                    quod voluptatum deleniti minima laborum.
                   </FFText>
                 </Pressable>
               ))}

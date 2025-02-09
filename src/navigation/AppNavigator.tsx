@@ -25,6 +25,7 @@ import { useNavigation } from "@react-navigation/native";
 import ProfileScreen from "@/screens/ProfileScreen";
 import AddressListScreen from "@/screens/AddressListScreen";
 import AddressDetailsScreen from "@/screens/AddressDetailsScreen";
+import { Type_Address } from "../types/Address";
 
 // Root stack param list for Login and Signup
 export type RootStackParamList = {
@@ -48,7 +49,11 @@ export type MainStackParamList = {
   Checkout: { orderItem: Order }; // Add Checkout screen to stack
   Profile: undefined; // Add Checkout screen to stack
   AddressList: undefined; // Add Checkout screen to stack
-  AddressDetails: undefined; // Add Checkout screen to stack
+  AddressDetails?:
+    | {
+        addressDetail: Type_Address;
+      }
+    | undefined; // Add Checkout screen to stack
 };
 
 // Create the root stack and bottom tab stack

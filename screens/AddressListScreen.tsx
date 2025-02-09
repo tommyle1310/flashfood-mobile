@@ -25,7 +25,7 @@ type AddressListSreenNavigationProp = StackNavigationProp<
 
 interface Props_Address {
   location: {
-    lon: number;
+    lng: number;
     lat: number;
   };
   _id: string;
@@ -37,7 +37,6 @@ interface Props_Address {
   updated_at: number;
   postal_code: number;
   title: string;
-  __v: number;
 }
 
 const AddressListScreen = () => {
@@ -71,12 +70,18 @@ const AddressListScreen = () => {
           <Pressable
             onPress={() => handleSelectAddress(item)}
             key={item._id}
-            style={{ borderColor: item.is_default ? "#63c550" : "#aaa" }}
-            className="rounded-lg border flex-row items-center p-2"
+            style={{
+              borderColor: item.is_default ? "#63c550" : "#aaa",
+              backgroundColor: item.is_default ? "#deefdc" : "#fff",
+            }}
+            className="rounded-lg border flex-row items-center p-2 "
           >
             <View className="flex-1 ">
               <FFText>{item.title}</FFText>
-              <FFText fontWeight="400" style={{ color: "#aaa" }}>
+              <FFText
+                fontWeight="400"
+                style={{ color: item.is_default ? "#215a1d" : "#aaa" }}
+              >
                 {truncateString(
                   `${item.street}, ${item.city}, ${item.nationality}`,
                   24
@@ -94,7 +99,11 @@ const AddressListScreen = () => {
               />
               <View className="gap-2 flex-row items-center justify-center">
                 <TouchableOpacity
-                  onPress={() => navigation.navigate("AddressDetails")}
+                  onPress={() =>
+                    navigation.navigate("AddressDetails", {
+                      addressDetail: item,
+                    })
+                  }
                 >
                   <IconFeather name="edit" size={18} className="" />
                 </TouchableOpacity>

@@ -15,8 +15,20 @@ import SlideUpModal from "../FFSlideUpModal";
 import FFText from "../FFText";
 import FFInputControl from "../FFInputControl";
 import { CountryPicker } from "react-native-country-codes-picker";
+import Spinner from "../FFSpinner";
 
-const LocationPicker: React.FC = () => {
+const LocationPicker = ({
+  propsLocation,
+  setPropsLocation,
+}: {
+  propsLocation?: { lat: number; lng: number };
+  setPropsLocation?: React.Dispatch<
+    React.SetStateAction<{
+      lat: number;
+      lng: number;
+    } | null>
+  >;
+}) => {
   const [selectedLocation, setSelectedLocation] = useState<{
     lat: number;
     lng: number;
@@ -26,13 +38,7 @@ const LocationPicker: React.FC = () => {
   const [searchText, setSearchText] = useState("");
   const [debouncedSearchText, setDebouncedSearchText] = useState("");
   const [lastSearchText, setLastSearchText] = useState("");
-  const [isShowSlideUpModal, setIsShowSlideUpModal] = useState(false);
-  const [isShowCountryPicker, setIsShowCountryPicker] = useState(false);
-  const [street, setStreet] = useState("");
-  const [city, setCity] = useState("");
-  const [nationality, setNationality] = useState("");
-  const [addressTitle, setAddressTitle] = useState("");
-  const [countryCode, setCountryCode] = useState("");
+
   const tomtomKey = "e73LfeJGmk0feDJtiyifoYWpPANPJLhT"; // Your TomTom API key
   const [isMapReady, setIsMapReady] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
@@ -40,13 +46,7 @@ const LocationPicker: React.FC = () => {
   const mapViewRef = useRef<MapView | null>(null); // Ref to the MapView
 
   // Handle country selection
-  const handleCountrySelect = (item: any) => {
-    setCountryCode(item.dial_code);
-    setNationality(item.name.en);
-    setIsShowCountryPicker(false);
-  };
 
-  // Handle text change for search input
   const handleSearchTextChange = (changedSearchText: string) => {
     if (!changedSearchText || changedSearchText.length < 3) {
       setSuggestionsData([]);
@@ -109,29 +109,46 @@ const LocationPicker: React.FC = () => {
       lat: coordinate.latitude,
       lng: coordinate.longitude,
     });
+    if (setPropsLocation) {
+      setPropsLocation({
+        lat: coordinate.latitude,
+        lng: coordinate.longitude,
+      });
+    }
   };
 
-  // Fetch the current location of the user
+  // Replace the current location useEffect with this:
+
   useEffect(() => {
-    const getLocation = async () => {
+    const initializeLocation = async () => {
       setIsLoading(true);
       try {
-        const { status } = await Location.requestForegroundPermissionsAsync();
-        if (status === "granted") {
-          const location = await Location.getCurrentPositionAsync({
-            accuracy: Location.Accuracy.High,
+        if (propsLocation) {
+          // If propsLocation is provided, use it
+          setSelectedLocation({
+            lat: propsLocation.lat,
+            lng: propsLocation.lng,
           });
-          const { latitude, longitude } = location.coords;
-          setSelectedLocation({ lat: latitude, lng: longitude });
+        } else {
+          // Otherwise get current location as before
+          const { status } = await Location.requestForegroundPermissionsAsync();
+          if (status === "granted") {
+            const location = await Location.getCurrentPositionAsync({
+              accuracy: Location.Accuracy.High,
+            });
+            const { latitude, longitude } = location.coords;
+            setSelectedLocation({ lat: latitude, lng: longitude });
+          }
         }
       } catch (error) {
-        console.error("Error getting location:", error);
+        console.error("Error initializing location:", error);
       } finally {
         setIsLoading(false);
       }
     };
-    getLocation();
-  }, []);
+
+    initializeLocation();
+  }, [propsLocation]); // Add propsLocation to dependency array
 
   // When the selectedLocation changes, update the map region
   useEffect(() => {
@@ -140,8 +157,8 @@ const LocationPicker: React.FC = () => {
         {
           latitude: selectedLocation.lat,
           longitude: selectedLocation.lng,
-          latitudeDelta: 0.05,
-          longitudeDelta: 0.05,
+          latitudeDelta: 0.005,
+          longitudeDelta: 0.005,
         },
         1000 // Animation duration
       );
@@ -151,7 +168,7 @@ const LocationPicker: React.FC = () => {
   if (isLoading) {
     return (
       <View style={[styles.map, styles.centerContent]}>
-        <ActivityIndicator size="large" />
+        <Spinner isVisible isOverlay />
       </View>
     );
   }
@@ -172,8 +189,8 @@ const LocationPicker: React.FC = () => {
           // Changed from initialRegion to region
           latitude: selectedLocation?.lat || 10.8291936,
           longitude: selectedLocation?.lng || 106.6203513,
-          latitudeDelta: 0.05,
-          longitudeDelta: 0.05,
+          latitudeDelta: 0.005,
+          longitudeDelta: 0.005,
         }}
         onPress={handleMapPress}
         onMapReady={() => {
@@ -204,76 +221,6 @@ const LocationPicker: React.FC = () => {
           />
         )}
       </MapView>
-      <FFButton
-        onPress={() => setIsShowSlideUpModal(true)}
-        style={{ position: "absolute", bottom: 30, right: 30 }}
-      >
-        Next
-      </FFButton>
-
-      <SlideUpModal
-        isVisible={isShowSlideUpModal}
-        onClose={() => {
-          setIsShowSlideUpModal(false);
-        }}
-      >
-        <View>
-          <FFInputControl
-            error={""}
-            label="Street Name"
-            placeholder="102 Phan Van Teo"
-            setValue={setStreet}
-            value={street}
-          />
-          <FFInputControl
-            error={""}
-            label="City"
-            placeholder="Saigon"
-            setValue={setCity}
-            value={city}
-          />
-          <FFInputControl
-            error={""}
-            label="Address Title"
-            placeholder="Home"
-            setValue={setAddressTitle}
-            value={addressTitle}
-          />
-          <View>
-            <FFText style={{ color: "#333", fontSize: 14 }} fontWeight="400">
-              Nationality
-            </FFText>
-            <TouchableOpacity
-              onPress={() => setIsShowCountryPicker(true)}
-              style={styles.textInputContainer}
-            >
-              <TextInput
-                style={styles.textInput}
-                editable={false}
-                placeholder="Select Country"
-                value={nationality}
-              />
-            </TouchableOpacity>
-          </View>
-        </View>
-
-        <FFButton
-          className="w-full"
-          style={{ marginTop: 24 }}
-          onPress={() => {}}
-          isLinear
-        >
-          <FFText style={{ color: "#fff" }}>Save Changes</FFText>
-        </FFButton>
-        <CountryPicker
-          show={isShowCountryPicker} // Trigger showing the country picker inside the modal
-          pickerButtonOnPress={handleCountrySelect} // Handle country selection
-          inputPlaceholder="Select Country"
-          lang="en" // Language for country names
-          enableModalAvoiding={true} // This will avoid keyboard overlapping
-          androidWindowSoftInputMode="pan" // Optional: Manage keyboard interaction on Android
-        />
-      </SlideUpModal>
     </View>
   );
 };
