@@ -51,7 +51,7 @@ const CheckoutScreen = () => {
     const requestData = {
       ...orderItem,
       payment_method: selectedPaymentMethod,
-      customer_location: globalState?.address?.[0]._id,
+      customer_location: globalState?.address?.find((item) => item.is_default),
       total_amount: totalAmount,
       service_fee: serviceFee,
       delivery_fee: deliveryFee,

@@ -47,6 +47,7 @@ const RestaurantDetail = () => {
     (state: RootState) => state.userPreference.favorite_restaurants
   );
   const user_id = useSelector((state: RootState) => state.auth.user_id);
+  const [err, setErr] = useState<string>("");
 
   const route = useRoute<RestaurantDetailRouteProp>();
   const { restaurantId } = route.params;
@@ -322,6 +323,7 @@ const RestaurantDetail = () => {
       <SlideUpModal
         isVisible={isShowSlideUpModal}
         onClose={() => {
+          setErr("");
           setIsShowSlideUpModal(false);
           setSeletedVariant(null);
         }}
@@ -345,14 +347,17 @@ const RestaurantDetail = () => {
               imageStyle={{ borderRadius: 8 }}
             ></ImageBackground>
           </View>
+
           <View className="flex-1 relative ">
             <FFText>{modalData?.menuItem?.name}</FFText>
             <FFText fontSize="sm" colorLight="#bbb" fontWeight="400">
               {modalData?.menuItem?.purchase_count} sold
             </FFText>
-            <FFText fontSize="lg" colorLight="#59bf47" fontWeight="600">
-              ${totalPrice.toFixed(2)}
-            </FFText>
+            <View className="  gap-1">
+              <FFText fontSize="lg" colorLight="#59bf47" fontWeight="600">
+                ${totalPrice.toFixed(2)}
+              </FFText>
+            </View>
             <View className="absolute right-2 bottom-0 flex-row">
               {/* Minus Button */}
               <Pressable
@@ -374,8 +379,12 @@ const RestaurantDetail = () => {
               {/* Plus Button */}
               <Pressable
                 onPress={() => {
-                  setIsShowSlideUpModal(true);
-                  setQuantity((prev) => prev + 1);
+                  if (!selectedVariant) {
+                    setErr("Please Select a variant below");
+                  } else {
+                    setIsShowSlideUpModal(true);
+                    setQuantity((prev) => prev + 1);
+                  }
                 }}
                 className="p-1  rounded-md bg-green-500 self-end items-center justify-center"
               >
@@ -384,6 +393,13 @@ const RestaurantDetail = () => {
             </View>
           </View>
         </View>
+        <FFText
+          fontSize="sm"
+          style={{ color: "red", textAlign: "center", marginTop: 4 }}
+        >
+          {err}
+        </FFText>
+
         <View className="h-1/2 ">
           <ScrollView className="my-4 ">
             {modalData?.variants &&
@@ -391,6 +407,7 @@ const RestaurantDetail = () => {
               modalData?.variants.map((item) => (
                 <Pressable
                   onPress={() => {
+                    setErr("");
                     setSeletedVariant(item);
                     setItemPrice(item?.price);
                   }}
@@ -402,11 +419,7 @@ const RestaurantDetail = () => {
                   key={item._id}
                 >
                   <FFText style={{ textAlign: "left" }}>
-                    {item?.variant} - ${item?.price} Lorem ipsum dolor sit amet,
-                    consectetur adipisicing elit. Non, quia recusandae,
-                    architecto laboriosam quis nostrum culpa molestiae
-                    cupiditate atque at sequi repellat explicabo natus quos,
-                    quod voluptatum deleniti minima laborum.
+                    {item?.variant} - ${item?.price}
                   </FFText>
                 </Pressable>
               ))}

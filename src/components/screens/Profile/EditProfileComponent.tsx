@@ -58,7 +58,10 @@ const EditProfileComponent = ({
   }, [responseData]);
 
   return (
-    <View className="bg-white rounded-xl border gap-4 border-gray-200 p-4">
+    <View
+      style={{ elevation: 10 }}
+      className="bg-white rounded-xl border gap-4 border-gray-200 p-4"
+    >
       <View className="items-center">
         <TouchableOpacity onPress={selectImage}>
           {imageUri ? (

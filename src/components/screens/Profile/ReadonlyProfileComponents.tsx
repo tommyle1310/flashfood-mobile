@@ -14,7 +14,10 @@ const ReadonlyProfileComponents = ({
   const { user_id, avatar } = useSelector((state: RootState) => state.auth);
 
   return (
-    <View className="bg-white rounded-xl border gap-2 border-gray-200 p-4">
+    <View
+      style={{ elevation: 10 }}
+      className="bg-white rounded-xl border gap-2 border-gray-200 p-4"
+    >
       <View className="flex-row justify-between gap-4">
         <FFAvatar avatar={avatar?.url} />
         <View className="flex-1">

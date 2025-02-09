@@ -30,6 +30,7 @@ import {
   Order,
 } from "@/src/types/Orders";
 import { MainStackParamList } from "@/src/navigation/AppNavigator";
+import FFAvatar from "@/src/components/FFAvatar";
 
 interface GroupedCartList {
   [restaurantId: string]: CartItem[];
@@ -221,9 +222,15 @@ const CartScreen = () => {
                 }`}
               >
                 <View className="flex-row items-center gap-2">
-                  <Image
-                    source={{ uri: restaurant.avatar.url }}
-                    className="w-8 h-8 rounded-xl self-end mb-2"
+                  <FFAvatar
+                    avatar={restaurant.avatar.url}
+                    size={32}
+                    onPress={() =>
+                      navigation.navigate("RestaurantDetail", {
+                        restaurantId: restaurant._id,
+                      })
+                    }
+                    rounded="sm"
                   />
                   <Text className="text-sm font-semibold mb-2">
                     {restaurant.restaurant_name}
