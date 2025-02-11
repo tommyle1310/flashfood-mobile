@@ -31,6 +31,7 @@ import {
 } from "@/src/types/Orders";
 import { MainStackParamList } from "@/src/navigation/AppNavigator";
 import FFAvatar from "@/src/components/FFAvatar";
+import FFView from "@/src/components/FFView";
 
 interface GroupedCartList {
   [restaurantId: string]: CartItem[];
@@ -203,8 +204,9 @@ const CartScreen = () => {
 
   return (
     <FFSafeAreaView>
-      <View className="flex-1 p-4 gap-4 pb-24">
+      <View className="flex-1 gap-4 pb-24">
         <FlatList
+          style={{ padding: 12 }}
           keyExtractor={(item) => item} // This is fine if the keys of groupedCartList are unique
           data={Object.keys(groupedCartList)}
           renderItem={({ item }) => {
@@ -212,14 +214,18 @@ const CartScreen = () => {
             const restaurant = restaurantItems[0].item.restaurantDetails;
 
             return (
-              <View
-                className={`mb-5 p-4 border border-gray-300 rounded-xl ${
-                  selectedRestaurant._id === "" ||
-                  selectedRestaurant._id ===
-                    restaurantItems[0].item.restaurantDetails._id
-                    ? "bg-white"
-                    : "bg-gray-300"
-                }`}
+              <FFView
+                colorDark="#333"
+                colorLight="#fff"
+                style={{
+                  padding: 8,
+                  borderRadius: 10,
+                  elevation: 4,
+                  backgroundColor: !restaurantItems[0].item.restaurantDetails
+                    ._id
+                    ? "#ddd"
+                    : undefined,
+                }}
               >
                 <View className="flex-row items-center gap-2">
                   <FFAvatar
@@ -232,27 +238,32 @@ const CartScreen = () => {
                     }
                     rounded="sm"
                   />
-                  <Text className="text-sm font-semibold mb-2">
+                  <FFText colorDark="#aaa" fontWeight="500">
                     {restaurant.restaurant_name}
-                  </Text>
+                  </FFText>
                 </View>
 
                 <FlatList
                   data={restaurantItems}
-                  renderItem={({ item }) => {
+                  renderItem={({ item, index }) => {
                     const cartItem = item;
                     const restaurantDetails = cartItem?.item?.restaurantDetails;
                     const isExpanded =
                       expandedRestaurantId === restaurantDetails._id;
                     return (
-                      <View className="mb-3 py-2 gap-4 border-b border-gray-200">
+                      <View
+                        style={{
+                          borderWidth: index === restaurantItems.length ? 1 : 0,
+                        }}
+                        className="mb-3 py-2 gap-4 border-gray-200"
+                      >
                         <Pressable
                           onPress={() =>
                             handleToggleAccordion(restaurantDetails._id)
                           }
                           className="flex-row items-center justify-between"
                         >
-                          <View className="flex-row items-center gap-2">
+                          <View className="flex-row items-center">
                             <Image
                               source={{ uri: cartItem?.item?.avatar?.url }}
                               className="w-12 h-12 rounded-full mr-4 bg-gray-400"
@@ -268,7 +279,7 @@ const CartScreen = () => {
                           <View className="flex-1">
                             {cartItem.variants.map((variant, index) => {
                               return (
-                                <Pressable
+                                <FFView
                                   key={
                                     variant._id ||
                                     `${cartItem.item._id}-${index}`
@@ -293,18 +304,30 @@ const CartScreen = () => {
                                       setIsShowModal(true);
                                     }
                                   }}
-                                  className={`
-                                            mb-1 p-2 rounded-lg
-                                            ${
-                                              selectedVariants.some(
-                                                (item) =>
-                                                  item.variant_id ===
-                                                  variant.variant_id
-                                              )
-                                                ? "bg-green-50 border-green-400 border"
-                                                : "border border-gray-200"
-                                            }
-                                          `}
+                                  colorDark="#000"
+                                  style={{
+                                    marginBottom: 8,
+                                    padding: 8,
+                                    borderRadius: 10,
+                                    borderWidth: selectedVariants.some(
+                                      (item) =>
+                                        item.variant_id === variant.variant_id
+                                    )
+                                      ? 1
+                                      : 0.5,
+                                    borderColor: selectedVariants.some(
+                                      (item) =>
+                                        item.variant_id === variant.variant_id
+                                    )
+                                      ? "#4caf50" // green-400
+                                      : "#e0e0e0", // gray-200
+                                    backgroundColor: selectedVariants.some(
+                                      (item) =>
+                                        item.variant_id === variant.variant_id
+                                    )
+                                      ? "#e8f5e9" // green-50
+                                      : undefined,
+                                  }}
                                 >
                                   <FFText
                                     fontWeight="400"
@@ -332,7 +355,7 @@ const CartScreen = () => {
                                       {variant.quantity}
                                     </FFText>
                                   </View>
-                                </Pressable>
+                                </FFView>
                               );
                             })}
                           </View>
@@ -344,14 +367,20 @@ const CartScreen = () => {
                     item._id ? item._id : `${index}`
                   }
                 />
-              </View>
+              </FFView>
             );
           }}
         />
         {isShowSubmitBtn && (
-          <FFButton onPress={handleSubmitCheckout} className="w-full" isLinear>
-            Check Out
-          </FFButton>
+          <View className="mx-4">
+            <FFButton
+              onPress={handleSubmitCheckout}
+              className="w-full"
+              isLinear
+            >
+              Check Out
+            </FFButton>
+          </View>
         )}
       </View>
       <FFModal visible={isShowModal} onClose={() => setIsShowModal(false)}>

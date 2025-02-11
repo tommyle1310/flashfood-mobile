@@ -23,6 +23,7 @@ import {
 import { useNavigation } from "@react-navigation/native";
 import { StackNavigationProp } from "@react-navigation/stack";
 import { MainStackParamList } from "@/src/navigation/AppNavigator";
+import FFView from "@/src/components/FFView";
 
 // Type Definitions
 type FoodCategory = { _id: string; name: string; description: string };
@@ -249,14 +250,22 @@ const HomeScreen = () => {
           </View>
           <ScrollView horizontal className="mt-2">
             {(renderedRestaurants ?? []).map((item) => (
-              <Pressable
-                onPress={() =>
-                  navigation.navigate("RestaurantDetail", {
-                    restaurantId: item._id,
-                  })
-                }
+              <FFView
+                // onPress={() =>
+                //   navigation.navigate("RestaurantDetail", {
+                //     restaurantId: item._id,
+                //   })
+                // }
                 key={item._id}
-                className="p-2 rounded-lg shadow-md bg-white w-36 h-48 mr-2"
+                style={{
+                  elevation: 6,
+                  borderRadius: 12,
+                  paddingHorizontal: 8,
+                  width: 140,
+                  marginRight: 8,
+                  paddingTop: 8,
+                }}
+                // className="p-2 rounded-lg shadow-md bg-white w-36 h-48 mr-2"
               >
                 <ImageBackground
                   source={{ uri: item.avatar.url }}
@@ -311,7 +320,7 @@ const HomeScreen = () => {
                     {item.address.title}
                   </FFText>
                 </View>
-              </Pressable>
+              </FFView>
             ))}
             {renderedRestaurants?.length === 0 && (
               <FFText>No restaurant found</FFText>

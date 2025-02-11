@@ -400,32 +400,28 @@ const RestaurantDetail = () => {
           {err}
         </FFText>
 
-        <View className="h-1/2 ">
-          <ScrollView className="my-4 ">
-            {modalData?.variants &&
-              modalData?.variants.length > 0 &&
-              modalData?.variants.map((item) => (
-                <Pressable
-                  onPress={() => {
-                    setErr("");
-                    setSeletedVariant(item);
-                    setItemPrice(item?.price);
-                  }}
-                  className={`gap-4  p-4 ${
-                    selectedVariant?._id === item._id
-                      ? "bg-white border-green-600 border-2"
-                      : "bg-gray-100"
-                  } rounded-lg my-2`}
-                  key={item._id}
-                >
-                  <FFText style={{ textAlign: "left" }}>
-                    {item?.variant} - ${item?.price}
-                  </FFText>
-                </Pressable>
-              ))}
-          </ScrollView>
-        </View>
-        <FFButton onPress={handleAddToCart} isLinear className="w-full">
+        {modalData?.variants &&
+          modalData?.variants.length > 0 &&
+          modalData?.variants.map((item) => (
+            <Pressable
+              onPress={() => {
+                setErr("");
+                setSeletedVariant(item);
+                setItemPrice(item?.price);
+              }}
+              className={`gap-4  p-4 ${
+                selectedVariant?._id === item._id
+                  ? "bg-white border-green-600 border-2"
+                  : "bg-gray-100"
+              } rounded-lg my-2`}
+              key={item._id}
+            >
+              <FFText style={{ textAlign: "left" }}>
+                {item?.variant} - ${item?.price}
+              </FFText>
+            </Pressable>
+          ))}
+        <FFButton onPress={handleAddToCart} isLinear className="w-full mt-4">
           <FFText style={{ color: "#fff" }}>Add to Cart</FFText>
         </FFButton>
       </SlideUpModal>

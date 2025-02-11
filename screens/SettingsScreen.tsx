@@ -14,6 +14,7 @@ import { LinearGradient } from "expo-linear-gradient";
 import FFAvatar from "@/src/components/FFAvatar";
 import { RootState } from "@/src/store/store";
 import useSettingData from "@/src/data/screens/Settings";
+import FFView from "@/src/components/FFView";
 
 type LogoutSreenNavigationProp = StackNavigationProp<
   RootStackParamList,
@@ -23,7 +24,7 @@ type LogoutSreenNavigationProp = StackNavigationProp<
 const SettingsScreen = () => {
   const navigation = useNavigation<LogoutSreenNavigationProp>();
   const dispatch = useDispatch();
-  const { user_id, address, avatar } = useSelector(
+  const { user_id, address, avatar, email } = useSelector(
     (state: RootState) => state.auth
   );
   const { "Account Settings": data_account_setting, More: data_more } =
@@ -31,7 +32,7 @@ const SettingsScreen = () => {
 
   return (
     <FFSafeAreaView>
-      <View style={styles.container}>
+      <FFView colorDark="#333" style={styles.container}>
         <ScrollView contentContainerStyle={styles.scrollContainer}>
           {/* Header Gradient Section */}
           <LinearGradient
@@ -48,21 +49,25 @@ const SettingsScreen = () => {
 
           {/* Main Content Section */}
           <View style={styles.contentWrapper}>
-            <View style={styles.contentContainer}>
+            <FFView colorDark="#000" style={styles.contentContainer}>
               {/* Profile Section */}
               <View style={styles.profileSection}>
                 <FFAvatar size={40} avatar={avatar?.url} />
-                <FFText>Tommy Bua</FFText>
+                <FFText>{email}</FFText>
               </View>
 
               {/* Account Settings Section */}
               <View style={styles.settingsSection}>
                 <FFText style={styles.sectionTitle}>Account Settings</FFText>
-                {data_account_setting.map((item) => (
+                {data_account_setting.map((item, i) => (
                   <Pressable
                     onPress={() => item.onPress()}
                     key={item.title}
-                    style={styles.optionItem}
+                    style={{
+                      ...styles.optionItem,
+                      borderBottomWidth:
+                        i === data_account_setting.length - 1 ? 0 : 1,
+                    }}
                   >
                     <FFText>{item.title}</FFText>
                     {item.rightIcon}
@@ -73,8 +78,14 @@ const SettingsScreen = () => {
               {/* More Settings Section */}
               <View style={styles.settingsSection}>
                 <FFText style={styles.sectionTitle}>More Settings</FFText>
-                {data_more.map((item) => (
-                  <Pressable key={item.title} style={styles.optionItem}>
+                {data_more.map((item, i) => (
+                  <Pressable
+                    key={item.title}
+                    style={{
+                      ...styles.optionItem,
+                      borderBottomWidth: i === data_more.length - 1 ? 0 : 1,
+                    }}
+                  >
                     <FFText>{item.title}</FFText>
                     {item.rightIcon}
                   </Pressable>
@@ -92,10 +103,10 @@ const SettingsScreen = () => {
                   Log Out
                 </FFButton>
               </View>
-            </View>
+            </FFView>
           </View>
         </ScrollView>
-      </View>
+      </FFView>
     </FFSafeAreaView>
   );
 };
@@ -103,7 +114,7 @@ const SettingsScreen = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#f9f9f9", // Background color for the container
+    // backgroundColor: "red", // Background color for the container
   },
   scrollContainer: {
     flexGrow: 1,
@@ -138,7 +149,6 @@ const styles = StyleSheet.create({
     width: "90%",
     paddingBottom: 60,
     borderRadius: 16,
-    backgroundColor: "#fff",
     paddingTop: 24,
     paddingHorizontal: 16,
     shadowColor: "#000",
