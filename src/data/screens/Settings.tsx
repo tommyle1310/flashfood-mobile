@@ -51,7 +51,15 @@ const useSettingData = () => {
       },
       {
         title: "Dark Mode",
-        rightIcon: <FFToggle initialChecked />,
+        rightIcon: (
+          <FFToggle
+            initialChecked
+            isChangeTheme={true}
+            onChange={() => {
+              // Add the logic for toggling dark mode
+            }}
+          />
+        ),
         onPress: () => {
           // Add the logic for toggling dark mode
         },

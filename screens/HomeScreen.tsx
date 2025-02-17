@@ -87,7 +87,7 @@ const HomeScreen = () => {
             axiosInstance.get(`/customers/restaurants/${globalState.user_id}`),
           ]
         );
-
+        console.log("check res", restaurantsResponse.data);
         if (foodCategoriesResponse.data.EC === 0) {
           setListFoodCategories(foodCategoriesResponse.data.data);
         }
@@ -167,7 +167,7 @@ const HomeScreen = () => {
         {/* Top Section */}
         <View className="flex-row justify-between items-center">
           <View className="flex-row items-center gap-2">
-            <FFAvatar avatar={globalState?.avatar?.url} size={50} />
+            <FFAvatar avatar={globalState?.avatar?.url ?? ""} size={50} />
             <View>
               <FFText>{globalState?.email}</FFText>
               <FFText
@@ -268,7 +268,7 @@ const HomeScreen = () => {
                 // className="p-2 rounded-lg shadow-md bg-white w-36 h-48 mr-2"
               >
                 <ImageBackground
-                  source={{ uri: item.avatar.url }}
+                  source={{ uri: item?.avatar?.url ?? "" }}
                   style={{ flex: 1, borderRadius: 8, backgroundColor: "gray" }}
                   imageStyle={{ borderRadius: 8 }}
                 >
@@ -317,7 +317,7 @@ const HomeScreen = () => {
                     {item.restaurant_name}
                   </FFText>
                   <FFText style={{ color: "#aaa", fontSize: 11 }}>
-                    {item.address.title}
+                    {item?.address?.title}
                   </FFText>
                 </View>
               </FFView>

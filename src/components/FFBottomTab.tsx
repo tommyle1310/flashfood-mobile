@@ -1,5 +1,5 @@
 import React, { useEffect } from "react";
-import { View, TouchableOpacity, StyleSheet } from "react-native";
+import { View, TouchableOpacity, StyleSheet, Animated } from "react-native";
 import FFText from "./FFText";
 import IconFontiso from "react-native-vector-icons/Fontisto";
 import IconIonicons from "react-native-vector-icons/Ionicons";
@@ -18,10 +18,10 @@ type FFBottomTabProps = {
 };
 
 const TAB_ITEMS = [
-  { icon: <IconFontiso name="home" size={20} />, label: "Home" },
-  { icon: <IconIonicons name="receipt-outline" size={20} />, label: "Orders" },
-  { icon: <IconEntypo name="shopping-cart" size={20} />, label: "Cart" },
-  { icon: <IconFontiso name="user-secret" size={20} />, label: "Settings" },
+  { icon: <IconFontiso name="home" size={22} />, label: "Home" },
+  { icon: <IconIonicons name="receipt-outline" size={22} />, label: "Orders" },
+  { icon: <IconEntypo name="shopping-cart" size={22} />, label: "Cart" },
+  { icon: <IconFontiso name="user-secret" size={22} />, label: "Settings" },
 ];
 
 const FFBottomTab: React.FC<FFBottomTabProps> = ({
@@ -42,16 +42,21 @@ const FFBottomTab: React.FC<FFBottomTabProps> = ({
   );
 
   const getButtonStyle = (isSelected: boolean) => ({
-    flex: isSelected ? 2 : 1,
+    flex: isSelected ? 2.2 : 1,
     backgroundColor: isSelected
       ? "#63c550"
       : theme === "dark"
-      ? "#111"
-      : "white",
+      ? "rgba(40, 40, 40, 0.8)"
+      : "rgba(255, 255, 255, 0.9)",
+    transform: [{ scale: isSelected ? 1.05 : 1 }],
   });
 
   const getIconStyle = (isSelected: boolean) => ({
-    color: isSelected || theme === "dark" ? "white" : "#111",
+    color: isSelected
+      ? "white"
+      : theme === "dark"
+      ? "rgba(255, 255, 255, 0.9)"
+      : "rgba(40, 40, 40, 0.9)",
   });
 
   const renderTabButton = (
@@ -61,7 +66,7 @@ const FFBottomTab: React.FC<FFBottomTabProps> = ({
     const isSelected = currentScreen === index;
     const paramLabel = label as "Home" | "Orders" | "Cart" | "Settings";
     const handlePress = () => {
-      setCurrentScreen(index); // Update the active tab state
+      setCurrentScreen(index);
     };
 
     return (
@@ -69,19 +74,28 @@ const FFBottomTab: React.FC<FFBottomTabProps> = ({
         key={index}
         style={[styles.button, getButtonStyle(isSelected)]}
         onPress={handlePress}
+        activeOpacity={0.7}
       >
         {index === 2 && listCartItem.length > 0 && (
           <View
             style={{
               position: "absolute",
               paddingHorizontal: 6,
-              borderRadius: 8,
+              paddingVertical: 2,
+              borderRadius: 12,
               backgroundColor: "#E9A000",
-              top: -2,
-              right: 2,
+              top: -6,
+              right: 0,
+              minWidth: 22,
+              alignItems: "center",
             }}
           >
-            <FFText colorLight="#fff" fontSize="sm" colorDark="#fff">
+            <FFText
+              colorLight="#fff"
+              fontSize="sm"
+              colorDark="#fff"
+              style={styles.badgeText}
+            >
               {listCartItem.length}
             </FFText>
           </View>
@@ -91,7 +105,8 @@ const FFBottomTab: React.FC<FFBottomTabProps> = ({
           <FFText
             style={{
               ...styles.text,
-              color: currentScreen === index ? "white" : "#111",
+              color: "white",
+              fontWeight: "600",
             }}
           >
             {label}
@@ -106,8 +121,11 @@ const FFBottomTab: React.FC<FFBottomTabProps> = ({
       style={[
         styles.container,
         {
-          backgroundColor: theme === "light" ? "white" : "#111",
-          shadowColor: theme === "light" ? "#111" : "white",
+          backgroundColor:
+            theme === "light"
+              ? "rgba(255, 255, 255, 0.95)"
+              : "rgba(20, 20, 20, 0.95)",
+          shadowColor: theme === "light" ? "#000" : "rgba(255, 255, 255, 0.3)",
         },
       ]}
     >
@@ -121,33 +139,40 @@ const styles = StyleSheet.create({
     position: "absolute",
     left: 0,
     right: 0,
-    bottom: 10,
-    marginHorizontal: "2.5%",
-    width: "95%",
+    bottom: 15,
+    marginHorizontal: "4%",
+    width: "92%",
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    borderRadius: 9999,
-    paddingVertical: 10,
-    paddingHorizontal: 6,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 10,
-    elevation: 5,
+    borderRadius: 30,
+    paddingVertical: 12,
+    paddingHorizontal: 8,
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.15,
+    shadowRadius: 12,
+    elevation: 8,
+    borderWidth: 1,
+    borderColor: "rgba(255, 255, 255, 0.1)",
   },
   button: {
-    borderRadius: 9999,
+    borderRadius: 25,
     paddingVertical: 10,
-    paddingHorizontal: 12,
+    paddingHorizontal: 14,
     position: "relative",
     flexDirection: "row",
-    gap: 4,
+    gap: 6,
     alignItems: "center",
     justifyContent: "center",
-    marginHorizontal: 5,
+    marginHorizontal: 4,
+    // transition: "all 0.3s ease",
   },
   text: {
-    fontSize: 12,
+    fontSize: 13,
+    letterSpacing: 0.3,
+  },
+  badgeText: {
+    fontWeight: "600",
   },
 });
 
