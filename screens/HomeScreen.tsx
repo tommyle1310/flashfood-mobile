@@ -77,7 +77,6 @@ const HomeScreen = () => {
     (state: RootState) => state.userPreference.favorite_restaurants
   );
   const globalState = useSelector((state: RootState) => state.auth);
-
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -87,7 +86,6 @@ const HomeScreen = () => {
             axiosInstance.get(`/customers/restaurants/${globalState.user_id}`),
           ]
         );
-        console.log("check res", restaurantsResponse.data);
         if (foodCategoriesResponse.data.EC === 0) {
           setListFoodCategories(foodCategoriesResponse.data.data);
         }

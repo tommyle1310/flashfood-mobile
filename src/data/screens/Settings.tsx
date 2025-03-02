@@ -67,6 +67,13 @@ const useSettingData = () => {
     ],
     More: [
       {
+        title: "Support Center",
+        rightIcon: <IconIonicons name="chevron-forward-outline" size={20} />,
+        onPress: () => {
+          navigation.navigate("SupportCenter");
+        },
+      },
+      {
         title: "About Us",
         rightIcon: <IconIonicons name="chevron-forward-outline" size={20} />,
         onPress: () => {

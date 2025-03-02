@@ -26,6 +26,8 @@ import ProfileScreen from "@/screens/ProfileScreen";
 import AddressListScreen from "@/screens/AddressListScreen";
 import AddressDetailsScreen from "@/screens/AddressDetailsScreen";
 import { Type_Address } from "../types/Address";
+import SupportCenterScreen from "@/screens/SupportCenterScreen";
+import FChatScreen from "@/screens/FChatScreen";
 
 // Root stack param list for Login and Signup
 export type RootStackParamList = {
@@ -44,8 +46,14 @@ export type BottomTabParamList = {
 
 // Define the MainStackParamList for BottomTabs and ContentStacks
 export type MainStackParamList = {
-  BottomTabs: BottomTabParamList;
+  FChat: {
+    withUserId?: string;
+    type?: "SUPPORT" | "ORDER";
+    orderId?: string;
+  };
   RestaurantDetail: { restaurantId: string }; // Param for RestaurantDetail
+  BottomTabs: BottomTabParamList;
+  SupportCenter: undefined;
   Checkout: { orderItem: Order }; // Add Checkout screen to stack
   Profile: undefined; // Add Checkout screen to stack
   AddressList: undefined; // Add Checkout screen to stack
@@ -94,6 +102,16 @@ const MainStackScreen = () => {
         options={{ headerShown: false }}
         name="AddressDetails"
         component={AddressDetailsScreen} // For handling checkout screen
+      />
+      <MainStack.Screen
+        options={{ headerShown: false }}
+        name="SupportCenter"
+        component={SupportCenterScreen} // For handling checkout screen
+      />
+      <MainStack.Screen
+        options={{ headerShown: false }}
+        name="FChat"
+        component={FChatScreen} // For handling checkout screen
       />
     </MainStack.Navigator>
   );

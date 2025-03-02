@@ -5,6 +5,7 @@ interface AuthState {
   accessToken: string | null;
   isAuthenticated: boolean;
   email: string | null;
+  id: string | null;
   app_preferences: object | null;
   preferred_category: string[];
   favorite_items: string[];
@@ -34,6 +35,7 @@ const initialState: AuthState = {
   accessToken: null,
   isAuthenticated: false,
   email: null,
+  id: null,
   address: null,
   app_preferences: {},
   preferred_category: [],
@@ -48,6 +50,7 @@ export const loadTokenFromAsyncStorage = createAsyncThunk(
   "auth/loadToken",
   async () => {
     const accessToken = await AsyncStorage.getItem("accessToken");
+    const id = await AsyncStorage.getItem("id");
     const app_preferences = await AsyncStorage.getItem("app_preferences");
     const email = await AsyncStorage.getItem("email");
     const preferred_category = await AsyncStorage.getItem("preferred_category");
@@ -60,6 +63,7 @@ export const loadTokenFromAsyncStorage = createAsyncThunk(
 
     return {
       accessToken,
+      id,
       app_preferences: app_preferences ? JSON.parse(app_preferences) : {},
       email,
       preferred_category: preferred_category
@@ -80,6 +84,7 @@ export const saveTokenToAsyncStorage = createAsyncThunk(
   "auth/saveToken",
   async (data: {
     accessToken: string;
+    id: string;
     app_preferences: object;
     email: string;
     preferred_category: string[];
@@ -102,6 +107,7 @@ export const saveTokenToAsyncStorage = createAsyncThunk(
     }> | null;
   }) => {
     await AsyncStorage.setItem("accessToken", data.accessToken);
+    await AsyncStorage.setItem("id", data.id);
     await AsyncStorage.setItem(
       "app_preferences",
       JSON.stringify(data.app_preferences)
@@ -174,6 +180,7 @@ export const logout = createAsyncThunk(
   async (_, { dispatch }) => {
     // Clear all user-related data from AsyncStorage
     await AsyncStorage.removeItem("accessToken");
+    await AsyncStorage.removeItem("id");
     await AsyncStorage.removeItem("app_preferences");
     await AsyncStorage.removeItem("email");
     await AsyncStorage.removeItem("preferred_category");
@@ -244,6 +251,7 @@ const authSlice = createSlice({
   reducers: {
     setAuthState: (state, action) => {
       const {
+        id,
         accessToken,
         app_preferences,
         email,
@@ -259,6 +267,7 @@ const authSlice = createSlice({
       state.isAuthenticated = true;
       state.app_preferences = app_preferences;
       state.email = email;
+      state.id = id;
       state.preferred_category = preferred_category;
       state.favorite_items = favorite_items;
       state.avatar = avatar;
@@ -273,6 +282,7 @@ const authSlice = createSlice({
       state.isAuthenticated = false;
       state.app_preferences = {};
       state.email = null;
+      state.id = null;
       state.preferred_category = [];
       state.favorite_items = [];
       state.avatar = null;
@@ -312,6 +322,7 @@ const authSlice = createSlice({
     builder
       .addCase(loadTokenFromAsyncStorage.fulfilled, (state, action) => {
         const {
+          id,
           accessToken,
           app_preferences,
           email,
@@ -329,6 +340,7 @@ const authSlice = createSlice({
           state.isAuthenticated = true;
           state.app_preferences = app_preferences;
           state.email = email;
+          state.id = id;
           state.preferred_category = preferred_category;
           state.favorite_items = favorite_items;
           state.avatar = avatar;
@@ -342,6 +354,7 @@ const authSlice = createSlice({
       })
       .addCase(saveTokenToAsyncStorage.fulfilled, (state, action) => {
         const {
+          id,
           accessToken,
           app_preferences,
           email,
@@ -358,6 +371,7 @@ const authSlice = createSlice({
         state.isAuthenticated = true;
         state.app_preferences = app_preferences;
         state.email = email;
+        state.id = id;
         state.preferred_category = preferred_category;
         state.favorite_items = favorite_items;
         state.avatar = avatar;
@@ -371,6 +385,7 @@ const authSlice = createSlice({
         state.isAuthenticated = false;
         state.app_preferences = {};
         state.email = null;
+        state.id = null;
         state.preferred_category = [];
         state.favorite_items = [];
         state.avatar = null;

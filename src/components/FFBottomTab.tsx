@@ -46,8 +46,8 @@ const FFBottomTab: React.FC<FFBottomTabProps> = ({
     backgroundColor: isSelected
       ? "#63c550"
       : theme === "dark"
-      ? "rgba(40, 40, 40, 0.8)"
-      : "rgba(255, 255, 255, 0.9)",
+      ? "rgba(40, 40, 40, 1)"
+      : "rgba(255, 255, 255, 1)",
     transform: [{ scale: isSelected ? 1.05 : 1 }],
   });
 
@@ -123,8 +123,8 @@ const FFBottomTab: React.FC<FFBottomTabProps> = ({
         {
           backgroundColor:
             theme === "light"
-              ? "rgba(255, 255, 255, 0.95)"
-              : "rgba(20, 20, 20, 0.95)",
+              ? "rgba(255, 255, 255, 1)"
+              : "rgba(20, 20, 20, 1)",
           shadowColor: theme === "light" ? "#000" : "rgba(255, 255, 255, 0.3)",
         },
       ]}

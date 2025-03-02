@@ -24,19 +24,14 @@ const FFView: React.FC<FFViewProps> = ({
 
   // If backgroundColor is undefined, fallback to the theme-based color
   if (backgroundColor === undefined) {
-    console.log("fall this?", backgroundColor);
     backgroundColor = theme === "light" ? colorLight : colorDark;
   }
-
-  console.log("check bg color", backgroundColor);
 
   // Combine styles with optional custom styles
   const combinedStyle: ViewStyle = {
     ...style, // First, include all the other styles
     backgroundColor, // Then apply backgroundColor last to ensure it's not overwritten
   };
-
-  console.log("check viewsttle", combinedStyle);
 
   return (
     <Pressable onPress={onPress} style={combinedStyle}>

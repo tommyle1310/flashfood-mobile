@@ -80,6 +80,7 @@ const SettingsScreen = () => {
                 <FFText style={styles.sectionTitle}>More Settings</FFText>
                 {data_more.map((item, i) => (
                   <Pressable
+                    onPress={() => item.onPress()}
                     key={item.title}
                     style={{
                       ...styles.optionItem,
