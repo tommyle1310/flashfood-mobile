@@ -7,6 +7,7 @@ import {
   ScrollView,
   KeyboardAvoidingView,
   Platform,
+  Image,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import FFSafeAreaView from "@/src/components/FFSafeAreaView";
@@ -100,13 +101,25 @@ const FChatScreen = () => {
                     : "bg-gray-200 rounded-tl-none"
                 }`}
               >
-                <Text
-                  className={`${
-                    msg.from === user_id ? "text-white" : "text-black"
-                  } text-base`}
-                >
-                  {msg.content}
-                </Text>
+                {msg.type === "IMAGE" ? (
+                  <Image
+                    source={{ uri: msg.content }}
+                    style={{
+                      width: 120,
+                      height: 120,
+                      borderRadius: 10,
+                    }}
+                    resizeMode="cover"
+                  />
+                ) : (
+                  <Text
+                    className={`${
+                      msg.from === user_id ? "text-white" : "text-black"
+                    } text-base`}
+                  >
+                    {msg.content}
+                  </Text>
+                )}
                 <Text
                   className={`text-xs mt-1 ${
                     msg.from === user_id ? "text-gray-200" : "text-gray-500"

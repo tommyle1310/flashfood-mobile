@@ -1,9 +1,10 @@
 // axiosInstance.ts
 import axios from "axios";
+import { BACKEND_URL } from "./constants";
 
 // Create an Axios instance
 const axiosInstance = axios.create({
-  baseURL: "https://1e81-2001-ee0-50c6-6480-8901-9c4b-fb36-c822.ngrok-free.app", // Replace with your base API URL
+  baseURL: BACKEND_URL, // Replace with your base API URL
   headers: {
     "Content-Type": "application/json",
   },

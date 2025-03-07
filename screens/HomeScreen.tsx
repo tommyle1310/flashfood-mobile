@@ -26,19 +26,19 @@ import { MainStackParamList } from "@/src/navigation/AppNavigator";
 import FFView from "@/src/components/FFView";
 
 // Type Definitions
-type FoodCategory = { _id: string; name: string; description: string };
+type FoodCategory = { id: string; name: string; description: string };
 type Promotion = {
-  _id: string;
+  id: string;
   name: string;
   start_date: number;
   end_date: number;
   status: string;
 };
 type Restaurant = {
-  _id: string;
+  id: string;
   restaurant_name: string;
   address: {
-    _id: string;
+    id: string;
     street: string;
     city: string;
     nationality: string;
@@ -111,7 +111,7 @@ const HomeScreen = () => {
     if (listRestaurants && selectedFoodCategories) {
       const filtered = listRestaurants.filter((restaurant) =>
         restaurant.specialize_in?.some((category) =>
-          selectedFoodCategories.includes(category._id)
+          selectedFoodCategories.includes(category.id)
         )
       );
       setFilteredRestaurants(filtered);
@@ -203,17 +203,17 @@ const HomeScreen = () => {
           <ScrollView horizontal className="mt-2">
             {listFoodCategories?.map((item) => (
               <TouchableOpacity
-                key={item._id}
+                key={item.id}
                 onPress={() => {
                   setSelectedFoodCategories((prev) => {
                     const currentSelected = prev ?? [];
-                    return currentSelected.includes(item._id)
-                      ? currentSelected.filter((id) => id !== item._id)
-                      : [...currentSelected, item._id];
+                    return currentSelected.includes(item.id)
+                      ? currentSelected.filter((id) => id !== item.id)
+                      : [...currentSelected, item.id];
                   });
                 }}
                 className={`px-2 py-1 mr-2 rounded-md ${
-                  selectedFoodCategories?.includes(item._id)
+                  selectedFoodCategories?.includes(item.id)
                     ? "bg-[#59bf47]"
                     : "bg-white"
                 }`}
@@ -222,7 +222,7 @@ const HomeScreen = () => {
                   style={{
                     fontSize: 14,
                     fontWeight: "500",
-                    color: selectedFoodCategories?.includes(item._id)
+                    color: selectedFoodCategories?.includes(item.id)
                       ? "#fff"
                       : "#111",
                   }}
@@ -251,10 +251,10 @@ const HomeScreen = () => {
               <FFView
                 // onPress={() =>
                 //   navigation.navigate("RestaurantDetail", {
-                //     restaurantId: item._id,
+                //     restaurantId: item.id,
                 //   })
                 // }
-                key={item._id}
+                key={item.id}
                 style={{
                   elevation: 6,
                   borderRadius: 12,
@@ -288,7 +288,7 @@ const HomeScreen = () => {
                   </View>
 
                   <Pressable
-                    onPress={() => handleToggleFavorite(item._id)}
+                    onPress={() => handleToggleFavorite(item.id)}
                     className="flex-row absolute items-center gap-1 top-1 right-1"
                     style={{
                       backgroundColor: "rgba(0, 0, 0, 0.3)",
@@ -298,7 +298,7 @@ const HomeScreen = () => {
                   >
                     <IconAntDesign
                       name={
-                        listFavoriteRestaurants?.includes(item._id)
+                        listFavoriteRestaurants?.includes(item.id)
                           ? "heart"
                           : "hearto"
                       }

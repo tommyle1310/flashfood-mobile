@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { io, Socket } from "socket.io-client";
 import { useSelector } from "@/src/store/types";
 import { RootState } from "@/src/store/store";
+import { BACKEND_URL } from "../utils/constants";
 
 interface ChatMessage {
   messageId: string;
@@ -10,15 +11,16 @@ interface ChatMessage {
   from: string;
   content: string;
   type: "TEXT" | "IMAGE" | "VIDEO" | "ORDER_INFO";
+  messageType?: "TEXT" | "IMAGE" | "VIDEO" | "ORDER_INFO";
   timestamp: Date;
-  chatId: string;
+  roomId: string;
 }
 
 export const useFChatSocket = () => {
   const [socket, setSocket] = useState<Socket | null>(null);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
-  const [chatId, setChatId] = useState<string | null>(
-    "chat_FF_CC_6cc2406a-3e83-4ff1-8816-ccfae8794a91_FF_CUS_9d650c2b-815d-417b-91c3-be89d2a74bda_SUPPORT"
+  const [roomId, setRoomId] = useState<string | null>(
+    "03cb9eff-cf97-412f-92a4-2097176447ab"
   );
   const { accessToken } = useSelector((state: RootState) => state.auth);
 
@@ -29,15 +31,12 @@ export const useFChatSocket = () => {
     }
 
     // Initialize socket connection specifically for chat
-    const socketInstance = io(
-      "https://1e81-2001-ee0-50c6-6480-8901-9c4b-fb36-c822.ngrok-free.app/chat",
-      {
-        transports: ["websocket"],
-        extraHeaders: {
-          auth: `Bearer ${accessToken}`,
-        },
-      }
-    );
+    const socketInstance = io(`${BACKEND_URL}/chat`, {
+      transports: ["websocket"],
+      extraHeaders: {
+        auth: `Bearer ${accessToken}`,
+      },
+    });
 
     socketInstance.on("connect", () => {
       console.log("Connected to chat server");
@@ -59,7 +58,7 @@ export const useFChatSocket = () => {
       setMessages((prev) => [...prev, message]);
     });
     socketInstance.on(
-      "getChatHistory",
+      "chatHistory",
       (data: { chatId: string; messages: ChatMessage[]; id: string }) => {
         if (data.messages && Array.isArray(data.messages)) {
           setMessages(
@@ -68,9 +67,9 @@ export const useFChatSocket = () => {
               messageId: msg.id ?? "",
               from: msg.senderId ?? "",
               content: msg.content,
-              type: msg.type,
+              type: msg.messageType ?? "TEXT",
               timestamp: msg.timestamp,
-              chatId: msg.chatId,
+              roomId: msg.roomId,
             }))
           );
         } else {
@@ -81,7 +80,7 @@ export const useFChatSocket = () => {
 
     socketInstance.on("chatStarted", (data: { chatId: string }) => {
       console.log("Chat started:", data);
-      setChatId(data.chatId);
+      setRoomId(data.chatId);
     });
 
     setSocket(socketInstance);
@@ -107,13 +106,13 @@ export const useFChatSocket = () => {
     content: string,
     type: "TEXT" | "IMAGE" | "VIDEO" | "ORDER_INFO" = "TEXT"
   ) => {
-    if (!socket || !chatId) {
-      console.log("Socket or chatId is not available");
+    if (!socket || !roomId) {
+      console.log("Socket or roomId is not available");
       return;
     }
-    console.log("sending message", chatId, content, type);
+    console.log("sending message", roomId, content, type);
     socket.emit("sendMessage", {
-      chatId,
+      roomId,
       content,
       type,
     });
@@ -125,19 +124,19 @@ export const useFChatSocket = () => {
     }
   }, [socket]);
   const getChatHistory = () => {
-    // console.log("check socket", socket, "chatId", chatId);
-    if (!socket || !chatId) {
-      console.log("Socket or chatId is not available for getting chat history");
+    // console.log("check socket", socket, "roomId", roomId);
+    if (!socket || !roomId) {
+      console.log("Socket or roomId is not available for getting chat history");
       return;
     }
-    socket.emit("getChatHistory", { chatId });
+    socket.emit("getChatHistory", { roomId });
     // console.log("check chatHistory", chatHistory);
   };
 
   return {
     socket,
     messages,
-    chatId,
+    roomId,
     startChat,
     sendMessage,
     getChatHistory,
