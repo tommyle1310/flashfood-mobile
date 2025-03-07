@@ -21,9 +21,14 @@ import { MainStackParamList } from "@/src/navigation/AppNavigator";
 import { Type_Address } from "@/src/types/Address";
 import axiosInstance from "@/src/utils/axiosConfig";
 import FFModal from "@/src/components/FFModal";
-import { updateSingleAddress } from "@/src/store/authSlice";
+import {
+  addAddress,
+  addAddressInAsyncStorage,
+  updateSingleAddress,
+} from "@/src/store/authSlice";
 import { useDispatch, useSelector } from "@/src/store/types";
 import { RootState } from "@/src/store/store";
+import FFToggle from "@/src/components/FFToggle";
 
 type AddressDetailRouteProp = RouteProp<MainStackParamList, "AddressDetails">;
 
@@ -32,6 +37,8 @@ const AddressDetailsScreen = () => {
   const [isShowSlideUpModal, setIsShowSlideUpModal] = useState(false);
   const [isShowModalSuccess, setIsShowModalSuccess] = useState(false);
   const [isShowCountryPicker, setIsShowCountryPicker] = useState(false);
+  const [isDefaultAddress, setIsDefaultAddress] = useState(false);
+  const [postalCode, setPostalCode] = useState("70000");
   const [street, setStreet] = useState("");
   const [city, setCity] = useState("");
   const [nationality, setNationality] = useState("");
@@ -41,15 +48,16 @@ const AddressDetailsScreen = () => {
     lat: number;
     lng: number;
   } | null>(null);
-  const { address } = useSelector((state: RootState) => state.auth);
+  const { address, id } = useSelector((state: RootState) => state.auth);
 
   const route = useRoute<AddressDetailRouteProp>();
 
   const addressDetail = route.params?.addressDetail;
+  const is_create_type = route.params?.is_create_type;
 
   useEffect(() => {
-    if (addressDetail) {
-      const { _id, city, is_default, location, nationality, street, title } =
+    if (addressDetail && !is_create_type) {
+      const { id, city, is_default, location, nationality, street, title } =
         addressDetail;
       setAddressTitle(title);
       setCity(city);
@@ -57,7 +65,7 @@ const AddressDetailsScreen = () => {
       setStreet(street);
       setSelectedLocation(location);
     }
-  }, [addressDetail]);
+  }, [addressDetail, is_create_type]);
 
   const handleCountrySelect = (item: any) => {
     setCountryCode(item.dial_code);
@@ -70,44 +78,63 @@ const AddressDetailsScreen = () => {
       city,
       street,
       nationality,
+      is_default: isDefaultAddress,
+      created_at: Math.floor(Date.now() / 1000),
+      updated_at: Math.floor(Date.now() / 1000),
       title: addressTitle,
+      postal_code: +postalCode,
       location: selectedLocation,
-    } as Type_Address;
+    } as Type_Address & { created_at: string; updated_at: string };
+
     let response: { data: { EC: number; EM: string; data: any } };
-    if (addressDetail) {
-      response = await axiosInstance.patch(
-        `/address_books/${addressDetail._id}`,
+
+    if (is_create_type) {
+      console.log("check ab", requestBody);
+      response = await axiosInstance.post(
+        `/customers/address/${id}`,
         requestBody,
         {
-          // This will ensure axios does NOT reject on non-2xx status codes
-          validateStatus: () => true, // Always return true so axios doesn't throw on errors
+          validateStatus: () => true,
         }
       );
+      if (response.data.EC === 0) {
+        dispatch(addAddress(response.data.data));
+        dispatch(addAddressInAsyncStorage(response.data.data));
+      }
     } else {
-      response = await axiosInstance.post(`/address_books`, requestBody, {
-        // This will ensure axios does NOT reject on non-2xx status codes
-        validateStatus: () => true, // Always return true so axios doesn't throw on errors
-      });
+      response = await axiosInstance.patch(
+        `/address_books/${addressDetail?.id}`,
+        requestBody,
+        {
+          validateStatus: () => true,
+        }
+      );
     }
 
-    const { EC, EM, data } = response.data; // Access EC, EM, and data
+    const { EC, EM, data } = response.data;
     if (EC === 0) {
-      console.log("cehck hrere", data);
-
       setIsShowSlideUpModal(false);
       setIsShowModalSuccess(true);
-      dispatch(updateSingleAddress(data));
+
+      // Reset form if creating new address
+      if (is_create_type) {
+        setStreet("");
+        setCity("");
+        setNationality("");
+        setAddressTitle("");
+        setSelectedLocation(null);
+      } else {
+        dispatch(updateSingleAddress(data));
+      }
     } else {
-      console.log("cehck err", response.data);
+      console.log("Error:", EM);
     }
   };
-
-  console.log("check addres1", address?.[0]);
 
   return (
     <FFSafeAreaView>
       <LocationPicker
-        propsLocation={addressDetail?.location}
+        propsLocation={!is_create_type ? addressDetail?.location : null}
         setPropsLocation={setSelectedLocation}
       />
       <FFButton
@@ -121,9 +148,9 @@ const AddressDetailsScreen = () => {
         visible={isShowModalSuccess}
       >
         <FFText>
-          {addressDetail
-            ? "Successfully updated address"
-            : "Add new successfully"}
+          {is_create_type
+            ? "Successfully added new address"
+            : "Successfully updated address"}
         </FFText>
       </FFModal>
       <SlideUpModal
@@ -159,6 +186,13 @@ const AddressDetailsScreen = () => {
               />
               <FFInputControl
                 error={""}
+                label="Postal Code"
+                placeholder="70000"
+                setValue={setPostalCode}
+                value={postalCode}
+              />
+              <FFInputControl
+                error={""}
                 label="Address Title"
                 placeholder="Home"
                 setValue={setAddressTitle}
@@ -183,6 +217,21 @@ const AddressDetailsScreen = () => {
                   />
                 </TouchableOpacity>
               </View>
+              <TouchableOpacity
+                className="flex flex-row items-center gap-2"
+                onPress={() => setIsShowCountryPicker(true)}
+              >
+                <FFText
+                  fontWeight="400"
+                  fontSize="md"
+                  style={{ color: "#333" }}
+                >
+                  Set this as default address
+                </FFText>
+                <FFToggle
+                  onChange={() => setIsDefaultAddress(!isDefaultAddress)}
+                />
+              </TouchableOpacity>
             </View>
 
             <FFButton
@@ -191,7 +240,7 @@ const AddressDetailsScreen = () => {
               onPress={handleSubmit}
               isLinear
             >
-              Save Changes
+              {is_create_type ? "Add Address" : "Save Changes"}
             </FFButton>
           </ScrollView>
         </KeyboardAvoidingView>
@@ -200,7 +249,7 @@ const AddressDetailsScreen = () => {
           pickerButtonOnPress={handleCountrySelect}
           inputPlaceholder="Select Country"
           lang="en"
-          enableModalAvoiding={false} // Changed to false
+          enableModalAvoiding={false}
           androidWindowSoftInputMode="adjustPan"
         />
       </SlideUpModal>

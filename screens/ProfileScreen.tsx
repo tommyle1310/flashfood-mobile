@@ -17,14 +17,14 @@ type ProfileSreenNavigationProp = StackNavigationProp<
 >;
 
 interface Props_ProfileData {
-  _id: string;
+  id: string;
   user_Id: string;
   avatar: { url: string; key: string };
   address: string[];
   first_name: string;
   last_name: string;
   user: {
-    _id: string;
+    id: string;
     first_name: string;
     last_name: string;
     email: string;
@@ -44,14 +44,14 @@ const ProfileScreen = () => {
   const [phone, setPhone] = useState<string>("");
   const { user_id } = useSelector((state: RootState) => state.auth);
   const [profileData, setProfileData] = useState<Props_ProfileData>({
-    _id: "",
+    id: "",
     user_Id: "",
     avatar: { url: "", key: "" },
     address: [""],
     first_name: "",
     last_name: "",
     user: {
-      _id: "",
+      id: "",
       first_name: "",
       last_name: "",
       email: "",
@@ -70,7 +70,7 @@ const ProfileScreen = () => {
     fetchProfileData();
   }, [user_id]);
   useEffect(() => {
-    const { _id, address, avatar, first_name, last_name, user, user_Id } =
+    const { id, address, avatar, first_name, last_name, user, user_Id } =
       profileData;
     let firstNameState;
     let lastNameState;

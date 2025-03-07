@@ -46,7 +46,7 @@ const RestaurantDetail = () => {
   const listFavoriteRestaurants = useSelector(
     (state: RootState) => state.userPreference.favorite_restaurants
   );
-  const user_id = useSelector((state: RootState) => state.auth.user_id);
+  const { user_id, id } = useSelector((state: RootState) => state.auth);
   const [err, setErr] = useState<string>("");
 
   const route = useRoute<RestaurantDetailRouteProp>();
@@ -118,26 +118,21 @@ const RestaurantDetail = () => {
   );
 
   const handleAddToCart = async () => {
-    const response = await axiosInstance.post(
-      `/customers/cart-items/${user_id}`,
-      {
-        item_id: selectedMenuItem,
-        variants: [{ variant_id: selectedVariant?._id, quantity }],
-      }
-    );
+    const response = await axiosInstance.post(`/customers/cart-items/${id}`, {
+      item_id: selectedMenuItem,
+      variants: [{ variant_id: selectedVariant?.id, quantity }],
+    });
 
     const { EC, EM, data } = response.data;
 
     if (EC === 0) {
-      console.log("cehck ", data);
-
       dispatch(
         addItemToCart({
-          _id: data._id,
+          id: data.id,
           customer_id: user_id,
           variants: [
             {
-              variant_id: selectedVariant?._id,
+              variant_id: selectedVariant?.id,
               quantity,
               variant_name: selectedVariant?.variant,
               variant_price_at_time_of_addition:
@@ -149,10 +144,10 @@ const RestaurantDetail = () => {
               url: modalData?.menuItem?.avatar?.url,
               key: modalData?.menuItem?.avatar?.key,
             },
-            _id: data.item_id,
+            id: data.item_id,
             restaurant_id: data.restaurant_id,
             restaurantDetails: {
-              _id: restaurantId,
+              id: restaurantId,
               restaurant_name: restaurantDetails?.restaurant_name,
               avatar: {
                 url: restaurantDetails?.avatar.url,
@@ -276,7 +271,7 @@ const RestaurantDetail = () => {
               {/* Menu items */}
               {restaurantMenuItem?.map((item) => (
                 <Pressable
-                  key={item._id}
+                  key={item.id}
                   className="flex-row items-center gap-2 p-2 rounded-lg bg-white"
                 >
                   <View className="w-1/4">
@@ -305,7 +300,7 @@ const RestaurantDetail = () => {
                     <Pressable
                       onPress={() => {
                         setIsShowSlideUpModal(true);
-                        setSelectedMenuItem(item._id);
+                        setSelectedMenuItem(item.id);
                       }}
                       className="p-1 -bottom-2 right-0 absolute rounded-md bg-green-500 self-end items-center justify-center"
                     >
@@ -410,11 +405,11 @@ const RestaurantDetail = () => {
                 setItemPrice(item?.price);
               }}
               className={`gap-4  p-4 ${
-                selectedVariant?._id === item._id
+                selectedVariant?.id === item.id
                   ? "bg-white border-green-600 border-2"
                   : "bg-gray-100"
               } rounded-lg my-2`}
-              key={item._id}
+              key={item.id}
             >
               <FFText style={{ textAlign: "left" }}>
                 {item?.variant} - ${item?.price}

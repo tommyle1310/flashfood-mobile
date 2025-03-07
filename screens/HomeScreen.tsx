@@ -24,6 +24,7 @@ import { useNavigation } from "@react-navigation/native";
 import { StackNavigationProp } from "@react-navigation/stack";
 import { MainStackParamList } from "@/src/navigation/AppNavigator";
 import FFView from "@/src/components/FFView";
+import Spinner from "@/src/components/FFSpinner";
 
 // Type Definitions
 type FoodCategory = { id: string; name: string; description: string };
@@ -83,7 +84,7 @@ const HomeScreen = () => {
         const [foodCategoriesResponse, restaurantsResponse] = await Promise.all(
           [
             axiosInstance.get("/food-categories"),
-            axiosInstance.get(`/customers/restaurants/${globalState.user_id}`),
+            axiosInstance.get(`/customers/restaurants/${globalState.id}`),
           ]
         );
         if (foodCategoriesResponse.data.EC === 0) {
@@ -126,12 +127,14 @@ const HomeScreen = () => {
   // Toggle favorite restaurant and update AsyncStorage
   const handleToggleFavorite = async (restaurantId: string) => {
     try {
+      console.log("globalState.id", globalState.id, restaurantId);
       const response = await axiosInstance.patch(
-        `/customers/favorite-restaurant/${globalState.user_id}`,
+        `/customers/favorite-restaurant/${globalState.id}`,
         {
-          favorite_restaurants: restaurantId,
+          favorite_restaurant: restaurantId,
         }
       );
+      console.log("response", response.data);
 
       if (response.data.EC === 0) {
         dispatch(toggleFavoriteRestaurant(restaurantId));
@@ -156,7 +159,7 @@ const HomeScreen = () => {
     filteredRestaurants?.length > 0 ? filteredRestaurants : listRestaurants;
 
   if (isLoading) {
-    return <FFText>Loading...</FFText>; // Or your custom loading spinner
+    return <Spinner isVisible />; // Or your custom loading spinner
   }
 
   return (
@@ -249,11 +252,11 @@ const HomeScreen = () => {
           <ScrollView horizontal className="mt-2">
             {(renderedRestaurants ?? []).map((item) => (
               <FFView
-                // onPress={() =>
-                //   navigation.navigate("RestaurantDetail", {
-                //     restaurantId: item.id,
-                //   })
-                // }
+                onPress={() =>
+                  navigation.navigate("RestaurantDetail", {
+                    restaurantId: item.id,
+                  })
+                }
                 key={item.id}
                 style={{
                   elevation: 6,

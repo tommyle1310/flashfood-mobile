@@ -21,7 +21,7 @@ const LocationPicker = ({
   propsLocation,
   setPropsLocation,
 }: {
-  propsLocation?: { lat: number; lng: number };
+  propsLocation?: { lat: number; lng: number } | undefined | null;
   setPropsLocation?: React.Dispatch<
     React.SetStateAction<{
       lat: number;

@@ -43,7 +43,7 @@ type CartScreenNavigationProp = StackNavigationProp<
 >;
 
 type Type_SelectedRestaurant = {
-  _id: string;
+  id: string;
   restaurant_name: string;
   avatar: {
     url: string;
@@ -52,7 +52,7 @@ type Type_SelectedRestaurant = {
   address: string;
 };
 const defaultSelectedRestaurant = {
-  _id: "",
+  id: "",
   restaurant_name: "",
   avatar: {
     url: "",
@@ -86,7 +86,7 @@ const CartScreen = () => {
   useEffect(() => {
     const groupByRestaurant = (cartList: CartItem[]): GroupedCartList => {
       return cartList.reduce((grouped, cartItem) => {
-        const restaurantId = cartItem.item.restaurantDetails._id;
+        const restaurantId = cartItem.item.restaurantDetails.id;
         // If the restaurant ID doesn't exist in the grouped object, create an array for it
         if (!grouped[restaurantId]) {
           grouped[restaurantId] = [];
@@ -103,7 +103,7 @@ const CartScreen = () => {
   }, [cartList]);
 
   useEffect(() => {
-    if (selectedRestaurant._id || selectedVariants.length > 0) {
+    if (selectedRestaurant.id || selectedVariants.length > 0) {
       setIsShowSubmitBtn(true);
     } else {
       setIsShowSubmitBtn(false);
@@ -113,7 +113,7 @@ const CartScreen = () => {
   const handleSelectVariants = (
     variant: Variant,
     restaurant: {
-      _id: string;
+      id: string;
       restaurant_name: string;
       address: string;
       avatar: {
@@ -129,16 +129,16 @@ const CartScreen = () => {
 
     // Check if the variant (with item_id) is already selected
     if (
-      selectedVariants.some((item) => item.item._id === variantWithItemId._id)
+      selectedVariants.some((item) => item.item.id === variantWithItemId.id)
     ) {
-      // If it's selected, remove it (filter out the variant by _id)
+      // If it's selected, remove it (filter out the variant byid)
       setSelectedVariants(
-        newVariants.filter((item) => item.item._id !== variantWithItemId._id)
+        newVariants.filter((item) => item.item.id !== variantWithItemId.id)
       );
       // Reset selectedRestaurant to empty object when removing a variant (if needed)
       if (newVariants.length === 0) {
         setSelectedRestaurant({
-          _id: "",
+          id: "",
           restaurant_name: "",
           avatar: { url: "", key: "" },
           address: "",
@@ -150,12 +150,9 @@ const CartScreen = () => {
       setSelectedVariants(newVariants); // Update the selectedVariants state
 
       // Update the selectedRestaurant state only if the first variant of a restaurant is selected
-      if (
-        !selectedRestaurant._id ||
-        selectedRestaurant._id === restaurant._id
-      ) {
+      if (!selectedRestaurant.id || selectedRestaurant.id === restaurant.id) {
         setSelectedRestaurant({
-          _id: restaurant._id,
+          id: restaurant.id,
           avatar: { url: restaurant.avatar.url, key: restaurant.avatar.key },
           restaurant_name: restaurant.restaurant_name,
           address: restaurant.address,
@@ -175,19 +172,18 @@ const CartScreen = () => {
       const itemTotal = item.variant_price_at_time_of_addition * item.quantity;
       return total + itemTotal;
     }, 0);
-    console.log("cehck res loc", selectedRestaurant);
 
     const orderData: Order = {
       customer_id: user_id,
-      restaurant_id: selectedRestaurant._id,
-      customer_location: address?.[0]?._id,
+      restaurant_id: selectedRestaurant.id,
+      customer_location: address?.[0]?.id,
       restaurant_location: selectedRestaurant.address,
       status: Enum_PaymentStatus.PENDING,
       payment_method: Enum_PaymentMethod.FWallet,
       total_amount: totalAmount,
       order_items: selectedVariants.map((item) => ({
         item: item.item,
-        item_id: item._id, /// fiix this shit
+        item_id: item.id, /// fiix this shit
         name: item.variant_name,
         quantity: item.quantity,
         price_at_time_of_order: item.variant_price_at_time_of_addition,
@@ -201,7 +197,6 @@ const CartScreen = () => {
 
     navigation.navigate("Checkout", { orderItem: orderData });
   };
-
   return (
     <FFSafeAreaView>
       <View className="flex-1 gap-4 pb-24">
@@ -221,8 +216,7 @@ const CartScreen = () => {
                   padding: 8,
                   borderRadius: 10,
                   elevation: 4,
-                  backgroundColor: !restaurantItems[0].item.restaurantDetails
-                    ._id
+                  backgroundColor: !restaurantItems[0].item.restaurantDetails.id
                     ? "#ddd"
                     : undefined,
                 }}
@@ -233,7 +227,7 @@ const CartScreen = () => {
                     size={32}
                     onPress={() =>
                       navigation.navigate("RestaurantDetail", {
-                        restaurantId: restaurant._id,
+                        restaurantId: restaurant.id,
                       })
                     }
                     rounded="sm"
@@ -249,7 +243,9 @@ const CartScreen = () => {
                     const cartItem = item;
                     const restaurantDetails = cartItem?.item?.restaurantDetails;
                     const isExpanded =
-                      expandedRestaurantId === restaurantDetails._id;
+                      expandedRestaurantId === restaurantDetails.id;
+                    console.log("check cart item", cartItem.variants[0]);
+
                     return (
                       <View
                         style={{
@@ -259,7 +255,7 @@ const CartScreen = () => {
                       >
                         <Pressable
                           onPress={() =>
-                            handleToggleAccordion(restaurantDetails._id)
+                            handleToggleAccordion(restaurantDetails.id)
                           }
                           className="flex-row items-center justify-between"
                         >
@@ -281,18 +277,17 @@ const CartScreen = () => {
                               return (
                                 <FFView
                                   key={
-                                    variant._id ||
-                                    `${cartItem.item._id}-${index}`
+                                    variant.id || `${cartItem.item.id}-${index}`
                                   }
                                   onPress={() => {
-                                    const { _id } = selectedRestaurant;
+                                    const { id } = selectedRestaurant;
 
-                                    // Check if selectedRestaurant._id is empty or matches the restaurant item ID
+                                    // Check if selectedRestaurant.id is empty or matches the restaurant item ID
                                     if (
-                                      _id === "" ||
-                                      _id ===
+                                      id === "" ||
+                                      id ===
                                         restaurantItems[0].item
-                                          .restaurantDetails._id
+                                          .restaurantDetails.id
                                     ) {
                                       handleSelectVariants(
                                         variant,
@@ -340,13 +335,12 @@ const CartScreen = () => {
                                       style={{ color: "#4d9c39", marginTop: 1 }}
                                     >
                                       $
-                                      {
-                                        +(
-                                          +variant?.variant_price_at_time_of_addition?.toFixed(
-                                            2
-                                          ) * +variant.quantity
-                                        ).toFixed(2)
-                                      }
+                                      {variant?.variant_price_at_time_of_addition
+                                        ? (
+                                            variant.variant_price_at_time_of_addition *
+                                            variant.quantity
+                                          ).toFixed(2)
+                                        : "0.00"}
                                     </FFText>
                                     <FFText
                                       fontWeight="400"
@@ -364,7 +358,7 @@ const CartScreen = () => {
                     );
                   }}
                   keyExtractor={(item, index) =>
-                    item._id ? item._id : `${index}`
+                    item.id ? item.id : `${index}`
                   }
                 />
               </FFView>

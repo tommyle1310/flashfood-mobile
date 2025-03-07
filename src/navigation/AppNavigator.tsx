@@ -59,7 +59,8 @@ export type MainStackParamList = {
   AddressList: undefined; // Add Checkout screen to stack
   AddressDetails?:
     | {
-        addressDetail: Type_Address;
+        addressDetail?: Type_Address;
+        is_create_type?: boolean;
       }
     | undefined; // Add Checkout screen to stack
 };

@@ -18,7 +18,7 @@ interface AuthState {
   user_type: string[] | null;
   address: Array<{
     location: { lng: number; lat: number };
-    _id: string;
+    id: string;
     street: string;
     city: string;
     nationality: string;
@@ -95,7 +95,7 @@ export const saveTokenToAsyncStorage = createAsyncThunk(
     user_type: string[];
     address: Array<{
       location: { lng: number; lat: number };
-      _id: string;
+      id: string;
       street: string;
       city: string;
       nationality: string;
@@ -148,7 +148,7 @@ export const setDefaultAddressInStorage = createAsyncThunk(
   async (
     address: {
       location: { lng: number; lat: number };
-      _id: string;
+      id: string;
       street: string;
       city: string;
       nationality: string;
@@ -170,6 +170,42 @@ export const setDefaultAddressInStorage = createAsyncThunk(
     } catch (error) {
       console.error("Error saving default address to AsyncStorage:", error);
       throw error; // Throw error to be caught in the extraReducer if needed
+    }
+  }
+);
+
+// Add address to AsyncStorage
+export const addAddressInAsyncStorage = createAsyncThunk(
+  "auth/addAddressInAsyncStorage",
+  async (
+    address: {
+      location: { lng: number; lat: number };
+      id: string;
+      street: string;
+      city: string;
+      nationality: string;
+      is_default: boolean;
+      created_at: number;
+      updated_at: number;
+      postal_code: number;
+      title: string;
+    },
+    { getState }
+  ) => {
+    try {
+      const state: any = getState();
+      const currentAddresses = state.auth.address || [];
+
+      // Add new address to array
+      const updatedAddresses = [...currentAddresses, address];
+      console.log("check updated address", updatedAddresses);
+      // Save to AsyncStorage
+      await AsyncStorage.setItem("address", JSON.stringify(updatedAddresses));
+
+      return address;
+    } catch (error) {
+      console.error("Error adding address to AsyncStorage:", error);
+      throw error;
     }
   }
 );
@@ -210,7 +246,7 @@ export const updateSingleAddress = createAsyncThunk(
   async (
     updatedAddress: {
       location: { lng: number; lat: number };
-      _id: string;
+      id: string;
       street: string;
       city: string;
       nationality: string;
@@ -231,7 +267,7 @@ export const updateSingleAddress = createAsyncThunk(
       console.log("check addres apyload", updatedAddress);
 
       const updatedAddresses = currentAddresses.map((addr: any) =>
-        addr._id === updatedAddress._id ? updatedAddress : addr
+        addr.id === updatedAddress.id ? updatedAddress : addr
       );
 
       // Save to AsyncStorage
@@ -240,6 +276,41 @@ export const updateSingleAddress = createAsyncThunk(
       return updatedAddress;
     } catch (error) {
       console.error("Error updating address:", error);
+      throw error;
+    }
+  }
+);
+
+export const addAddress = createAsyncThunk(
+  "auth/addAddress",
+  async (
+    newAddress: {
+      location: { lng: number; lat: number };
+      id: string;
+      street: string;
+      city: string;
+      nationality: string;
+      is_default: boolean;
+      created_at: number;
+      updated_at: number;
+      postal_code: number;
+      title: string;
+    },
+    { getState }
+  ) => {
+    try {
+      const state: any = getState();
+      const currentAddresses = state.auth.address || [];
+
+      // Add new address to array
+      const updatedAddresses = [...currentAddresses, newAddress];
+
+      // Save to AsyncStorage
+      await AsyncStorage.setItem("address", JSON.stringify(updatedAddresses));
+
+      return newAddress;
+    } catch (error) {
+      console.error("Error adding address:", error);
       throw error;
     }
   }
@@ -298,20 +369,19 @@ const authSlice = createSlice({
     setDefaultAddress: (state, action) => {
       const updatedAddress = action.payload;
 
-      // If the address array exists
       if (state.address) {
         // First, set all existing addresses with `is_default` to false
         state.address = state.address.map((address) => {
           if (address.is_default) {
-            return { ...address, is_default: false }; // Set existing default to false
+            return { ...address, is_default: false };
           }
           return address;
         });
 
         // Now, find the address from the payload and set `is_default: true`
         state.address = state.address.map((address) => {
-          if (address._id === updatedAddress._id) {
-            return { ...address, is_default: true }; // Set selected address as default
+          if (address.id === updatedAddress.id) {
+            return { ...address, is_default: true };
           }
           return address;
         });
@@ -397,9 +467,8 @@ const authSlice = createSlice({
       .addCase(updateAddressInState.fulfilled, (state, action) => {
         const updatedAddress = action.payload;
 
-        // Ensure state.address is always an array, even if it was null
         state.address = (state.address || []).map((address) => {
-          if (address._id === updatedAddress._id) {
+          if (address.id === updatedAddress.id) {
             return { ...address, is_default: true };
           }
           return { ...address, is_default: false };
@@ -409,9 +478,23 @@ const authSlice = createSlice({
         const updatedAddress = action.payload;
         if (state.address) {
           state.address = state.address.map((address) =>
-            address._id === updatedAddress._id ? updatedAddress : address
+            address.id === updatedAddress.id ? updatedAddress : address
           );
         }
+      })
+      .addCase(addAddress.fulfilled, (state, action) => {
+        const newAddress = action.payload;
+        if (!state.address) {
+          state.address = [];
+        }
+        state.address.push(newAddress);
+      })
+      .addCase(addAddressInAsyncStorage.fulfilled, (state, action) => {
+        const newAddress = action.payload;
+        if (!state.address) {
+          state.address = [];
+        }
+        // state.address.push(newAddress);
       });
   },
 });

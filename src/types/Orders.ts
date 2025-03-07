@@ -27,7 +27,7 @@ export type OrderItem = {
   price_at_time_of_order: number | null;
   variant_id: string | null;
   item: {
-    _id: string;
+    id: string;
     name: string;
     avatar: { url: string; key: string };
   };

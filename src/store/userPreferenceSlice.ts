@@ -6,13 +6,13 @@ export interface Variant {
   variant_id: string;
   variant_name: string;
   quantity: number;
-  item: { _id: string; avatar: { url: string; key: string }; name: string };
-  _id: string;
+  item: { id: string; avatar: { url: string; key: string }; name: string };
+  id: string;
   variant_price_at_time_of_addition: number; // Price for each variant
 }
 
 export interface CartItem {
-  _id: string;
+  id: string;
   customer_id: string;
   variants: Variant[];
   created_at: number;
@@ -20,11 +20,11 @@ export interface CartItem {
   __v: number;
   item: {
     avatar: { url: string; key: string };
-    _id: string;
+    id: string;
     item_id: string;
     restaurant_id: string;
     restaurantDetails: {
-      _id: string;
+      id: string;
       restaurant_name: string;
       avatar: { url: string; key: string };
       address: string;
@@ -123,10 +123,11 @@ const userPreferenceSlice = createSlice({
 
       // Check if the item already exists in the cart by comparing the item's unique identifier (_id)
       const existingItem = state.cart_items.find(
-        (item) => item._id === newItem._id
+        (item) => item.id === newItem.id
       );
 
       if (existingItem) {
+        console.log("check newItem", newItem, "existed item", existingItem);
         // Loop over the variants to find the existing variant and update the quantity and price accordingly
         newItem.variants.forEach((newVariant: Variant) => {
           const existingVariant = existingItem.variants.find(
@@ -152,13 +153,13 @@ const userPreferenceSlice = createSlice({
     removeItemFromCart: (state, action) => {
       const itemId = action.payload;
       // Remove the item from cart based on its unique identifier (_id)
-      state.cart_items = state.cart_items.filter((item) => item._id !== itemId);
+      state.cart_items = state.cart_items.filter((item) => item.id !== itemId);
     },
 
     updateItemQuantity: (state, action) => {
       const { itemId, variantId, quantity } = action.payload;
 
-      const item = state.cart_items.find((item) => item._id === itemId);
+      const item = state.cart_items.find((item) => item.id === itemId);
       if (item) {
         const variant = item.variants.find(
           (variant) => variant.variant_id === variantId

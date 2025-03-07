@@ -52,12 +52,12 @@ const CheckoutScreen = () => {
       ...orderItem,
       payment_method: selectedPaymentMethod,
       customer_location: globalState?.address?.find((item) => item.is_default)
-        ?._id,
+        ?.id,
       total_amount: totalAmount,
       service_fee: serviceFee,
       delivery_fee: deliveryFee,
       order_items: orderItem.order_items.map((item) => ({
-        item_id: item.item._id,
+        item_id: item.item.id,
         variant_id: item.variant_id,
         name: item.name,
         price_at_time_of_order: item.price_at_time_of_order,
