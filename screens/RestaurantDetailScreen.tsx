@@ -153,6 +153,7 @@ const RestaurantDetail = () => {
                 url: restaurantDetails?.avatar.url,
                 key: restaurantDetails?.avatar.key,
               },
+              address_id: restaurantDetails?.address_id,
             },
             name: modalData?.menuItem.name,
             description: "",

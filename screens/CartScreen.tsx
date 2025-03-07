@@ -49,7 +49,7 @@ type Type_SelectedRestaurant = {
     url: string;
     key: string;
   };
-  address: string;
+  address_id: string;
 };
 const defaultSelectedRestaurant = {
   id: "",
@@ -58,7 +58,7 @@ const defaultSelectedRestaurant = {
     url: "",
     key: "",
   },
-  address: "",
+  address_id: "",
 };
 
 const CartScreen = () => {
@@ -72,7 +72,9 @@ const CartScreen = () => {
   const [expandedRestaurantId, setExpandedRestaurantId] = useState<
     string | null
   >(null);
-  const { user_id, address } = useSelector((state: RootState) => state.auth);
+  const { user_id, address, id } = useSelector(
+    (state: RootState) => state.auth
+  );
   const dispatch = useDispatch();
 
   useEffect(() => {
@@ -82,7 +84,7 @@ const CartScreen = () => {
   const cartList = useSelector(
     (state: RootState) => state.userPreference.cart_items
   );
-
+  console.log("check cart list", cartList[0]?.item?.restaurantDetails);
   useEffect(() => {
     const groupByRestaurant = (cartList: CartItem[]): GroupedCartList => {
       return cartList.reduce((grouped, cartItem) => {
@@ -115,7 +117,7 @@ const CartScreen = () => {
     restaurant: {
       id: string;
       restaurant_name: string;
-      address: string;
+      address_id: string;
       avatar: {
         url: string;
         key: string;
@@ -141,7 +143,7 @@ const CartScreen = () => {
           id: "",
           restaurant_name: "",
           avatar: { url: "", key: "" },
-          address: "",
+          address_id: "",
         });
       }
     } else {
@@ -150,12 +152,13 @@ const CartScreen = () => {
       setSelectedVariants(newVariants); // Update the selectedVariants state
 
       // Update the selectedRestaurant state only if the first variant of a restaurant is selected
+      console.log("check dog", restaurant);
       if (!selectedRestaurant.id || selectedRestaurant.id === restaurant.id) {
         setSelectedRestaurant({
           id: restaurant.id,
           avatar: { url: restaurant.avatar.url, key: restaurant.avatar.key },
           restaurant_name: restaurant.restaurant_name,
-          address: restaurant.address,
+          address_id: restaurant.address_id,
         });
       }
     }
@@ -172,12 +175,12 @@ const CartScreen = () => {
       const itemTotal = item.variant_price_at_time_of_addition * item.quantity;
       return total + itemTotal;
     }, 0);
-
+    console.log("chek address res", selectedRestaurant);
     const orderData: Order = {
-      customer_id: user_id,
+      customer_id: id,
       restaurant_id: selectedRestaurant.id,
       customer_location: address?.[0]?.id,
-      restaurant_location: selectedRestaurant.address,
+      restaurant_location: selectedRestaurant.address_id,
       status: Enum_PaymentStatus.PENDING,
       payment_method: Enum_PaymentMethod.FWallet,
       total_amount: totalAmount,
@@ -365,7 +368,7 @@ const CartScreen = () => {
             );
           }}
         />
-        {isShowSubmitBtn && (
+        {isShowSubmitBtn && cartList.length > 0 && (
           <View className="mx-4">
             <FFButton
               onPress={handleSubmitCheckout}

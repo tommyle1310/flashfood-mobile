@@ -75,7 +75,6 @@ const Login = () => {
         dispatch(
           saveFavoriteRestaurantsToAsyncStorage(userData.favorite_restaurants)
         );
-
         dispatch(saveCartItemsToAsyncStorage(userData.cart_items));
 
         navigation.navigate("MainStack");

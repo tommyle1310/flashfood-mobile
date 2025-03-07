@@ -6,18 +6,31 @@ import FFSafeAreaView from "@/src/components/FFSafeAreaView";
 import OrderSummary from "@/src/components/screens/Checkout/OrderSummary";
 import OrderConfirmation from "@/src/components/screens/Checkout/OrderConfirmation";
 import PaymentInformation from "@/src/components/screens/Checkout/PaymentInformation";
-import { useSelector } from "@/src/store/types";
+import { useDispatch, useSelector } from "@/src/store/types";
 import { RootState } from "@/src/store/store";
 import { DELIVERY_FEE, SERVICE_FEE } from "@/src/utils/constants";
 import FFModal from "@/src/components/FFModal";
 import axiosInstance from "@/src/utils/axiosConfig";
 import ModalStatusCheckout from "@/src/components/screens/Checkout/ModalStatusCheckout";
-import { MainStackParamList } from "@/src/navigation/AppNavigator";
+import {
+  BottomTabParamList,
+  MainStackParamList,
+} from "@/src/navigation/AppNavigator";
 import FFScreenTopSection from "@/src/components/FFScreenTopSection";
+import { StackNavigationProp } from "@react-navigation/stack";
+import {
+  removeCartItemFromAsyncStorage,
+  saveCartItemsToAsyncStorage,
+  subtractItemFromCart,
+} from "@/src/store/userPreferenceSlice";
 
 type CheckoutRouteProps = RouteProp<MainStackParamList, "Checkout">;
-
+type CheckoutScreenNavigationProp = StackNavigationProp<
+  BottomTabParamList,
+  "Cart"
+>;
 const CheckoutScreen = () => {
+  const dispatch = useDispatch();
   const route = useRoute<CheckoutRouteProps>();
   const { orderItem } = route.params;
   const [isShowModalStatusCheckout, setIsShowModalStatusCheckout] =
@@ -25,7 +38,7 @@ const CheckoutScreen = () => {
   const [modalContentType, setModalContentType] = useState<
     "SUCCESS" | "ERROR" | "WARNING"
   >("ERROR"); // Default can be "SUCCESS"
-  const navigation = useNavigation();
+  const navigation = useNavigation<CheckoutScreenNavigationProp>();
   const [deliveryFee, setDeliveryFee] = useState<number>(DELIVERY_FEE);
   const [serviceFee, setServiceFee] = useState<number>(SERVICE_FEE);
   const [totalAmount, setTotalAmount] = useState<number>(0);
@@ -48,11 +61,14 @@ const CheckoutScreen = () => {
       setModalContentType("ERROR");
       return;
     }
+    console.log("check res location", orderItem?.restaurant_location);
     const requestData = {
       ...orderItem,
+      restaurant_location: orderItem?.restaurant_location,
       payment_method: selectedPaymentMethod,
-      customer_location: globalState?.address?.find((item) => item.is_default)
-        ?.id,
+      customer_location: globalState?.address?.find(
+        (item) => item.title === selectedAddress
+      )?.id,
       total_amount: totalAmount,
       service_fee: serviceFee,
       delivery_fee: deliveryFee,
@@ -70,11 +86,16 @@ const CheckoutScreen = () => {
       // This will ensure axios does NOT reject on non-2xx status codes
       validateStatus: () => true, // Always return true so axios doesn't throw on errors
     });
-
+    console.log("check response", response.data.data);
     const { EC, EM, data } = response.data;
     if (EC === 0) {
+      dispatch(subtractItemFromCart(response.data.data.order_items));
+      dispatch(removeCartItemFromAsyncStorage(response.data.data.order_items));
       setIsShowModalStatusCheckout(true);
       setModalContentType("SUCCESS");
+      // setTimeout(() => {
+      //   navigation.navigate("Orders");
+      // }, 5000);
     } else {
       setIsShowModalStatusCheckout(true);
       setModalContentType("ERROR");

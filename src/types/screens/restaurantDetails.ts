@@ -1,4 +1,5 @@
 export interface Props_RestaurantDetails {
+  address_id: string;
   address: {
     id: string;
     postal_code: number;

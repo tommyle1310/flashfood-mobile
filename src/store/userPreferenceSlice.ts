@@ -1,5 +1,6 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { RootState } from "./store";
 
 // Define the types of state we will use in this slice
 export interface Variant {
@@ -8,7 +9,7 @@ export interface Variant {
   quantity: number;
   item: { id: string; avatar: { url: string; key: string }; name: string };
   id: string;
-  variant_price_at_time_of_addition: number; // Price for each variant
+  variant_price_at_time_of_addition: number;
 }
 
 export interface CartItem {
@@ -27,7 +28,7 @@ export interface CartItem {
       id: string;
       restaurant_name: string;
       avatar: { url: string; key: string };
-      address: string;
+      address_id: string;
     };
     name: string;
     description: string;
@@ -46,7 +47,6 @@ export interface CartItem {
   };
 }
 
-// Initialize the state
 interface UserPreferenceState {
   favorite_restaurants: string[];
   cart_items: CartItem[];
@@ -57,7 +57,7 @@ const initialState: UserPreferenceState = {
   cart_items: [],
 };
 
-// Async thunk to save the updated favorite restaurants list to AsyncStorage
+// Async thunks (giữ nguyên)
 export const saveFavoriteRestaurantsToAsyncStorage = createAsyncThunk(
   "userPreference/saveFavoriteRestaurants",
   async (favorite_restaurants: string[]) => {
@@ -69,7 +69,6 @@ export const saveFavoriteRestaurantsToAsyncStorage = createAsyncThunk(
   }
 );
 
-// Async thunk to load favorite restaurants from AsyncStorage
 export const loadFavoriteRestaurantsFromAsyncStorage = createAsyncThunk(
   "userPreference/loadFavoriteRestaurants",
   async () => {
@@ -80,16 +79,29 @@ export const loadFavoriteRestaurantsFromAsyncStorage = createAsyncThunk(
   }
 );
 
-// Async thunk to save the updated cart items list to AsyncStorage
 export const saveCartItemsToAsyncStorage = createAsyncThunk(
   "userPreference/saveCartItems",
   async (cart_items: CartItem[]) => {
+    console.log(
+      "check cart items",
+      cart_items[0]?.item?.restaurantDetails?.address_id
+    );
     await AsyncStorage.setItem("cart_items", JSON.stringify(cart_items));
     return cart_items;
   }
 );
+export const removeCartItemFromAsyncStorage = createAsyncThunk(
+  "userPreference/removeCartItems",
+  async (itemsToRemove: { id: string }[], thunkAPI) => {
+    const state = thunkAPI.getState() as RootState;
+    const updatedCartItems = state.userPreference.cart_items.filter(
+      (item) => !itemsToRemove.some((removeItem) => removeItem.id === item.id)
+    );
+    await AsyncStorage.setItem("cart_items", JSON.stringify(updatedCartItems));
+    return itemsToRemove;
+  }
+);
 
-// Async thunk to load cart items from AsyncStorage
 export const loadCartItemsFromAsyncStorage = createAsyncThunk(
   "userPreference/loadCartItems",
   async () => {
@@ -108,10 +120,8 @@ const userPreferenceSlice = createSlice({
       const index = state.favorite_restaurants.indexOf(restaurantId);
 
       if (index === -1) {
-        // Add the restaurant to favorites if it's not already in the list
         state.favorite_restaurants.push(restaurantId);
       } else {
-        // Remove the restaurant from favorites if it's already in the list
         state.favorite_restaurants = state.favorite_restaurants.filter(
           (id) => id !== restaurantId
         );
@@ -120,15 +130,12 @@ const userPreferenceSlice = createSlice({
 
     addItemToCart: (state, action) => {
       const newItem = action.payload;
-
-      // Check if the item already exists in the cart by comparing the item's unique identifier (_id)
       const existingItem = state.cart_items.find(
         (item) => item.id === newItem.id
       );
 
       if (existingItem) {
         console.log("check newItem", newItem, "existed item", existingItem);
-        // Loop over the variants to find the existing variant and update the quantity and price accordingly
         newItem.variants.forEach((newVariant: Variant) => {
           const existingVariant = existingItem.variants.find(
             (variant) => variant.variant_id === newVariant.variant_id
@@ -136,39 +143,90 @@ const userPreferenceSlice = createSlice({
 
           if (existingVariant) {
             console.log("check fall hrere", newVariant);
-
-            // If the variant exists, update its quantity
             existingVariant.quantity += newVariant.quantity;
           } else {
-            // If the variant doesn't exist in the existing item, add it to the variants array
             existingItem.variants.push(newVariant);
           }
         });
       } else {
-        // If the item doesn't exist in the cart, add it as a new item
         state.cart_items.push(newItem);
       }
     },
 
     removeItemFromCart: (state, action) => {
       const itemId = action.payload;
-      // Remove the item from cart based on its unique identifier (_id)
       state.cart_items = state.cart_items.filter((item) => item.id !== itemId);
     },
 
     updateItemQuantity: (state, action) => {
       const { itemId, variantId, quantity } = action.payload;
-
       const item = state.cart_items.find((item) => item.id === itemId);
       if (item) {
         const variant = item.variants.find(
           (variant) => variant.variant_id === variantId
         );
         if (variant) {
-          // Update the variant quantity
           variant.quantity = quantity;
         }
       }
+    },
+
+    // Thêm action mới: subtractItemFromCart
+
+    subtractItemFromCart: (state, action) => {
+      const orderItems = action.payload;
+      console.log("check orderitem", orderItems);
+      console.log("check current cart_items", state.cart_items); // Thêm log để xem state.cart_items
+
+      orderItems.forEach(
+        (orderItem: {
+          item_id: string;
+          variant_id: string;
+          quantity: number;
+        }) => {
+          const cartItemIndex = state.cart_items.findIndex(
+            (item) => item.item.id === orderItem.item_id
+          );
+          console.log("check cartitemindex", cartItemIndex);
+
+          if (cartItemIndex !== -1) {
+            const cartItem = state.cart_items[cartItemIndex];
+            const variantIndex = cartItem.variants.findIndex(
+              (variant) => variant.variant_id === orderItem.variant_id
+            );
+            console.log("check variantindex", variantIndex);
+
+            if (variantIndex !== -1) {
+              const variant = cartItem.variants[variantIndex];
+              const newQuantity = variant.quantity - orderItem.quantity;
+
+              if (newQuantity <= 0) {
+                cartItem.variants.splice(variantIndex, 1);
+                console.log(
+                  `Removed variant ${orderItem.variant_id} from cart item ${cartItem.id}`
+                );
+
+                if (cartItem.variants.length === 0) {
+                  state.cart_items.splice(cartItemIndex, 1);
+                  console.log(
+                    `Removed cart item ${cartItem.id} as no variants remain`
+                  );
+                }
+              } else {
+                variant.quantity = newQuantity;
+                console.log(
+                  `Updated quantity of variant ${orderItem.variant_id} in cart item ${cartItem.id} to ${newQuantity}`
+                );
+              }
+            }
+            console.log("check finally", cartItem);
+          } else {
+            console.log(
+              `Cart item with item_id ${orderItem.item_id} not found in state.cart_items`
+            );
+          }
+        }
+      );
     },
   },
   extraReducers: (builder) => {
@@ -191,6 +249,7 @@ export const {
   addItemToCart,
   removeItemFromCart,
   updateItemQuantity,
+  subtractItemFromCart, // Export action mới
 } = userPreferenceSlice.actions;
 
 export default userPreferenceSlice.reducer;
