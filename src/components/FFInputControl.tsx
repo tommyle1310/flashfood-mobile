@@ -8,15 +8,17 @@ import {
 } from "react-native";
 import React, { useState, useRef } from "react";
 import IconIonicons from "react-native-vector-icons/Ionicons";
+import FFText from "@/src/components/FFText"; // Giả sử mày đã có FFText
 
 interface FFInputControlProps {
   value: string;
-  setValue: React.Dispatch<React.SetStateAction<string>>;
-  error: string | null | undefined;
-  placeholder: string;
+  setValue?: React.Dispatch<React.SetStateAction<string>>;
+  error?: string | null | undefined;
+  placeholder?: string;
   secureTextEntry?: boolean;
   label: string;
-  disabled?: boolean; // Optional disabled prop
+  disabled?: boolean;
+  readonly?: boolean; // Thêm prop readonly tùy chọn
 }
 
 const FFInputControl = ({
@@ -26,7 +28,8 @@ const FFInputControl = ({
   placeholder,
   secureTextEntry = false,
   label,
-  disabled = false, // Default is false
+  disabled = false,
+  readonly = false, // Default là false
 }: FFInputControlProps) => {
   const [isPasswordVisible, setIsPasswordVisible] = useState<boolean>(false);
   const inputRef = useRef<TextInput>(null);
@@ -38,11 +41,25 @@ const FFInputControl = ({
 
   // Handle press anywhere in the input container to focus
   const handleInputContainerPress = () => {
-    if (!disabled) {
+    if (!disabled && !readonly) {
       inputRef.current?.focus();
     }
   };
 
+  // Nếu readonly, dùng FFText thay vì TextInput
+  if (readonly) {
+    return (
+      <View>
+        <Text style={styles.inputLabel}>{label}</Text>
+        <FFText fontSize="md" fontWeight="400" style={styles.readonlyText}>
+          {value}
+        </FFText>
+        {error && <Text style={styles.errorText}>{error}</Text>}
+      </View>
+    );
+  }
+
+  // Nếu không phải readonly, hiển thị TextInput như trước
   return (
     <Pressable onPress={handleInputContainerPress}>
       <Text style={styles.inputLabel}>{label}</Text>
@@ -50,7 +67,7 @@ const FFInputControl = ({
         style={{
           ...styles.inputFieldContainer,
           borderColor: error ? "red" : disabled ? "#d1d1d1" : "#d1d1d1",
-          backgroundColor: disabled ? "#f0f0f0" : "white", // Background change for disabled state
+          backgroundColor: disabled ? "#f0f0f0" : "white",
         }}
       >
         <TextInput
@@ -104,6 +121,10 @@ const styles = StyleSheet.create({
   errorText: {
     color: "red",
     fontSize: 12,
+  },
+  readonlyText: {
+    // marginTop: 4, // Khoảng cách giữa label và text
+    color: "#aaa",
   },
 });
 
