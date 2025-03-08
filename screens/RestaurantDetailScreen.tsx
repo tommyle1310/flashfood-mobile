@@ -30,6 +30,7 @@ import {
   saveCartItemsToAsyncStorage,
 } from "@/src/store/userPreferenceSlice";
 import { MainStackParamList } from "@/src/navigation/AppNavigator";
+import { DEFAULT_AVATAR_FOOD } from "@/src/utils/constants";
 
 // Correct the typing for useRoute
 type RestaurantDetailRouteProp = RouteProp<
@@ -202,7 +203,7 @@ const RestaurantDetail = () => {
             <View className="flex-col gap-4 h-72 relative">
               <ImageBackground
                 source={{
-                  uri: restaurantDetails?.avatar?.url,
+                  uri: restaurantDetails?.avatar?.url ?? DEFAULT_AVATAR_FOOD,
                 }}
                 style={{
                   flex: 1,

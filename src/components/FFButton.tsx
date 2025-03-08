@@ -9,7 +9,7 @@ const FFButton: React.FC<{
   isLinear?: boolean;
   textClassName?: string;
   onPress?: () => void;
-  variant?: "primary" | "secondary" | "outline" | "danger"; // Added variant prop
+  variant?: "primary" | "secondary" | "outline" | "danger" | "link"; // Added link variant
   style?: ViewStyle; // Optional style prop for custom styles
 }> = ({
   children,
@@ -59,6 +59,11 @@ const FFButton: React.FC<{
       gradientEnd: pressed ? "#e60000" : "#ff4343", // Darker red gradient
       textColor: "white",
     },
+    link: {
+      gradientStart: "transparent",
+      gradientEnd: "transparent",
+      textColor: pressed ? "#4d9c39" : "#333",
+    },
   };
 
   const { gradientStart, gradientEnd, textColor } = variantStyles[variant];
@@ -69,7 +74,15 @@ const FFButton: React.FC<{
       return (
         <Text
           style={[
-            { color: textColor, fontSize: 16, fontWeight: "600" },
+            {
+              color: textColor,
+              fontSize: 16,
+              fontWeight: "600",
+              ...(variant === "link" && {
+                textDecorationLine: "underline",
+                textDecorationColor: pressed ? "#4d9c39" : "#333",
+              }),
+            },
             textClassName as any, // NativeWind will handle the className for styles
           ]}
         >
@@ -81,6 +94,27 @@ const FFButton: React.FC<{
     // If children is a ReactNode (not a string), return it as is
     return children;
   };
+
+  if (variant === "link") {
+    return (
+      <Pressable
+        onPressIn={() => setPressed(true)}
+        onPressOut={() => {
+          setPressed(false);
+          onPress();
+        }}
+        style={[
+          {
+            justifyContent: "center",
+            alignItems: "center",
+          },
+          style,
+        ]}
+      >
+        {renderChildren()}
+      </Pressable>
+    );
+  }
 
   return (
     <Pressable

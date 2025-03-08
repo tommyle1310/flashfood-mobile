@@ -24,6 +24,11 @@ import FFSeperator from "@/src/components/FFSeperator";
 import FFTab from "@/src/components/FFTab.conventional";
 import FFButton from "@/src/components/FFButton";
 import { formatTimestampToDate } from "@/src/utils/dateConverter";
+import Spinner from "@/src/components/FFSpinner";
+import { DEFAULT_AVATAR_FOOD } from "@/src/utils/constants";
+import { useNavigation } from "@react-navigation/native";
+import { StackNavigationProp } from "@react-navigation/stack";
+import { BottomTabParamList } from "@/src/navigation/AppNavigator";
 
 const skeletonTabContent = ({
   type,
@@ -35,6 +40,10 @@ const skeletonTabContent = ({
   const [isExpandedOrderItem, setIsExpandedOrderItem] = useState(false);
   const [detailedOrder, setDetailedOrder] = useState<OrderTracking | null>(
     null
+  );
+  console.log(
+    "check saduosa",
+    detailedOrder?.order_items[0]?.menu_item?.avatar?.url
   );
   return (
     <ScrollView className="gap-4 p-4">
@@ -50,7 +59,7 @@ const skeletonTabContent = ({
             >
               <View className="flex flex-row justify-between gap-2 items-center">
                 <FFText fontSize="sm">
-                  {item?.order_items[0]?.food_category ?? "Japanese"}
+                  {item?.restaurant.specialize_in[0] ?? "Japanese"}
                 </FFText>
                 <FFText style={{ flex: 1, color: "#7dbf72" }} fontSize="sm">
                   Completed
@@ -61,9 +70,13 @@ const skeletonTabContent = ({
               </View>
               <FFSeperator />
               <View className="flex flex-row gap-2">
-                <FFAvatar size={70} rounded="md" />
+                <FFAvatar
+                  size={70}
+                  rounded="md"
+                  avatar={item?.restaurant?.avatar?.url ?? DEFAULT_AVATAR_FOOD}
+                />
                 <View className="flex-1">
-                  <FFText>Starbucks</FFText>
+                  <FFText>{item?.restaurant.restaurant_name}</FFText>
                   <FFText fontSize="sm" style={{ color: "#aaa" }}>
                     {item?.restaurantAddress?.street},{" "}
                     {item?.restaurantAddress?.city},{" "}
@@ -107,7 +120,7 @@ const skeletonTabContent = ({
         style={{ marginBottom: 200 }}
         className="flex flex-col gap-4 flex-1 w-full items-center"
       >
-        {type === "ACTIVE" && (
+        {type === "ACTIVE" && detailedOrder && (
           <>
             <View className="w-full p-4">
               <FFProgressStage
@@ -196,100 +209,141 @@ const skeletonTabContent = ({
             </FFView>
           </>
         )}
-        {(type === "ACTIVE" || detailedOrder !== null) && (
-          <>
-            <FFView
-              style={{
-                width: "100%",
-                padding: 12,
-                borderRadius: 12,
-                gap: 4,
-                elevation: 3,
-              }}
-            >
-              <FFText fontSize="lg">Delivery details</FFText>
-              <FFInputControl
-                label="My address"
-                value={`${detailedOrder?.restaurantAddress?.street}, ${detailedOrder?.customerAddress?.city}, ${detailedOrder?.customerAddress?.nationality}`}
-                readonly
+        {(type === "ACTIVE" || detailedOrder !== null) &&
+          (detailedOrder === null ? (
+            <View className="w-full gap-4">
+              <Image
+                source={{
+                  uri: "https://res.cloudinary.com/dlavqnrlx/image/upload/v1741444037/nl4bvq26ns92lfrkofmu.png",
+                }}
+                style={{
+                  width: "100%",
+                  height: 200,
+                  borderRadius: 12,
+                  resizeMode: "cover",
+                }}
               />
-              <FFInputControl
-                label="Restaurant address"
-                value={`${detailedOrder?.restaurantAddress?.street}, ${detailedOrder?.restaurantAddress?.city}, ${detailedOrder?.restaurantAddress?.nationality}`}
-                readonly
-              />
-              <FFInputControl label="Total distance" value={"10km"} readonly />
-              <FFInputControl
-                label="Order time"
-                value={
-                  (detailedOrder?.order_time &&
-                    formatTimestampToDate(+detailedOrder?.order_time)) ??
-                  "undefined sth??"
-                }
-                readonly
-              />
-              <FFSeperator />
-              <FFInputControl
-                label="My Note"
-                value={detailedOrder?.customer_note ?? "undefined sth??"}
-                readonly
-              />
-            </FFView>
-            <FFView
-              style={{
-                width: "100%",
-                padding: 12,
-                borderRadius: 12,
-                gap: 4,
-                elevation: 3,
-              }}
-            >
-              <View className="flex flex-row justify-between items-center">
-                <FFText fontSize="lg">Order summary</FFText>
-                <TouchableOpacity onPress={() => {}}>
-                  <FFText style={{ color: "#7dbf72" }} fontSize="sm">
-                    View Receipt
-                  </FFText>
-                </TouchableOpacity>
-              </View>
-              <FFText fontWeight="400" style={{ color: "#aaa" }}>
-                Tommyummy, 102 PVH...
+              <FFText
+                fontWeight="400"
+                style={{ textAlign: "center", color: "#777" }}
+              >
+                You have no active orders...
               </FFText>
-              <View className="flex-row gap-2 my-4">
-                <FFAvatar rounded="sm" size={40} />
-                <View className="flex-1">
-                  <FFText style={{ color: "#aaa" }}>Crispy dog</FFText>
-                  <FFText
-                    fontWeight="400"
-                    fontSize="sm"
-                    style={{ color: "#aaa" }}
-                  >
-                    x3
-                  </FFText>
+              <FFButton variant="link">Browse some food</FFButton>
+            </View>
+          ) : (
+            <>
+              <FFView
+                style={{
+                  width: "100%",
+                  padding: 12,
+                  borderRadius: 12,
+                  gap: 4,
+                  elevation: 3,
+                }}
+              >
+                <FFText fontSize="lg">Delivery details</FFText>
+                <FFInputControl
+                  label="My address"
+                  value={`${detailedOrder?.restaurantAddress?.street}, ${detailedOrder?.customerAddress?.city}, ${detailedOrder?.customerAddress?.nationality}`}
+                  readonly
+                />
+                <FFInputControl
+                  label="Restaurant address"
+                  value={`${detailedOrder?.restaurantAddress?.street}, ${detailedOrder?.restaurantAddress?.city}, ${detailedOrder?.restaurantAddress?.nationality}`}
+                  readonly
+                />
+                <FFInputControl
+                  label="Total distance"
+                  value={
+                    detailedOrder?.distance
+                      ? `${parseFloat(detailedOrder?.distance).toFixed(2)}km`
+                      : "0km"
+                  }
+                  readonly
+                />
+                <FFInputControl
+                  label="Order time"
+                  value={
+                    (detailedOrder?.order_time &&
+                      formatTimestampToDate(+detailedOrder?.order_time)) ??
+                    "undefined sth??"
+                  }
+                  readonly
+                />
+                <FFSeperator />
+                <FFInputControl
+                  label="My Note"
+                  value={detailedOrder?.customer_note ?? "undefined sth??"}
+                  readonly
+                />
+              </FFView>
+              <FFView
+                style={{
+                  width: "100%",
+                  padding: 12,
+                  borderRadius: 12,
+                  gap: 4,
+                  elevation: 3,
+                }}
+              >
+                <View className="flex flex-row justify-between items-center">
+                  <FFText fontSize="lg">Order summary</FFText>
+                  <TouchableOpacity onPress={() => {}}>
+                    <FFText style={{ color: "#7dbf72" }} fontSize="sm">
+                      View Receipt
+                    </FFText>
+                  </TouchableOpacity>
                 </View>
-                <TouchableOpacity
-                  onPress={() => {}}
-                  className="flex-row items-center justify-between"
-                >
-                  <FFText fontWeight="400" fontSize="sm">
-                    Show More
-                  </FFText>
-                  <IconFeather
-                    size={20}
-                    name={isExpandedOrderItem ? "chevron-up" : "chevron-down"}
-                  />
-                </TouchableOpacity>
-              </View>
-              <FFSeperator />
-              <View className="flex flex-row justify-between items-center">
                 <FFText fontWeight="400" style={{ color: "#aaa" }}>
-                  Total
+                  Tommyummy, 102 PVH...
                 </FFText>
-                <FFText style={{ color: "#4c9f3a" }}>$100</FFText>
-              </View>
-            </FFView>
-          </>
-        )}
+                {detailedOrder?.order_items?.map((item, i) => (
+                  <View key={i} className="flex-row gap-2 my-4">
+                    <FFAvatar
+                      rounded="sm"
+                      size={40}
+                      avatar={
+                        detailedOrder?.order_items[0]?.menu_item?.avatar?.url ??
+                        DEFAULT_AVATAR_FOOD
+                      }
+                    />
+                    <View className="flex-1">
+                      <FFText style={{ color: "#aaa" }}>{item?.name}</FFText>
+                      <FFText
+                        fontWeight="400"
+                        fontSize="sm"
+                        style={{ color: "#aaa" }}
+                      >
+                        x{item?.quantity}
+                      </FFText>
+                    </View>
+                    <TouchableOpacity
+                      onPress={() => {}}
+                      className="flex-row items-center justify-between"
+                    >
+                      <FFText fontWeight="400" fontSize="sm">
+                        Show More
+                      </FFText>
+                      <IconFeather
+                        size={20}
+                        name={
+                          isExpandedOrderItem ? "chevron-up" : "chevron-down"
+                        }
+                      />
+                    </TouchableOpacity>
+                  </View>
+                ))}
+                <FFSeperator />
+                <View className="flex flex-row justify-between items-center">
+                  <FFText fontWeight="400" style={{ color: "#aaa" }}>
+                    Total
+                  </FFText>
+                  <FFText style={{ color: "#4c9f3a" }}>$100</FFText>
+                </View>
+              </FFView>
+            </>
+          ))}
       </View>
     </ScrollView>
   );
@@ -327,17 +381,6 @@ const OrdersScreen = () => {
     setCompletedOrders(orders.filter((order) => order.status === "DELIVERED"));
     setCancelledOrders(orders.filter((order) => order.status === "CANCELLED"));
   }, [orders]);
-
-  console.log(
-    "check orders finished",
-    orders.filter((order) => order.status === "DELIVERED")
-  );
-  console.log(
-    "check orders in progress",
-    orders.filter(
-      (order) => order.status !== "DELIVERED" && order.status !== "CANCELLED"
-    )
-  );
 
   const activeTabContent = skeletonTabContent({
     type: "ACTIVE",

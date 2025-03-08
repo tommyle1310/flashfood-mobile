@@ -41,6 +41,7 @@ export interface OrderTracking {
   customer_id: string;
   customer_location: string;
   customer_note: string;
+  distance: string;
   delivery_time: string; // You may want to convert this to Date in your application if necessary
   driver: Driver | null;
   driver_id: string | null;
@@ -88,10 +89,11 @@ export interface Driver {
 
 export interface Restaurant {
   address_id: string;
-  avatar: string | null; // Adjust based on actual structure
+  avatar: Avatar | null; // Adjust based on actual structure
   contact_email: string[];
   contact_phone: string[];
   created_at: number;
+  specialize_in: string[];
   description: string | null;
   id: string;
   images_gallery: any | null; // Adjust based on actual structure
