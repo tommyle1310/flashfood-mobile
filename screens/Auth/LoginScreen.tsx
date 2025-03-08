@@ -49,7 +49,7 @@ const Login = () => {
 
       // Now you can safely access the EC field
       const { EC, EM, data } = response.data; // Access EC, EM, and data
-
+      console.log("response.data", response.data);
       if (EC === 0) {
         // Success, decode the JWT token (assuming 'data.access_token' contains the JWT)
         const userData = decodeJWT(data.access_token); // Decode JWT to get user data
@@ -84,6 +84,7 @@ const Login = () => {
       }
     } catch (error) {
       console.error("Login failed:", error);
+
       setError("An unexpected error occurred during login."); // Provide a generic error message if the request fails
     }
   };

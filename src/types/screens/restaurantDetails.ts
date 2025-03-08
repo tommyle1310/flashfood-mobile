@@ -1,3 +1,5 @@
+import { Avatar } from "../common";
+
 export interface Props_RestaurantDetails {
   address_id: string;
   address: {
@@ -45,11 +47,6 @@ export interface Props_MenuItem {
     created_at: number;
     updated_at: number;
   }[];
-}
-
-export interface Avatar {
-  key: string;
-  url: string;
 }
 
 export interface MenuItemVariant {
