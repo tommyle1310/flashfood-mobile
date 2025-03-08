@@ -8,6 +8,36 @@ export interface OrderTracking {
     id: string;
     last_name: string;
   };
+  customerAddress: {
+    id: string;
+    street: string;
+    city: string;
+    nationality: string;
+    is_default: boolean;
+    created_at: number;
+    updated_at: number;
+    postal_code: number;
+    location: {
+      lat: number;
+      lon: number;
+    };
+    title: string;
+  };
+  restaurantAddress: {
+    id: string;
+    street: string;
+    city: string;
+    nationality: string;
+    is_default: boolean;
+    created_at: number;
+    updated_at: number;
+    postal_code: number;
+    location: {
+      lat: number;
+      lon: number;
+    };
+    title: string;
+  };
   customer_id: string;
   customer_location: string;
   customer_note: string;
