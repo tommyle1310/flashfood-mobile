@@ -30,7 +30,9 @@ import {
   saveCartItemsToAsyncStorage,
 } from "@/src/store/userPreferenceSlice";
 import { MainStackParamList } from "@/src/navigation/AppNavigator";
-import { DEFAULT_AVATAR_FOOD } from "@/src/utils/constants";
+import { IMAGE_LINKS } from "@/src/assets/imageLinks";
+import FFModal from "@/src/components/FFModal";
+import Spinner from "@/src/components/FFSpinner";
 
 // Correct the typing for useRoute
 type RestaurantDetailRouteProp = RouteProp<
@@ -57,12 +59,14 @@ const RestaurantDetail = () => {
   const [restaurantMenuItem, setRestaurantMenuItem] =
     useState<Props_MenuItem[]>();
   const [isShowSlideUpModal, setIsShowSlideUpModal] = useState<boolean>(false);
+  const [isShowStatusModal, setIsShowStatusModal] = useState<boolean>(false);
   const [selectedMenuItem, setSelectedMenuItem] = useState<string | null>(null);
   const [modalData, setModalData] = useState<MenuItemProps>();
   const [selectedVariant, setSeletedVariant] = useState<any>(null);
   const [totalPrice, setTotalPrice] = useState<number>(0);
   const [quantity, setQuantity] = useState<number>(1);
   const [itemPrice, setItemPrice] = useState<number | null>(0);
+  const [isLoading, setIsLoading] = useState<boolean>(false);
   useEffect(() => {
     const fetchRestaurantDetails = async () => {
       const response = await axiosInstance.get(`/restaurants/${restaurantId}`);
@@ -127,7 +131,8 @@ const RestaurantDetail = () => {
     const { EC, EM, data } = response.data;
 
     if (EC === 0) {
-      dispatch(
+      setIsLoading(true);
+      await dispatch(
         addItemToCart({
           id: data.id,
           customer_id: user_id,
@@ -165,6 +170,9 @@ const RestaurantDetail = () => {
           },
         })
       );
+      setIsLoading(false);
+      setIsShowStatusModal(true);
+      console.log("check data", data);
     }
   };
   useEffect(() => {
@@ -175,6 +183,9 @@ const RestaurantDetail = () => {
     dispatch(saveCartItemsToAsyncStorage(listCartItem));
   }, [listCartItem]);
 
+  if (isLoading) {
+    return <Spinner isVisible={isLoading} />;
+  }
   return (
     <FFSafeAreaView>
       <View style={{ flex: 1, position: "relative" }}>
@@ -203,7 +214,9 @@ const RestaurantDetail = () => {
             <View className="flex-col gap-4 h-72 relative">
               <ImageBackground
                 source={{
-                  uri: restaurantDetails?.avatar?.url ?? DEFAULT_AVATAR_FOOD,
+                  uri:
+                    restaurantDetails?.avatar?.url ??
+                    IMAGE_LINKS.DEFAULT_AVATAR_FOOD,
                 }}
                 style={{
                   flex: 1,
@@ -314,6 +327,12 @@ const RestaurantDetail = () => {
             </View>
           </View>
         </ScrollView>
+        <FFModal
+          visible={isShowStatusModal}
+          onClose={() => setIsShowStatusModal(false)}
+        >
+          <FFText>Your order has been added to your cart🤑.</FFText>
+        </FFModal>
       </View>
 
       {/* slide up modal */}

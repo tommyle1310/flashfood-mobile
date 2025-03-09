@@ -23,6 +23,7 @@ import {
   saveCartItemsToAsyncStorage,
   subtractItemFromCart,
 } from "@/src/store/userPreferenceSlice";
+import Spinner from "@/src/components/FFSpinner";
 
 type CheckoutRouteProps = RouteProp<MainStackParamList, "Checkout">;
 type CheckoutScreenNavigationProp = StackNavigationProp<
@@ -46,6 +47,7 @@ const CheckoutScreen = () => {
   const [selectedPaymentMethod, setSelectedPaymentMethod] =
     useState<string>("");
   const [selectedAddress, setSelectedAddress] = useState<string>("");
+  const [isLoading, setIsLoading] = useState<boolean>(false);
 
   const handleSelectPaymentMethod = (option: string) => {
     setSelectedPaymentMethod(option);
@@ -86,16 +88,14 @@ const CheckoutScreen = () => {
       // This will ensure axios does NOT reject on non-2xx status codes
       validateStatus: () => true, // Always return true so axios doesn't throw on errors
     });
-    console.log("check response", response.data.data);
     const { EC, EM, data } = response.data;
     if (EC === 0) {
+      setIsLoading(true);
       dispatch(subtractItemFromCart(response.data.data.order_items));
       dispatch(removeCartItemFromAsyncStorage(response.data.data.order_items));
+      setIsLoading(false);
       setIsShowModalStatusCheckout(true);
       setModalContentType("SUCCESS");
-      // setTimeout(() => {
-      //   navigation.navigate("Orders");
-      // }, 5000);
     } else {
       setIsShowModalStatusCheckout(true);
       setModalContentType("ERROR");
@@ -120,7 +120,9 @@ const CheckoutScreen = () => {
       selected={selectedAddress}
     />,
   ];
-
+  if (isLoading) {
+    return <Spinner isVisible={isLoading} />;
+  }
   return (
     <FFSafeAreaView>
       <FFScreenTopSection title="Check Out" navigation={navigation} />

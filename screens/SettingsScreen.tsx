@@ -108,7 +108,6 @@ const SettingsScreen = () => {
                 >
                   Log Out
                 </FFButton>
-                ;
               </View>
             </FFView>
           </View>

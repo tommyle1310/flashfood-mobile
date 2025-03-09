@@ -17,6 +17,7 @@ export enum Enum_TrackingInfo {
   PREPARING = "PREPARING",
   OUT_FOR_DELIVERY = "OUT_FOR_DELIVERY",
   DELIVERED = "DELIVERED",
+  RESTAURANT_PICKUP = "RESTAURANT_PICKUP",
 }
 
 export enum Enum_OrderStatus {

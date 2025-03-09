@@ -6,6 +6,7 @@ import { BACKEND_URL } from "../utils/constants";
 import { Enum_OrderStatus, Enum_TrackingInfo } from "../types/Orders";
 import {
   removeOrderTracking,
+  saveOrderTrackingAfterUpdate,
   saveOrderTrackingToAsyncStorage,
   updateOrderTracking,
 } from "@/src/store/orderTrackingRealtimeSlice"; // Import action
@@ -69,10 +70,9 @@ export const useActiveOrderTrackingSocket = () => {
       } else {
         dispatch(updateOrderTracking(data));
       }
-      // Lưu toàn bộ danh sách orders vào AsyncStorage
-      dispatch(saveOrderTrackingToAsyncStorage(orders));
+      // Chỉ lưu state mới nhất bằng saveOrderTrackingAfterUpdate
+      dispatch(saveOrderTrackingAfterUpdate());
     };
-
     socketInstance.on(
       "orderTrackingUpdate",
       (data: { data: OrderTrackingSocket }) => {
@@ -96,7 +96,7 @@ export const useActiveOrderTrackingSocket = () => {
     return () => {
       if (socketInstance) socketInstance.disconnect();
     };
-  }, [accessToken, id, dispatch, orders]); // Thêm orders vào dependency
+  }, [accessToken, id, dispatch]); // Thêm orders vào dependency
 
   return {
     socket,

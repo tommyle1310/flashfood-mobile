@@ -9,4 +9,8 @@ export const IMAGE_LINKS = {
     "https://res.cloudinary.com/dlavqnrlx/image/upload/v1741494616/lbhbrbptl2olwbpzzfvj.jpg",
   RESTAURANT_PREPARING:
     "https://res.cloudinary.com/dlavqnrlx/image/upload/v1741408785/pui7asaniy2uw4htsymp.png",
+  EMPTY_CART:
+    "https://res.cloudinary.com/dlavqnrlx/image/upload/v1741529898/empty-cart_evsxpn.jpg",
+  RESTAURANT_PICKUP:
+    "https://res.cloudinary.com/dlavqnrlx/image/upload/v1741531469/abwll9q3gmscnialyn9p.jpg",
 };

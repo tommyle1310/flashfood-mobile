@@ -23,14 +23,21 @@ const initialState: OrderTrackingRealtimeState = {
 // Async thunk để lưu orders vào AsyncStorage
 export const saveOrderTrackingToAsyncStorage = createAsyncThunk(
   "orderTrackingRealtime/saveOrderTracking",
-  async (orders: OrderTracking[]) => {
+  async (orders: OrderTracking[], { rejectWithValue }) => {
     try {
-      await AsyncStorage.setItem("orderTracking", JSON.stringify(orders));
+      const serializedOrders = JSON.stringify(orders);
+      await AsyncStorage.setItem("orderTracking", serializedOrders);
       console.log("Saved order tracking to AsyncStorage:", orders);
+      // Kiểm tra dữ liệu vừa lưu
+      const savedData = await AsyncStorage.getItem("orderTracking");
+      console.log(
+        "Data in AsyncStorage after save:",
+        JSON.parse(savedData ?? "")
+      );
       return orders;
     } catch (error) {
       console.error("Error saving order tracking to AsyncStorage:", error);
-      throw error;
+      return rejectWithValue(error);
     }
   }
 );
@@ -65,7 +72,17 @@ export const clearOrderTrackingFromAsyncStorage = createAsyncThunk(
     }
   }
 );
-
+export const saveOrderTrackingAfterUpdate = createAsyncThunk(
+  "orderTrackingRealtime/saveOrderTrackingAfterUpdate",
+  async (_, { dispatch, getState }) => {
+    const state = getState() as {
+      orderTrackingRealtime: OrderTrackingRealtimeState;
+    };
+    const updatedOrders = state.orderTrackingRealtime.orders;
+    await dispatch(saveOrderTrackingToAsyncStorage(updatedOrders)).unwrap();
+    return updatedOrders;
+  }
+);
 // Tạo slice
 const orderTrackingRealtimeSlice = createSlice({
   name: "orderTrackingRealtime",

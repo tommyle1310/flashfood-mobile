@@ -156,6 +156,9 @@ const skeletonTabContent = ({
                       : firstActiveOrder?.tracking_info ===
                         Enum_TrackingInfo.ORDER_PLACED
                       ? IMAGE_LINKS.ORDER_PLACED
+                      : firstActiveOrder?.tracking_info ===
+                        Enum_TrackingInfo.RESTAURANT_PICKUP
+                      ? IMAGE_LINKS.RESTAURANT_PICKUP
                       : IMAGE_LINKS.DEFAULT_AVATAR_FOOD,
                 }}
                 style={{

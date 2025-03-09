@@ -25,7 +25,7 @@ import { StackNavigationProp } from "@react-navigation/stack";
 import { MainStackParamList } from "@/src/navigation/AppNavigator";
 import FFView from "@/src/components/FFView";
 import Spinner from "@/src/components/FFSpinner";
-import { DEFAULT_AVATAR_FOOD } from "@/src/utils/constants";
+import { IMAGE_LINKS } from "@/src/assets/imageLinks";
 
 // Type Definitions
 type FoodCategory = { id: string; name: string; description: string };
@@ -270,7 +270,9 @@ const HomeScreen = () => {
                 // className="p-2 rounded-lg shadow-md bg-white w-36 h-48 mr-2"
               >
                 <ImageBackground
-                  source={{ uri: item?.avatar?.url ?? DEFAULT_AVATAR_FOOD }}
+                  source={{
+                    uri: item?.avatar?.url ?? IMAGE_LINKS.DEFAULT_AVATAR_FOOD,
+                  }}
                   style={{ flex: 1, borderRadius: 8, backgroundColor: "gray" }}
                   imageStyle={{ borderRadius: 8 }}
                 >

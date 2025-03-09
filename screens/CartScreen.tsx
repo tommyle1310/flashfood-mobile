@@ -204,177 +204,206 @@ const CartScreen = () => {
   return (
     <FFSafeAreaView>
       <View className="flex-1 gap-4 pb-24">
-        <FlatList
-          style={{ padding: 12 }}
-          keyExtractor={(item) => item} // This is fine if the keys of groupedCartList are unique
-          data={Object.keys(groupedCartList)}
-          renderItem={({ item }) => {
-            const restaurantItems = groupedCartList[item];
-            const restaurant = restaurantItems[0].item.restaurantDetails;
+        {cartList.length === 0 ? (
+          <View className="w-full justify-center flex-1 pb-12 p-4">
+            <Image
+              source={{ uri: IMAGE_LINKS.EMPTY_CART }}
+              style={{ width: "100%", aspectRatio: 1, borderRadius: 12 }}
+            />
+            <FFText
+              fontWeight="400"
+              style={{ textAlign: "center", marginVertical: 12, color: "#aaa" }}
+            >
+              Your cart is empty
+            </FFText>
+            <FFButton variant="link" onPress={() => {}}>
+              Browse some food
+            </FFButton>
+          </View>
+        ) : (
+          <FlatList
+            style={{ padding: 12 }}
+            keyExtractor={(item) => item} // This is fine if the keys of groupedCartList are unique
+            data={Object.keys(groupedCartList)}
+            renderItem={({ item }) => {
+              const restaurantItems = groupedCartList[item];
+              const restaurant = restaurantItems[0].item.restaurantDetails;
 
-            return (
-              <FFView
-                colorDark="#333"
-                colorLight="#fff"
-                style={{
-                  padding: 8,
-                  borderRadius: 10,
-                  elevation: 4,
-                  backgroundColor: !restaurantItems[0].item.restaurantDetails.id
-                    ? "#ddd"
-                    : undefined,
-                }}
-              >
-                <View className="flex-row items-center gap-2">
-                  <FFAvatar
-                    avatar={
-                      restaurant?.avatar?.url ?? IMAGE_LINKS.DEFAULT_AVATAR_FOOD
-                    }
-                    size={32}
-                    onPress={() =>
-                      navigation.navigate("RestaurantDetail", {
-                        restaurantId: restaurant.id,
-                      })
-                    }
-                    rounded="sm"
-                  />
-                  <FFText colorDark="#aaa" fontWeight="500">
-                    {restaurant.restaurant_name}
-                  </FFText>
-                </View>
+              return (
+                <FFView
+                  colorDark="#333"
+                  colorLight="#fff"
+                  style={{
+                    padding: 8,
+                    borderRadius: 10,
+                    elevation: 4,
+                    backgroundColor: !restaurantItems[0].item.restaurantDetails
+                      .id
+                      ? "#ddd"
+                      : undefined,
+                  }}
+                >
+                  <View className="flex-row items-center gap-2">
+                    <FFAvatar
+                      avatar={
+                        restaurant?.avatar?.url ??
+                        IMAGE_LINKS.DEFAULT_AVATAR_FOOD
+                      }
+                      size={32}
+                      onPress={() =>
+                        navigation.navigate("RestaurantDetail", {
+                          restaurantId: restaurant.id,
+                        })
+                      }
+                      rounded="sm"
+                    />
+                    <FFText colorDark="#aaa" fontWeight="500">
+                      {restaurant.restaurant_name}
+                    </FFText>
+                  </View>
 
-                <FlatList
-                  data={restaurantItems}
-                  renderItem={({ item, index }) => {
-                    const cartItem = item;
-                    const restaurantDetails = cartItem?.item?.restaurantDetails;
-                    const isExpanded =
-                      expandedRestaurantId === restaurantDetails.id;
-                    console.log("check cart item", cartItem.variants[0]);
+                  <FlatList
+                    data={restaurantItems}
+                    renderItem={({ item, index }) => {
+                      const cartItem = item;
+                      const restaurantDetails =
+                        cartItem?.item?.restaurantDetails;
+                      const isExpanded =
+                        expandedRestaurantId === restaurantDetails.id;
+                      console.log("check cart item", cartItem.variants[0]);
 
-                    return (
-                      <View
-                        style={{
-                          borderWidth: index === restaurantItems.length ? 1 : 0,
-                        }}
-                        className="mb-3 py-2 gap-4 border-gray-200"
-                      >
-                        <Pressable
-                          onPress={() =>
-                            handleToggleAccordion(restaurantDetails.id)
-                          }
-                          className="flex-row items-center justify-between"
+                      return (
+                        <View
+                          style={{
+                            borderWidth:
+                              index === restaurantItems.length ? 1 : 0,
+                          }}
+                          className="mb-3 py-2 gap-4 border-gray-200"
                         >
-                          <View className="flex-row items-center">
-                            <Image
-                              source={{
-                                uri:
-                                  cartItem?.item?.avatar?.url ??
-                                  IMAGE_LINKS.DEFAULT_AVATAR_FOOD,
-                              }}
-                              className="w-12 h-12 rounded-full mr-4 bg-gray-400"
+                          <Pressable
+                            onPress={() =>
+                              handleToggleAccordion(restaurantDetails.id)
+                            }
+                            className="flex-row items-center justify-between"
+                          >
+                            <View className="flex-row items-center">
+                              <Image
+                                source={{
+                                  uri:
+                                    cartItem?.item?.avatar?.url ??
+                                    IMAGE_LINKS.DEFAULT_AVATAR_FOOD,
+                                }}
+                                className="w-12 h-12 rounded-full mr-4 bg-gray-400"
+                              />
+                              <FFText>{cartItem.item.name}</FFText>
+                            </View>
+                            <IconFeather
+                              size={20}
+                              name={isExpanded ? "chevron-up" : "chevron-down"}
                             />
-                            <FFText>{cartItem.item.name}</FFText>
-                          </View>
-                          <IconFeather
-                            size={20}
-                            name={isExpanded ? "chevron-up" : "chevron-down"}
-                          />
-                        </Pressable>
-                        {isExpanded && (
-                          <View className="flex-1">
-                            {cartItem.variants.map((variant, index) => {
-                              return (
-                                <FFView
-                                  key={
-                                    variant.id || `${cartItem.item.id}-${index}`
-                                  }
-                                  onPress={() => {
-                                    const { id } = selectedRestaurant;
-
-                                    // Check if selectedRestaurant.id is empty or matches the restaurant item ID
-                                    if (
-                                      id === "" ||
-                                      id ===
-                                        restaurantItems[0].item
-                                          .restaurantDetails.id
-                                    ) {
-                                      handleSelectVariants(
-                                        variant,
-                                        restaurantItems[0].item
-                                          .restaurantDetails,
-                                        cartItem
-                                      );
-                                    } else {
-                                      setIsShowModal(true);
+                          </Pressable>
+                          {isExpanded && (
+                            <View className="flex-1">
+                              {cartItem.variants.map((variant, index) => {
+                                return (
+                                  <FFView
+                                    key={
+                                      variant.id ||
+                                      `${cartItem.item.id}-${index}`
                                     }
-                                  }}
-                                  colorDark="#000"
-                                  style={{
-                                    marginBottom: 8,
-                                    padding: 8,
-                                    borderRadius: 10,
-                                    borderWidth: selectedVariants.some(
-                                      (item) =>
-                                        item.variant_id === variant.variant_id
-                                    )
-                                      ? 1
-                                      : 0.5,
-                                    borderColor: selectedVariants.some(
-                                      (item) =>
-                                        item.variant_id === variant.variant_id
-                                    )
-                                      ? "#4caf50" // green-400
-                                      : "#e0e0e0", // gray-200
-                                    backgroundColor: selectedVariants.some(
-                                      (item) =>
-                                        item.variant_id === variant.variant_id
-                                    )
-                                      ? "#e8f5e9" // green-50
-                                      : undefined,
-                                  }}
-                                >
-                                  <FFText
-                                    fontWeight="400"
-                                    style={{ color: "#888" }}
+                                    onPress={() => {
+                                      const { id } = selectedRestaurant;
+
+                                      // Check if selectedRestaurant.id is empty or matches the restaurant item ID
+                                      if (
+                                        id === "" ||
+                                        id ===
+                                          restaurantItems[0].item
+                                            .restaurantDetails.id
+                                      ) {
+                                        handleSelectVariants(
+                                          variant,
+                                          restaurantItems[0].item
+                                            .restaurantDetails,
+                                          cartItem
+                                        );
+                                      } else {
+                                        setIsShowModal(true);
+                                      }
+                                    }}
+                                    colorDark="#000"
+                                    style={{
+                                      marginBottom: 8,
+                                      padding: 8,
+                                      borderRadius: 10,
+                                      borderWidth: selectedVariants.some(
+                                        (item) =>
+                                          item.variant_id === variant.variant_id
+                                      )
+                                        ? 1
+                                        : 0.5,
+                                      borderColor: selectedVariants.some(
+                                        (item) =>
+                                          item.variant_id === variant.variant_id
+                                      )
+                                        ? "#4caf50" // green-400
+                                        : "#e0e0e0", // gray-200
+                                      backgroundColor: selectedVariants.some(
+                                        (item) =>
+                                          item.variant_id === variant.variant_id
+                                      )
+                                        ? "#e8f5e9" // green-50
+                                        : undefined,
+                                    }}
                                   >
-                                    {variant.variant_name}
-                                  </FFText>
-                                  <View className="flex-row items-center justify-between">
-                                    <FFText
-                                      style={{ color: "#4d9c39", marginTop: 1 }}
-                                    >
-                                      $
-                                      {variant?.variant_price_at_time_of_addition
-                                        ? (
-                                            variant.variant_price_at_time_of_addition *
-                                            variant.quantity
-                                          ).toFixed(2)
-                                        : "0.00"}
-                                    </FFText>
                                     <FFText
                                       fontWeight="400"
-                                      style={{ color: "#4d9c39", marginTop: 1 }}
+                                      style={{ color: "#888" }}
                                     >
-                                      {variant.quantity}
+                                      {variant.variant_name}
                                     </FFText>
-                                  </View>
-                                </FFView>
-                              );
-                            })}
-                          </View>
-                        )}
-                      </View>
-                    );
-                  }}
-                  keyExtractor={(item, index) =>
-                    item.id ? item.id : `${index}`
-                  }
-                />
-              </FFView>
-            );
-          }}
-        />
+                                    <View className="flex-row items-center justify-between">
+                                      <FFText
+                                        style={{
+                                          color: "#4d9c39",
+                                          marginTop: 1,
+                                        }}
+                                      >
+                                        $
+                                        {variant?.variant_price_at_time_of_addition
+                                          ? (
+                                              variant.variant_price_at_time_of_addition *
+                                              variant.quantity
+                                            ).toFixed(2)
+                                          : "0.00"}
+                                      </FFText>
+                                      <FFText
+                                        fontWeight="400"
+                                        style={{
+                                          color: "#4d9c39",
+                                          marginTop: 1,
+                                        }}
+                                      >
+                                        {variant.quantity}
+                                      </FFText>
+                                    </View>
+                                  </FFView>
+                                );
+                              })}
+                            </View>
+                          )}
+                        </View>
+                      );
+                    }}
+                    keyExtractor={(item, index) =>
+                      item.id ? item.id : `${index}`
+                    }
+                  />
+                </FFView>
+              );
+            }}
+          />
+        )}
         {isShowSubmitBtn && cartList.length > 0 && (
           <View className="mx-4">
             <FFButton
