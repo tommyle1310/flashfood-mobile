@@ -1,4 +1,5 @@
 import { Avatar } from "../common";
+import { Enum_OrderStatus, Enum_TrackingInfo } from "../Orders";
 
 export interface OrderTracking {
   customer: {
@@ -54,18 +55,9 @@ export interface OrderTracking {
   restaurant_id: string;
   restaurant_location: string;
   restaurant_note: string;
-  status:
-    | "PENDING"
-    | "RESTAURANT_ACCEPTED"
-    | "IN_PROGRESS"
-    | "DELIVERED"
-    | "CANCELLED"; // Adjust based on actual statuses
+  status: Enum_OrderStatus; // Adjust based on actual statuses
   total_amount: string; // You may want to convert this to number or decimal
-  tracking_info:
-    | "ORDER_PLACED"
-    | "PREPARING"
-    | "OUT_FOR_DELIVERY"
-    | "DELIVERED";
+  tracking_info: Enum_TrackingInfo;
 }
 
 export interface Driver {

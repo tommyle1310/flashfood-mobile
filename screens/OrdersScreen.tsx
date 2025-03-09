@@ -25,10 +25,12 @@ import FFTab from "@/src/components/FFTab.conventional";
 import FFButton from "@/src/components/FFButton";
 import { formatTimestampToDate } from "@/src/utils/dateConverter";
 import Spinner from "@/src/components/FFSpinner";
-import { DEFAULT_AVATAR_FOOD } from "@/src/utils/constants";
+import { IMAGE_LINKS } from "@/src/assets/imageLinks";
 import { useNavigation } from "@react-navigation/native";
 import { StackNavigationProp } from "@react-navigation/stack";
 import { BottomTabParamList } from "@/src/navigation/AppNavigator";
+import { OrderTracking as OrderTrackingRealtime } from "@/src/store/orderTrackingRealtimeSlice";
+import { Enum_TrackingInfo } from "@/src/types/Orders";
 
 const skeletonTabContent = ({
   type,
@@ -37,14 +39,23 @@ const skeletonTabContent = ({
   type: "ACTIVE" | "COMPLETED" | "CANCELLED";
   data: OrderTracking[];
 }) => {
+  const { orders: orderTrackingRealtimeOrders } = useSelector(
+    (state: RootState) => state.orderTrackingRealtime
+  );
+
   const [isExpandedOrderItem, setIsExpandedOrderItem] = useState(false);
+  const [firstActiveOrder, setFirstActiveOrder] =
+    useState<OrderTrackingRealtime | null>(null);
   const [detailedOrder, setDetailedOrder] = useState<OrderTracking | null>(
     null
   );
-  console.log(
-    "check saduosa",
-    detailedOrder?.order_items[0]?.menu_item?.avatar?.url
-  );
+  useEffect(() => {
+    if (orderTrackingRealtimeOrders.length > 0) {
+      setFirstActiveOrder(orderTrackingRealtimeOrders[0]);
+    }
+  }, [orderTrackingRealtimeOrders]);
+  console.log("check orderTrackingRealtimeOrders", orderTrackingRealtimeOrders);
+
   return (
     <ScrollView className="gap-4 p-4">
       <View className="gap-4 ">
@@ -73,7 +84,10 @@ const skeletonTabContent = ({
                 <FFAvatar
                   size={70}
                   rounded="md"
-                  avatar={item?.restaurant?.avatar?.url ?? DEFAULT_AVATAR_FOOD}
+                  avatar={
+                    item?.restaurant?.avatar?.url ??
+                    IMAGE_LINKS.DEFAULT_AVATAR_FOOD
+                  }
                 />
                 <View className="flex-1">
                   <FFText>{item?.restaurant.restaurant_name}</FFText>
@@ -120,101 +134,117 @@ const skeletonTabContent = ({
         style={{ marginBottom: 200 }}
         className="flex flex-col gap-4 flex-1 w-full items-center"
       >
-        {type === "ACTIVE" && detailedOrder && (
-          <>
-            <View className="w-full p-4">
-              <FFProgressStage
-                stageText="Arriving at 10:15"
-                completedSegments={3}
-                totalSegments={5}
+        {type === "ACTIVE" &&
+          (detailedOrder || orderTrackingRealtimeOrders?.length > 0) && (
+            <>
+              <View className="w-full p-4">
+                <FFProgressStage
+                  stageText="Arriving at 10:15"
+                  completedSegments={3}
+                  totalSegments={5}
+                />
+              </View>
+              <Image
+                source={{
+                  uri:
+                    firstActiveOrder?.tracking_info ===
+                    Enum_TrackingInfo.PREPARING
+                      ? IMAGE_LINKS.RESTAURANT_PREPARING
+                      : firstActiveOrder?.tracking_info ===
+                        Enum_TrackingInfo.OUT_FOR_DELIVERY
+                      ? IMAGE_LINKS.DELIVERING_TO_CUSTOMER
+                      : firstActiveOrder?.tracking_info ===
+                        Enum_TrackingInfo.ORDER_PLACED
+                      ? IMAGE_LINKS.ORDER_PLACED
+                      : IMAGE_LINKS.DEFAULT_AVATAR_FOOD,
+                }}
+                style={{
+                  width: "100%",
+                  height: 200,
+                  borderRadius: 12,
+                  resizeMode: "cover",
+                }}
               />
-            </View>
-            <Image
-              source={{
-                uri: "https://res.cloudinary.com/dlavqnrlx/image/upload/v1741408785/pui7asaniy2uw4htsymp.png",
-              }}
-              style={{
-                width: "100%",
-                height: 200,
-                borderRadius: 12,
-                resizeMode: "cover",
-              }}
-            />
-            <FFView
-              style={{
-                width: "100%",
-                padding: 12,
-                borderRadius: 12,
-                gap: 20,
-                elevation: 3,
-              }}
-            >
-              <View className="flex flex-row gap-2 items-center">
-                <View className="relative">
-                  <FFAvatar size={50} />
-                  <View className="absolute -bottom-2 left-3 p-1 rounded-lg bg-[#56a943]">
-                    <FFText
-                      fontSize="sm"
-                      fontWeight="400"
-                      style={{ color: "#fff" }}
-                    >
-                      4.8
+              <FFView
+                style={{
+                  width: "100%",
+                  padding: 12,
+                  borderRadius: 12,
+                  gap: 20,
+                  elevation: 3,
+                }}
+              >
+                <View className="flex flex-row gap-2 items-center">
+                  <View className="relative">
+                    <FFAvatar size={50} />
+                    <View className="absolute -bottom-2 left-3 p-1 rounded-lg bg-[#56a943]">
+                      <FFText
+                        fontSize="sm"
+                        fontWeight="400"
+                        style={{ color: "#fff" }}
+                      >
+                        4.8
+                      </FFText>
+                    </View>
+                  </View>
+                  <View>
+                    <View className="flex-row items-center gap-2">
+                      <FFText style={{ color: "#4c9f3a" }}>
+                        {detailedOrder?.driver?.first_name ?? "df"},{" "}
+                        {detailedOrder?.driver?.last_name ?? "dl"}
+                      </FFText>
+                      <FFText fontSize="sm" style={{ marginTop: 2 }}>
+                        59D2 - 99421
+                      </FFText>
+                    </View>
+                    <FFText fontWeight="400" fontSize="sm">
+                      White Winner X
                     </FFText>
                   </View>
                 </View>
-                <View>
-                  <View className="flex-row items-center gap-2">
-                    <FFText style={{ color: "#4c9f3a" }}>Tommanal</FFText>
-                    <FFText fontSize="sm" style={{ marginTop: 2 }}>
-                      59D2 - 99421
-                    </FFText>
-                  </View>
-                  <FFText fontWeight="400" fontSize="sm">
-                    White Winner X
-                  </FFText>
+                <View className="flex flex-row gap-2 items-center">
+                  <TouchableOpacity
+                    style={{
+                      width: 50,
+                      height: 50,
+                      backgroundColor: "#ddd",
+                      borderRadius: 9999,
+                      alignItems: "center",
+                      justifyContent: "center",
+                    }}
+                  >
+                    <IconFeather name="phone" size={20} color="#222" />
+                  </TouchableOpacity>
+                  <TouchableOpacity className="flex flex-row bg-gray-200 p-4 rounded-full flex-1">
+                    <Text>Send a Message</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={{
+                      paddingHorizontal: 12,
+                      height: 50,
+                      backgroundColor: "#ddd",
+                      borderRadius: 24,
+                      alignItems: "center",
+                      justifyContent: "center",
+                      flexDirection: "row",
+                      gap: 4,
+                    }}
+                  >
+                    <IconFeather name="plus" size={20} color="#222" />
+                    <Text>Tips</Text>
+                  </TouchableOpacity>
                 </View>
-              </View>
-              <View className="flex flex-row gap-2 items-center">
-                <TouchableOpacity
-                  style={{
-                    width: 50,
-                    height: 50,
-                    backgroundColor: "#ddd",
-                    borderRadius: 9999,
-                    alignItems: "center",
-                    justifyContent: "center",
-                  }}
-                >
-                  <IconFeather name="phone" size={20} color="#222" />
-                </TouchableOpacity>
-                <TouchableOpacity className="flex flex-row bg-gray-200 p-4 rounded-full flex-1">
-                  <Text>Send a Message</Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  style={{
-                    paddingHorizontal: 12,
-                    height: 50,
-                    backgroundColor: "#ddd",
-                    borderRadius: 24,
-                    alignItems: "center",
-                    justifyContent: "center",
-                    flexDirection: "row",
-                    gap: 4,
-                  }}
-                >
-                  <IconFeather name="plus" size={20} color="#222" />
-                  <Text>Tips</Text>
-                </TouchableOpacity>
-              </View>
-            </FFView>
-          </>
-        )}
+              </FFView>
+            </>
+          )}
         {(type === "ACTIVE" || detailedOrder !== null) &&
-          (detailedOrder === null ? (
+          (detailedOrder === null &&
+          (orderTrackingRealtimeOrders?.length === 0 ||
+            firstActiveOrder?.tracking_info === Enum_TrackingInfo.DELIVERED) ? (
             <View className="w-full gap-4">
               <Image
                 source={{
-                  uri: "https://res.cloudinary.com/dlavqnrlx/image/upload/v1741444037/nl4bvq26ns92lfrkofmu.png",
+                  uri: IMAGE_LINKS.EMPTY_ORDERS,
                 }}
                 style={{
                   width: "100%",
@@ -305,7 +335,7 @@ const skeletonTabContent = ({
                       size={40}
                       avatar={
                         detailedOrder?.order_items[0]?.menu_item?.avatar?.url ??
-                        DEFAULT_AVATAR_FOOD
+                        IMAGE_LINKS.DEFAULT_AVATAR_FOOD
                       }
                     />
                     <View className="flex-1">
@@ -381,7 +411,6 @@ const OrdersScreen = () => {
     setCompletedOrders(orders.filter((order) => order.status === "DELIVERED"));
     setCancelledOrders(orders.filter((order) => order.status === "CANCELLED"));
   }, [orders]);
-
   const activeTabContent = skeletonTabContent({
     type: "ACTIVE",
     data: activeOrders,

@@ -19,6 +19,14 @@ export enum Enum_TrackingInfo {
   DELIVERED = "DELIVERED",
 }
 
+export enum Enum_OrderStatus {
+  IN_PROGRESS = "IN_PROGRESS",
+  CANCELLED = "CANCELLED",
+  PENDING = "PENDING",
+  RESTAURANT_ACCEPTED = "RESTAURANT_ACCEPTED",
+  DELIVERED = "DELIVERED",
+}
+
 // Define the item structure in the order
 export type OrderItem = {
   item_id: string | null;

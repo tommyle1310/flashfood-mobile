@@ -215,7 +215,6 @@ const userPreferenceSlice = createSlice({
                 );
               }
             }
-            console.log("check finally", cartItem);
           } else {
             console.log(
               `Cart item with item_id ${orderItem.item_id} not found in state.cart_items`
