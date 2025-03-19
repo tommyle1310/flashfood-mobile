@@ -26,7 +26,7 @@ import FFButton from "@/src/components/FFButton";
 import {
   Enum_PaymentMethod,
   Enum_PaymentStatus,
-  Enum_TrackingInfo,
+  Enum_OrderTrackingInfo,
   Order,
 } from "@/src/types/Orders";
 import { MainStackParamList } from "@/src/navigation/AppNavigator";
@@ -157,7 +157,10 @@ const CartScreen = () => {
       if (!selectedRestaurant.id || selectedRestaurant.id === restaurant.id) {
         setSelectedRestaurant({
           id: restaurant.id,
-          avatar: { url: restaurant.avatar.url, key: restaurant.avatar.key },
+          avatar: {
+            url: restaurant?.avatar?.url,
+            key: restaurant?.avatar?.key,
+          },
           restaurant_name: restaurant.restaurant_name,
           address_id: restaurant.address_id,
         });
@@ -193,7 +196,7 @@ const CartScreen = () => {
         price_at_time_of_order: item.variant_price_at_time_of_addition,
         variant_id: item.variant_id,
       })),
-      tracking_info: Enum_TrackingInfo.ORDER_PLACED,
+      tracking_info: Enum_OrderTrackingInfo.ORDER_PLACED,
       customer_note: "SOS customer",
       restaurant_note: "SOS restaurant",
       order_time: new Date().getTime(),

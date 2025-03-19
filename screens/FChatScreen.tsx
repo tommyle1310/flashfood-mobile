@@ -26,7 +26,7 @@ const FChatScreen = () => {
   const navigation = useNavigation<FChatNavigationProp>();
   const route = useRoute<FChatRouteProp>();
   const [message, setMessage] = useState("");
-  const { socket, messages, chatId, startChat, sendMessage, getChatHistory } =
+  const { socket, messages, roomId, startChat, sendMessage, getChatHistory } =
     useFChatSocket();
   const { user_id, id } = useSelector((state: RootState) => state.auth);
 
@@ -43,10 +43,10 @@ const FChatScreen = () => {
 
   // Get chat history when chatId is available
   useEffect(() => {
-    if (chatId) {
+    if (roomId) {
       const chatHistory = getChatHistory();
     }
-  }, [chatId]);
+  }, [roomId]);
 
   const handleSendMessage = () => {
     if (message.trim()) {

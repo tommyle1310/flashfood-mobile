@@ -3,18 +3,16 @@ import { io, Socket } from "socket.io-client";
 import { useDispatch, useSelector } from "@/src/store/types";
 import { RootState } from "@/src/store/store";
 import { BACKEND_URL } from "../utils/constants";
-import { Enum_OrderStatus, Enum_TrackingInfo } from "../types/Orders";
+import { Enum_OrderStatus, Enum_OrderTrackingInfo } from "../types/Orders";
 import {
   removeOrderTracking,
-  saveOrderTrackingAfterUpdate,
-  saveOrderTrackingToAsyncStorage,
-  updateOrderTracking,
-} from "@/src/store/orderTrackingRealtimeSlice"; // Import action
+  updateAndSaveOrderTracking,
+} from "@/src/store/orderTrackingRealtimeSlice";
 
 type OrderTrackingSocket = {
   orderId: string;
   status: Enum_OrderStatus;
-  tracking_info: Enum_TrackingInfo;
+  tracking_info: Enum_OrderTrackingInfo;
   updated_at: number;
   customer_id: string;
   driver_id: string;
@@ -24,9 +22,6 @@ type OrderTrackingSocket = {
 export const useActiveOrderTrackingSocket = () => {
   const [socket, setSocket] = useState<Socket | null>(null);
   const { accessToken, id } = useSelector((state: RootState) => state.auth);
-  const orders = useSelector(
-    (state: RootState) => state.orderTrackingRealtime.orders
-  ); // Lấy toàn bộ orders
   const dispatch = useDispatch();
 
   useEffect(() => {
@@ -47,12 +42,6 @@ export const useActiveOrderTrackingSocket = () => {
       setSocket(socketInstance);
     });
 
-    if (id) {
-      socketInstance.emit("joinRoomCustomer", id);
-    } else {
-      console.log("Please provide a customer ID");
-    }
-
     socketInstance.on("disconnect", (reason) => {
       console.log("Disconnected from order tracking server:", reason);
       setSocket(null);
@@ -68,26 +57,12 @@ export const useActiveOrderTrackingSocket = () => {
       if (data.status === Enum_OrderStatus.DELIVERED) {
         dispatch(removeOrderTracking(data.orderId));
       } else {
-        dispatch(updateOrderTracking(data));
+        dispatch(updateAndSaveOrderTracking(data));
       }
-      // Chỉ lưu state mới nhất bằng saveOrderTrackingAfterUpdate
-      dispatch(saveOrderTrackingAfterUpdate());
     };
-    socketInstance.on(
-      "orderTrackingUpdate",
-      (data: { data: OrderTrackingSocket }) => {
-        handleOrderUpdate(data.data);
-      }
-    );
 
-    socketInstance.on(
-      "restaurantPreparingOrder",
-      (data: { data: OrderTrackingSocket }) => {
-        handleOrderUpdate(data.data);
-      }
-    );
-
-    socketInstance.on("customerPlaceOrder", (data: OrderTrackingSocket) => {
+    socketInstance.on("notifyOrderStatus", (data: OrderTrackingSocket) => {
+      console.log("check datât", data);
       handleOrderUpdate(data);
     });
 
@@ -96,7 +71,7 @@ export const useActiveOrderTrackingSocket = () => {
     return () => {
       if (socketInstance) socketInstance.disconnect();
     };
-  }, [accessToken, id, dispatch]); // Thêm orders vào dependency
+  }, [accessToken, id, dispatch]);
 
   return {
     socket,

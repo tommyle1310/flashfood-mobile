@@ -12,20 +12,35 @@ export enum Enum_PaymentStatus {
   CANCELLED = "CANCELLED",
 }
 
-export enum Enum_TrackingInfo {
+export enum Enum_OrderTrackingInfo {
   ORDER_PLACED = "ORDER_PLACED",
+  ORDER_RECEIVED = "ORDER_RECEIVED",
   PREPARING = "PREPARING",
-  OUT_FOR_DELIVERY = "OUT_FOR_DELIVERY",
-  DELIVERED = "DELIVERED",
+  IN_PROGRESS = "IN_PROGRESS",
   RESTAURANT_PICKUP = "RESTAURANT_PICKUP",
+  DISPATCHED = "DISPATCHED",
+  EN_ROUTE = "EN_ROUTE",
+  OUT_FOR_DELIVERY = "OUT_FOR_DELIVERY",
+  DELIVERY_FAILED = "DELIVERY_FAILED",
+  DELIVERED = "DELIVERED",
+  CANCELLED = "CANCELLED",
+  RETURNED = "RETURNED",
 }
 
 export enum Enum_OrderStatus {
-  IN_PROGRESS = "IN_PROGRESS",
-  CANCELLED = "CANCELLED",
   PENDING = "PENDING",
   RESTAURANT_ACCEPTED = "RESTAURANT_ACCEPTED",
+  PREPARING = "PREPARING",
+  IN_PROGRESS = "IN_PROGRESS",
+  READY_FOR_PICKUP = "READY_FOR_PICKUP",
+  RESTAURANT_PICKUP = "RESTAURANT_PICKUP",
+  DISPATCHED = "DISPATCHED",
+  EN_ROUTE = "EN_ROUTE",
+  OUT_FOR_DELIVERY = "OUT_FOR_DELIVERY",
   DELIVERED = "DELIVERED",
+  CANCELLED = "CANCELLED",
+  RETURNED = "RETURNED",
+  DELIVERY_FAILED = "DELIVERY_FAILED",
 }
 
 // Define the item structure in the order
@@ -52,7 +67,7 @@ export type Order = {
   payment_method: Enum_PaymentMethod;
   total_amount: number;
   order_items: OrderItem[];
-  tracking_info: Enum_TrackingInfo;
+  tracking_info: Enum_OrderTrackingInfo;
   customer_note: string;
   restaurant_note: string;
   order_time: number; // Unix timestamp
