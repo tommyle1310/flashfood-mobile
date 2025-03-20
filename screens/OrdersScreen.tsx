@@ -10,8 +10,11 @@ import {
 import { useSelector } from "@/src/store/types";
 import { RootState } from "@/src/store/store";
 import axiosInstance from "@/src/utils/axiosConfig";
-import { formatTimestampToDate } from "@/src/utils/dateConverter";
-import { OrderTracking } from "@/src/types/screens/Order";
+import {
+  formatTimestampToDate,
+  formatTimestampToDate2,
+} from "@/src/utils/dateConverter";
+import { Driver, OrderTracking } from "@/src/types/screens/Order";
 import { OrderTracking as OrderTrackingRealtime } from "@/src/store/orderTrackingRealtimeSlice";
 import { IMAGE_LINKS } from "@/src/assets/imageLinks";
 
@@ -31,14 +34,24 @@ import FFButton from "@/src/components/FFButton";
 import IconFeather from "react-native-vector-icons/Feather";
 import IconIonicons from "react-native-vector-icons/Ionicons";
 import { Enum_OrderStatus, Enum_OrderTrackingInfo } from "@/src/types/Orders";
+import { useNavigation } from "@react-navigation/native";
+import { StackNavigationProp } from "@react-navigation/stack";
+import { MainStackParamList } from "@/src/navigation/AppNavigator";
 
 interface OrderTabContentProps {
   type: "ACTIVE" | "COMPLETED" | "CANCELLED";
   orders: OrderTracking[];
+  refetchOrders?: () => void;
+  navigation?: OrderScreenNavigationProp;
 }
 
 // Hàm render nội dung cho từng tab
-const OrderTabContent: React.FC<OrderTabContentProps> = ({ type, orders }) => {
+const OrderTabContent: React.FC<OrderTabContentProps> = ({
+  type,
+  orders,
+  navigation,
+  refetchOrders,
+}) => {
   const { orders: realtimeOrders } = useSelector(
     (state: RootState) => state.orderTrackingRealtime
   );
@@ -46,22 +59,41 @@ const OrderTabContent: React.FC<OrderTabContentProps> = ({ type, orders }) => {
   const [detailedOrder, setDetailedOrder] = useState<OrderTracking | null>(
     null
   );
-
+  const [driverDetails, setDriverDetails] = useState<Driver | null>(null);
+  const [activeOrderDetails, setActiveOrderDetails] =
+    useState<OrderTracking | null>(null);
   const firstActiveOrder = realtimeOrders[0] || null;
-  console.log("check first", firstActiveOrder);
+
+  useEffect(() => {
+    if (
+      firstActiveOrder?.status === Enum_OrderStatus.CANCELLED &&
+      firstActiveOrder?.tracking_info === Enum_OrderTrackingInfo.DELIVERED &&
+      refetchOrders
+    ) {
+      refetchOrders();
+    }
+  }, [firstActiveOrder]);
+
+  useEffect(() => {
+    if (orders?.[0]?.driver_id) {
+      setDriverDetails(orders[0].driver);
+    }
+    setActiveOrderDetails(orders[0]);
+  }, [orders]);
 
   const getTrackingImage = (
     status?: Enum_OrderStatus,
     tracking_info?: Enum_OrderTrackingInfo
   ) => {
-    console.log("check status??", status, tracking_info);
     switch (status) {
       case Enum_OrderStatus.PREPARING:
         return IMAGE_LINKS.RESTAURANT_PREPARING;
       case Enum_OrderStatus.DISPATCHED:
         return IMAGE_LINKS.DRIVER_DISPATCH;
       case Enum_OrderStatus.EN_ROUTE:
-        return IMAGE_LINKS.DELIVERING_TO_CUSTOMER;
+        return IMAGE_LINKS.EN_ROUTE;
+      case Enum_OrderStatus.READY_FOR_PICKUP:
+        return IMAGE_LINKS.FOOD_PACKED;
       case Enum_OrderStatus.PENDING:
         if (tracking_info === Enum_OrderTrackingInfo.ORDER_PLACED) {
           return IMAGE_LINKS.ORDER_PLACED;
@@ -71,6 +103,34 @@ const OrderTabContent: React.FC<OrderTabContentProps> = ({ type, orders }) => {
         return IMAGE_LINKS.RESTAURANT_PICKUP;
       default:
         return IMAGE_LINKS.DEFAULT_AVATAR_FOOD;
+    }
+  };
+
+  // Hàm mới để lấy text và emoji tương ứng với status
+  const getTrackingText = (
+    status?: Enum_OrderStatus,
+    tracking_info?: Enum_OrderTrackingInfo
+  ) => {
+    switch (status) {
+      case Enum_OrderStatus.PENDING:
+        if (tracking_info === Enum_OrderTrackingInfo.ORDER_PLACED) {
+          return "Order placed successfully! Waiting for restaurant confirmation... ⌛";
+        }
+        return "Processing your order... ⌛";
+      case Enum_OrderStatus.PREPARING:
+        return "Chefs are cooking your meal! 🍳";
+      case Enum_OrderStatus.READY_FOR_PICKUP:
+        return "Your order is ready for pickup! 📦";
+      case Enum_OrderStatus.DISPATCHED:
+        return "Driver is heading to the restaurant! 🚚";
+      case Enum_OrderStatus.RESTAURANT_PICKUP:
+        return "Driver is picking up your order! 🛒";
+      case Enum_OrderStatus.EN_ROUTE:
+        return "On the way to you! 🚀";
+      case Enum_OrderStatus.DELIVERED:
+        return "Enjoy your meal! 🎉";
+      default:
+        return "Something’s cooking... stay tuned! ❓";
     }
   };
 
@@ -89,7 +149,7 @@ const OrderTabContent: React.FC<OrderTabContentProps> = ({ type, orders }) => {
           Completed
         </FFText>
         <FFText style={{ color: "#aaa" }} fontSize="sm">
-          {formatTimestampToDate(+order.delivery_time)}
+          {formatTimestampToDate2(Number(order.delivery_time))}
         </FFText>
       </View>
       <FFSeperator />
@@ -108,7 +168,7 @@ const OrderTabContent: React.FC<OrderTabContentProps> = ({ type, orders }) => {
           </FFText>
           <View className="flex-row gap-2 items-center mt-1">
             <FFText fontSize="sm" style={{ color: "#7dbf72" }}>
-              ${order.total_amount}
+              ${Number(order.total_amount).toFixed(2)}
             </FFText>
             <FFText fontSize="sm" style={{ color: "#aaa" }}>
               {order.order_items?.length} items
@@ -151,90 +211,111 @@ const OrderTabContent: React.FC<OrderTabContentProps> = ({ type, orders }) => {
                 totalSegments={5}
               />
             </View>
-            <Image
-              source={{
-                uri: getTrackingImage(
-                  firstActiveOrder?.status as Enum_OrderStatus,
-                  firstActiveOrder?.tracking_info as Enum_OrderTrackingInfo
-                ),
-              }}
+            <View
               style={{
                 width: "100%",
-                height: 200,
-                borderRadius: 12,
-                resizeMode: "cover",
-              }}
-            />
-            <FFView
-              style={{
-                width: "100%",
-                padding: 12,
-                borderRadius: 12,
-                gap: 20,
+                backgroundColor: "#fff",
                 elevation: 3,
+                borderRadius: 12,
+                overflow: "hidden",
               }}
             >
-              <View className="flex-row gap-2 items-center">
-                <View className="relative">
-                  <FFAvatar size={50} />
-                  <View className="absolute -bottom-2 left-3 p-1 rounded-lg bg-[#56a943]">
-                    <FFText
-                      fontSize="sm"
-                      fontWeight="400"
-                      style={{ color: "#fff" }}
-                    >
-                      4.8
+              <FFText
+                fontSize="sm"
+                style={{ padding: 8, textAlign: "center", color: "#4a9e3e" }}
+              >
+                {getTrackingText(
+                  firstActiveOrder?.status as Enum_OrderStatus,
+                  firstActiveOrder?.tracking_info as Enum_OrderTrackingInfo
+                )}
+              </FFText>
+              <Image
+                source={{
+                  uri: getTrackingImage(
+                    firstActiveOrder?.status as Enum_OrderStatus,
+                    firstActiveOrder?.tracking_info as Enum_OrderTrackingInfo
+                  ),
+                }}
+                style={{
+                  width: "100%",
+                  height: 200,
+                  resizeMode: "cover",
+                }}
+              />
+            </View>
+            {firstActiveOrder.driver_id && (
+              <FFView
+                style={{
+                  width: "100%",
+                  padding: 12,
+                  borderRadius: 12,
+                  gap: 20,
+                  elevation: 3,
+                }}
+              >
+                <View className="flex-row gap-2 items-center">
+                  <View className="relative">
+                    <FFAvatar size={50} avatar={driverDetails?.avatar?.url} />
+                    <View className="absolute -bottom-2 left-3 p-1 rounded-lg bg-[#56a943]">
+                      <FFText
+                        fontSize="sm"
+                        fontWeight="400"
+                        style={{ color: "#fff" }}
+                      >
+                        {driverDetails?.rating?.average_rating ?? "4.8"}
+                      </FFText>
+                    </View>
+                  </View>
+                  <View>
+                    <View className="flex-row items-center gap-2">
+                      <FFText style={{ color: "#4c9f3a" }}>
+                        {driverDetails?.first_name ?? "df"},{" "}
+                        {driverDetails?.last_name ?? "dl"}
+                      </FFText>
+                      <FFText fontSize="sm" style={{ marginTop: 2 }}>
+                        {driverDetails?.vehicle?.license_plate}
+                      </FFText>
+                    </View>
+                    <FFText fontWeight="400" fontSize="sm">
+                      {driverDetails?.vehicle?.color}{" "}
+                      {driverDetails?.vehicle?.model}
                     </FFText>
                   </View>
                 </View>
-                <View>
-                  <View className="flex-row items-center gap-2">
-                    <FFText style={{ color: "#4c9f3a" }}>
-                      {detailedOrder?.driver?.first_name ?? "df"},{" "}
-                      {detailedOrder?.driver?.last_name ?? "dl"}
-                    </FFText>
-                    <FFText fontSize="sm" style={{ marginTop: 2 }}>
-                      59D2 - 99421
-                    </FFText>
-                  </View>
-                  <FFText fontWeight="400" fontSize="sm">
-                    White Winner X
-                  </FFText>
+                <View className="flex-row gap-2 items-center">
+                  <TouchableOpacity
+                    style={{
+                      width: 50,
+                      height: 50,
+                      backgroundColor: "#ddd",
+                      borderRadius: 9999,
+                      alignItems: "center",
+                      justifyContent: "center",
+                    }}
+                  >
+                    <IconFeather name="phone" size={20} color="#222" />
+                  </TouchableOpacity>
+                  <TouchableOpacity className="flex-row bg-gray-200 p-4 rounded-full flex-1">
+                    <Text>Send a Message</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={{
+                      paddingHorizontal: 12,
+                      height: 50,
+                      backgroundColor: "#ddd",
+                      borderRadius: 24,
+                      alignItems: "center",
+                      justifyContent: "center",
+                      flexDirection: "row",
+                      gap: 4,
+                    }}
+                  >
+                    <IconFeather name="plus" size={20} color="#222" />
+                    <Text>Tips</Text>
+                  </TouchableOpacity>
                 </View>
-              </View>
-              <View className="flex-row gap-2 items-center">
-                <TouchableOpacity
-                  style={{
-                    width: 50,
-                    height: 50,
-                    backgroundColor: "#ddd",
-                    borderRadius: 9999,
-                    alignItems: "center",
-                    justifyContent: "center",
-                  }}
-                >
-                  <IconFeather name="phone" size={20} color="#222" />
-                </TouchableOpacity>
-                <TouchableOpacity className="flex-row bg-gray-200 p-4 rounded-full flex-1">
-                  <Text>Send a Message</Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  style={{
-                    paddingHorizontal: 12,
-                    height: 50,
-                    backgroundColor: "#ddd",
-                    borderRadius: 24,
-                    alignItems: "center",
-                    justifyContent: "center",
-                    flexDirection: "row",
-                    gap: 4,
-                  }}
-                >
-                  <IconFeather name="plus" size={20} color="#222" />
-                  <Text>Tips</Text>
-                </TouchableOpacity>
-              </View>
-            </FFView>
+              </FFView>
+            )}
           </>
         )}
         {(detailedOrder || type === "ACTIVE") &&
@@ -257,7 +338,14 @@ const OrderTabContent: React.FC<OrderTabContentProps> = ({ type, orders }) => {
               >
                 You have no active orders...
               </FFText>
-              <FFButton variant="link">Browse some food</FFButton>
+              <FFButton
+                variant="link"
+                onPress={() =>
+                  navigation?.navigate("BottomTabs", { screenIndex: 0 })
+                }
+              >
+                Browse some food
+              </FFButton>
             </View>
           ) : (
             <>
@@ -273,19 +361,33 @@ const OrderTabContent: React.FC<OrderTabContentProps> = ({ type, orders }) => {
                 <FFText fontSize="lg">Delivery details</FFText>
                 <FFInputControl
                   label="My address"
-                  value={`${detailedOrder?.restaurantAddress?.street}, ${detailedOrder?.customerAddress?.city}, ${detailedOrder?.customerAddress?.nationality}`}
+                  value={
+                    detailedOrder
+                      ? `${detailedOrder?.restaurantAddress?.street}, ${detailedOrder?.customerAddress?.city}, ${detailedOrder?.customerAddress?.nationality}`
+                      : `${activeOrderDetails?.customerAddress?.street}, ${activeOrderDetails?.customerAddress?.city}, ${activeOrderDetails?.customerAddress?.nationality}`
+                  }
                   readonly
                 />
                 <FFInputControl
                   label="Restaurant address"
-                  value={`${detailedOrder?.restaurantAddress?.street}, ${detailedOrder?.restaurantAddress?.city}, ${detailedOrder?.restaurantAddress?.nationality}`}
+                  value={
+                    detailedOrder
+                      ? `${detailedOrder?.restaurantAddress?.street}, ${detailedOrder?.restaurantAddress?.city}, ${detailedOrder?.restaurantAddress?.nationality}`
+                      : `${activeOrderDetails?.restaurantAddress?.street}, ${activeOrderDetails?.restaurantAddress?.city}, ${activeOrderDetails?.restaurantAddress?.nationality}`
+                  }
                   readonly
                 />
                 <FFInputControl
                   label="Total distance"
                   value={
-                    detailedOrder?.distance
-                      ? `${parseFloat(detailedOrder.distance).toFixed(2)}km`
+                    detailedOrder
+                      ? detailedOrder.distance
+                        ? `${parseFloat(detailedOrder.distance).toFixed(2)}km`
+                        : "0km"
+                      : activeOrderDetails?.distance
+                      ? `${parseFloat(activeOrderDetails.distance).toFixed(
+                          2
+                        )}km`
                       : "0km"
                   }
                   readonly
@@ -293,8 +395,16 @@ const OrderTabContent: React.FC<OrderTabContentProps> = ({ type, orders }) => {
                 <FFInputControl
                   label="Order time"
                   value={
-                    detailedOrder?.order_time
-                      ? formatTimestampToDate(+detailedOrder.order_time)
+                    detailedOrder
+                      ? detailedOrder.order_time
+                        ? formatTimestampToDate(
+                            Number(detailedOrder.order_time)
+                          )
+                        : "undefined sth??"
+                      : activeOrderDetails?.order_time
+                      ? formatTimestampToDate(
+                          Number(activeOrderDetails.order_time)
+                        )
                       : "undefined sth??"
                   }
                   readonly
@@ -302,7 +412,11 @@ const OrderTabContent: React.FC<OrderTabContentProps> = ({ type, orders }) => {
                 <FFSeperator />
                 <FFInputControl
                   label="My Note"
-                  value={detailedOrder?.customer_note ?? "undefined sth??"}
+                  value={
+                    detailedOrder
+                      ? detailedOrder.customer_note ?? "undefined sth??"
+                      : activeOrderDetails?.customer_note ?? "undefined sth??"
+                  }
                   readonly
                 />
               </FFView>
@@ -324,9 +438,49 @@ const OrderTabContent: React.FC<OrderTabContentProps> = ({ type, orders }) => {
                   </TouchableOpacity>
                 </View>
                 <FFText fontWeight="400" style={{ color: "#aaa" }}>
-                  Tommyummy, 102 PVH...
+                  {detailedOrder
+                    ? `${detailedOrder?.restaurant?.restaurant_name}, ${detailedOrder?.restaurantAddress?.street}, ${detailedOrder?.restaurantAddress?.city}, ${detailedOrder?.restaurantAddress?.nationality}`
+                    : `${activeOrderDetails?.restaurant?.restaurant_name}, ${activeOrderDetails?.restaurantAddress?.street}, ${activeOrderDetails?.restaurantAddress?.city}, ${activeOrderDetails?.restaurantAddress?.nationality}`}
                 </FFText>
                 {detailedOrder?.order_items?.map((item, i) => (
+                  <View key={i} className="flex-row gap-2 my-4">
+                    <FFAvatar
+                      rounded="sm"
+                      size={40}
+                      avatar={
+                        item.menu_item?.avatar?.url ??
+                        IMAGE_LINKS.DEFAULT_AVATAR_FOOD
+                      }
+                    />
+                    <View className="flex-1">
+                      <FFText style={{ color: "#aaa" }}>{item.name}</FFText>
+                      <FFText
+                        fontWeight="400"
+                        fontSize="sm"
+                        style={{ color: "#aaa" }}
+                      >
+                        x{item.quantity}
+                      </FFText>
+                    </View>
+                    <TouchableOpacity
+                      onPress={() =>
+                        setIsExpandedOrderItem(!isExpandedOrderItem)
+                      }
+                      className="flex-row items-center justify-between"
+                    >
+                      <FFText fontWeight="400" fontSize="sm">
+                        Show More
+                      </FFText>
+                      <IconFeather
+                        size={20}
+                        name={
+                          isExpandedOrderItem ? "chevron-up" : "chevron-down"
+                        }
+                      />
+                    </TouchableOpacity>
+                  </View>
+                ))}
+                {activeOrderDetails?.order_items?.map((item, i) => (
                   <View key={i} className="flex-row gap-2 my-4">
                     <FFAvatar
                       rounded="sm"
@@ -384,12 +538,30 @@ const OrderTabContent: React.FC<OrderTabContentProps> = ({ type, orders }) => {
       <View className="gap-4">
         {type !== "ACTIVE" &&
           detailedOrder === null &&
-          orders.map(renderOrderCard)}
+          orders.map((item, i) => {
+            if (i === orders.length - 1) {
+              return (
+                <View key={item.id || i} style={{ marginBottom: 200 }}>
+                  {renderOrderCard(item)}
+                </View>
+              );
+            }
+            return (
+              <React.Fragment key={item.id || i}>
+                {renderOrderCard(item)}
+              </React.Fragment>
+            );
+          })}
       </View>
       {(detailedOrder !== null || type === "ACTIVE") && renderDetailedOrder()}
     </ScrollView>
   );
 };
+
+type OrderScreenNavigationProp = StackNavigationProp<
+  MainStackParamList,
+  "BottomTabs"
+>;
 
 // Main OrdersScreen component
 const OrdersScreen: React.FC = () => {
@@ -399,19 +571,21 @@ const OrdersScreen: React.FC = () => {
   const [completedOrders, setCompletedOrders] = useState<OrderTracking[]>([]);
   const [cancelledOrders, setCancelledOrders] = useState<OrderTracking[]>([]);
   const [loading, setLoading] = useState(true);
+  const navigation = useNavigation<OrderScreenNavigationProp>();
+
+  const fetchOrders = async () => {
+    try {
+      setLoading(true);
+      const res = await axiosInstance.get(`/customers/orders/${id}`);
+      setOrders(res.data.data);
+    } catch (error) {
+      console.error("Error fetching orders:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    const fetchOrders = async () => {
-      try {
-        setLoading(true);
-        const res = await axiosInstance.get(`/customers/orders/${id}`);
-        setOrders(res.data.data);
-      } catch (error) {
-        console.error("Error fetching orders:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
     fetchOrders();
   }, [id]);
 
@@ -426,7 +600,13 @@ const OrdersScreen: React.FC = () => {
   }, [orders]);
 
   const tabContent = [
-    <OrderTabContent key="active" type="ACTIVE" orders={activeOrders} />,
+    <OrderTabContent
+      navigation={navigation}
+      refetchOrders={fetchOrders}
+      key="active"
+      type="ACTIVE"
+      orders={activeOrders}
+    />,
     <OrderTabContent
       key="completed"
       type="COMPLETED"

@@ -19,6 +19,7 @@ import {
   saveCartItemsToAsyncStorage,
   saveFavoriteRestaurantsToAsyncStorage,
 } from "@/src/store/userPreferenceSlice";
+import Spinner from "@/src/components/FFSpinner";
 
 type LoginScreenNavigationProp = StackNavigationProp<
   RootStackParamList,
@@ -28,6 +29,7 @@ type LoginScreenNavigationProp = StackNavigationProp<
 const Login = () => {
   const navigation = useNavigation<LoginScreenNavigationProp>();
   const dispatch = useDispatch();
+  const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
   const handleLoginSubmit = async (email: string, password: string) => {
     // Request body
@@ -35,6 +37,7 @@ const Login = () => {
       email: email,
       password: password,
     };
+    setIsLoading(true);
 
     try {
       // Make the POST request
@@ -78,11 +81,14 @@ const Login = () => {
         dispatch(saveCartItemsToAsyncStorage(userData.cart_items));
 
         navigation.navigate("MainStack");
+        setIsLoading(false);
       } else {
+        setIsLoading(false);
         // Handle error based on EC (optional)
         setError(EM); // Show error message if EC is non-zero
       }
     } catch (error) {
+      setIsLoading(false);
       console.error("Login failed:", error);
 
       setError("An unexpected error occurred during login."); // Provide a generic error message if the request fails
@@ -98,6 +104,10 @@ const Login = () => {
     // console.log("User is authenticated with token:", accessToken);
   } else {
     console.log("User is not authenticated");
+  }
+
+  if (isLoading) {
+    return <Spinner isVisible isOverlay />;
   }
 
   return (

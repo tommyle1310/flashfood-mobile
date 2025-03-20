@@ -55,3 +55,14 @@ export const formatTimestampToDate = (timestamp: number): string => {
 
   return `${dayName}, ${paddedDay} ${month}, ${year}`;
 };
+
+export const formatTimestampToDate2 = (timestamp: number) => {
+  const date = new Date(timestamp);
+  const options: Intl.DateTimeFormatOptions = {
+    weekday: "long", // "Monday"
+    day: "2-digit", // "09"
+    month: "short", // "Sep" (3 chữ cái)
+    year: "numeric", // "2025"
+  };
+  return date.toLocaleDateString("en-US", options);
+};

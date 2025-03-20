@@ -12,10 +12,7 @@ import { DELIVERY_FEE, SERVICE_FEE } from "@/src/utils/constants";
 import FFModal from "@/src/components/FFModal";
 import axiosInstance from "@/src/utils/axiosConfig";
 import ModalStatusCheckout from "@/src/components/screens/Checkout/ModalStatusCheckout";
-import {
-  BottomTabParamList,
-  MainStackParamList,
-} from "@/src/navigation/AppNavigator";
+import { MainStackParamList } from "@/src/navigation/AppNavigator";
 import FFScreenTopSection from "@/src/components/FFScreenTopSection";
 import { StackNavigationProp } from "@react-navigation/stack";
 import {
@@ -27,8 +24,8 @@ import Spinner from "@/src/components/FFSpinner";
 
 type CheckoutRouteProps = RouteProp<MainStackParamList, "Checkout">;
 type CheckoutScreenNavigationProp = StackNavigationProp<
-  BottomTabParamList,
-  "Cart"
+  MainStackParamList,
+  "Checkout"
 >;
 const CheckoutScreen = () => {
   const dispatch = useDispatch();
@@ -96,6 +93,7 @@ const CheckoutScreen = () => {
       setIsLoading(false);
       setIsShowModalStatusCheckout(true);
       setModalContentType("SUCCESS");
+      navigation.navigate("BottomTabs", { screenIndex: 1 });
     } else {
       setIsShowModalStatusCheckout(true);
       setModalContentType("ERROR");
@@ -121,7 +119,7 @@ const CheckoutScreen = () => {
     />,
   ];
   if (isLoading) {
-    return <Spinner isVisible={isLoading} />;
+    return <Spinner isVisible isOverlay />;
   }
   return (
     <FFSafeAreaView>

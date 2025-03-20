@@ -1,13 +1,11 @@
 import React, { useEffect, useState } from "react";
 import { createStackNavigator } from "@react-navigation/stack";
-import {
-  BottomTabNavigationProp,
-  createBottomTabNavigator,
-} from "@react-navigation/bottom-tabs"; // Import BottomTabNavigator
 import { useSelector } from "react-redux";
 import { RootState } from "@/src/store/store";
 import { useDispatch } from "../store/types";
 import { loadTokenFromAsyncStorage } from "../store/authSlice";
+import { useNavigation } from "@react-navigation/native"; // Giữ useNavigation từ đây
+import { StackScreenProps } from "@react-navigation/stack"; // Import StackScreenProps từ @react-navigation/stack
 
 import CartScreen from "@/screens/CartScreen";
 import HomeScreen from "@/screens/HomeScreen";
@@ -16,12 +14,9 @@ import LoginScreen from "@/screens/Auth/LoginScreen";
 import SignupScreen from "@/screens/Auth/SignupScreen";
 import SettingsScreen from "@/screens/SettingsScreen";
 import RestaurantDetail from "@/screens/RestaurantDetailScreen";
-import CheckoutScreen from "@/screens/CheckoutScreen"; // Import CheckoutScreen
+import CheckoutScreen from "@/screens/CheckoutScreen";
 import { Order } from "../types/Orders";
-
-// Import your custom FFBottomTab
 import FFBottomTab from "../components/FFBottomTab";
-import { useNavigation } from "@react-navigation/native";
 import ProfileScreen from "@/screens/ProfileScreen";
 import AddressListScreen from "@/screens/AddressListScreen";
 import AddressDetailsScreen from "@/screens/AddressDetailsScreen";
@@ -29,103 +24,89 @@ import { Type_Address } from "../types/Address";
 import SupportCenterScreen from "@/screens/SupportCenterScreen";
 import FChatScreen from "@/screens/FChatScreen";
 
-// Root stack param list for Login and Signup
 export type RootStackParamList = {
   Login: undefined;
   Signup: undefined;
   MainStack: undefined;
 };
 
-// Define the BottomTabParamList for the BottomTabNavigator
-export type BottomTabParamList = {
-  Home: undefined;
-  Orders: undefined;
-  Cart: undefined;
-  Settings: undefined;
-};
-
-// Define the MainStackParamList for BottomTabs and ContentStacks
 export type MainStackParamList = {
-  FChat: {
-    withUserId?: string;
-    type?: "SUPPORT" | "ORDER";
-    orderId?: string;
-  };
-  RestaurantDetail: { restaurantId: string }; // Param for RestaurantDetail
-  BottomTabs: BottomTabParamList;
+  FChat: { withUserId?: string; type?: "SUPPORT" | "ORDER"; orderId?: string };
+  RestaurantDetail: { restaurantId: string };
+  BottomTabs: { screenIndex?: number }; // Thêm tham số screenIndex
   SupportCenter: undefined;
-  Checkout: { orderItem: Order }; // Add Checkout screen to stack
-  Profile: undefined; // Add Checkout screen to stack
-  AddressList: undefined; // Add Checkout screen to stack
-  AddressDetails?:
-    | {
-        addressDetail?: Type_Address;
-        is_create_type?: boolean;
-      }
-    | undefined; // Add Checkout screen to stack
+  Checkout: { orderItem: Order };
+  Profile: undefined;
+  AddressList: undefined;
+  AddressDetails?: { addressDetail?: Type_Address; is_create_type?: boolean };
 };
 
-// Create the root stack and bottom tab stack
-const RootStack = createStackNavigator<RootStackParamList>(); // Root stack for Login, Signup, and MainStack
-const MainStack = createStackNavigator<MainStackParamList>(); // Create MainStack with MainStackParamList
-const BottomTab = createBottomTabNavigator(); // Create a BottomTabNavigator
+const RootStack = createStackNavigator<RootStackParamList>();
+const MainStack = createStackNavigator<MainStackParamList>();
 
-// MainStack to include BottomTabs and ContentStacks (RestaurantDetail, Checkout)
+// MainStackScreen
 const MainStackScreen = () => {
   return (
     <MainStack.Navigator>
       <MainStack.Screen
         options={{ headerShown: false }}
         name="BottomTabs"
-        component={BottomTabs} // The BottomTabs navigator
+        component={BottomTabs}
       />
       <MainStack.Screen
         options={{ headerShown: false }}
         name="RestaurantDetail"
-        component={RestaurantDetail} // For handling restaurant details
+        component={RestaurantDetail}
       />
       <MainStack.Screen
         options={{ headerShown: false }}
         name="Checkout"
-        component={CheckoutScreen} // For handling checkout screen
+        component={CheckoutScreen}
       />
       <MainStack.Screen
         options={{ headerShown: false }}
         name="Profile"
-        component={ProfileScreen} // For handling checkout screen
+        component={ProfileScreen}
       />
       <MainStack.Screen
         options={{ headerShown: false }}
         name="AddressList"
-        component={AddressListScreen} // For handling checkout screen
+        component={AddressListScreen}
       />
       <MainStack.Screen
         options={{ headerShown: false }}
         name="AddressDetails"
-        component={AddressDetailsScreen} // For handling checkout screen
+        component={AddressDetailsScreen}
       />
       <MainStack.Screen
         options={{ headerShown: false }}
         name="SupportCenter"
-        component={SupportCenterScreen} // For handling checkout screen
+        component={SupportCenterScreen}
       />
       <MainStack.Screen
         options={{ headerShown: false }}
         name="FChat"
-        component={FChatScreen} // For handling checkout screen
+        component={FChatScreen}
       />
     </MainStack.Navigator>
   );
 };
 
-type BottomNavigationProp = BottomTabNavigationProp<BottomTabParamList>;
+// Props cho BottomTabs
+type BottomTabsProps = StackScreenProps<MainStackParamList, "BottomTabs">;
 
-// BottomTabs with FFBottomTab
-const BottomTabs = () => {
-  const [currentScreen, setCurrentScreen] = useState(0); // Track the current tab index
+// BottomTabs component
+const BottomTabs = ({ route }: BottomTabsProps) => {
+  const [currentScreen, setCurrentScreen] = useState(
+    route.params?.screenIndex ?? 0 // Lấy screenIndex từ params, mặc định là 0
+  );
 
-  // Use useNavigation with the correct type for BottomTab navigation
-  const navigation = useNavigation<BottomNavigationProp>();
+  // Cập nhật currentScreen khi route.params thay đổi
+  useEffect(() => {
+    if (route.params?.screenIndex !== undefined) {
+      setCurrentScreen(route.params.screenIndex);
+    }
+  }, [route.params?.screenIndex]);
 
   const renderedScreen = () => {
     switch (currentScreen) {
@@ -167,7 +148,7 @@ const AppNavigator = () => {
   }, [dispatch]);
 
   if (loading) {
-    return null; // Loading state, can show a loading spinner if needed
+    return null;
   }
 
   return (
@@ -185,7 +166,7 @@ const AppNavigator = () => {
       <RootStack.Screen
         name="MainStack"
         options={{ headerShown: false }}
-        component={MainStackScreen} // Now the MainRootStack contains BottomTabs and ContentRootStacks
+        component={MainStackScreen}
       />
     </RootStack.Navigator>
   );

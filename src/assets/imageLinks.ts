@@ -3,8 +3,12 @@ export const IMAGE_LINKS = {
     "https://res.cloudinary.com/dlavqnrlx/image/upload/v1741448554/e3r1lfpbz7oklnjei0o7.jpg",
   EMPTY_ORDERS:
     "https://res.cloudinary.com/dlavqnrlx/image/upload/v1741444037/nl4bvq26ns92lfrkofmu.png",
-  DELIVERING_TO_CUSTOMER:
+  PEOPLE_WALKING:
     "https://res.cloudinary.com/dlavqnrlx/image/upload/v1741494440/vpdgbl5qhwwf1mgqhqms.jpg",
+  EN_ROUTE:
+    "https://res.cloudinary.com/dlavqnrlx/image/upload/v1742443925/lsp5pzw48iqrieqixxhu.jpg",
+  FOOD_PACKED:
+    "https://res.cloudinary.com/dlavqnrlx/image/upload/v1742443920/e4n3wv10rqxrl62pagon.jpg",
   ORDER_PLACED:
     "https://res.cloudinary.com/dlavqnrlx/image/upload/v1741494616/lbhbrbptl2olwbpzzfvj.jpg",
   RESTAURANT_PREPARING:

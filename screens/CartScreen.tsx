@@ -1,14 +1,5 @@
 import React, { useEffect, useState } from "react";
-import {
-  FlatList,
-  Image,
-  ImageBackground,
-  Pressable,
-  StyleSheet,
-  Text,
-  TextInput,
-  View,
-} from "react-native";
+import { FlatList, Image, Pressable, View } from "react-native";
 import FFSafeAreaView from "@/src/components/FFSafeAreaView";
 import FFText from "@/src/components/FFText";
 import IconFeather from "react-native-vector-icons/Feather";
@@ -46,19 +37,13 @@ type CartScreenNavigationProp = StackNavigationProp<
 type Type_SelectedRestaurant = {
   id: string;
   restaurant_name: string;
-  avatar: {
-    url: string;
-    key: string;
-  };
+  avatar: { url: string; key: string };
   address_id: string;
 };
 const defaultSelectedRestaurant = {
   id: "",
   restaurant_name: "",
-  avatar: {
-    url: "",
-    key: "",
-  },
+  avatar: { url: "", key: "" },
   address_id: "",
 };
 
@@ -85,22 +70,18 @@ const CartScreen = () => {
   const cartList = useSelector(
     (state: RootState) => state.userPreference.cart_items
   );
-  console.log("check cart list", cartList[0]?.item?.restaurantDetails);
+
   useEffect(() => {
     const groupByRestaurant = (cartList: CartItem[]): GroupedCartList => {
       return cartList.reduce((grouped, cartItem) => {
         const restaurantId = cartItem.item.restaurantDetails.id;
-        // If the restaurant ID doesn't exist in the grouped object, create an array for it
         if (!grouped[restaurantId]) {
           grouped[restaurantId] = [];
         }
-        // Push the current cart item into the respective restaurant's group
         grouped[restaurantId].push(cartItem);
         return grouped;
-      }, {} as GroupedCartList); // Explicitly cast to GroupedCartList
+      }, {} as GroupedCartList);
     };
-
-    // Group the cartList and update the state
     const grouped = groupByRestaurant(cartList);
     setGroupedCartList(grouped);
   }, [cartList]);
@@ -119,26 +100,19 @@ const CartScreen = () => {
       id: string;
       restaurant_name: string;
       address_id: string;
-      avatar: {
-        url: string;
-        key: string;
-      };
+      avatar: { url: string; key: string };
     },
     menuItem: CartItem
   ) => {
-    const newVariants = [...selectedVariants]; // Create a new array to avoid mutation
-
+    const newVariants = [...selectedVariants];
     const variantWithItemId = { ...variant, item: menuItem.item };
 
-    // Check if the variant (with item_id) is already selected
     if (
       selectedVariants.some((item) => item.item.id === variantWithItemId.id)
     ) {
-      // If it's selected, remove it (filter out the variant byid)
       setSelectedVariants(
         newVariants.filter((item) => item.item.id !== variantWithItemId.id)
       );
-      // Reset selectedRestaurant to empty object when removing a variant (if needed)
       if (newVariants.length === 0) {
         setSelectedRestaurant({
           id: "",
@@ -148,12 +122,8 @@ const CartScreen = () => {
         });
       }
     } else {
-      // If the variant is not selected, add it to the array
       newVariants.push(variantWithItemId);
-      setSelectedVariants(newVariants); // Update the selectedVariants state
-
-      // Update the selectedRestaurant state only if the first variant of a restaurant is selected
-      console.log("check dog", restaurant);
+      setSelectedVariants(newVariants);
       if (!selectedRestaurant.id || selectedRestaurant.id === restaurant.id) {
         setSelectedRestaurant({
           id: restaurant.id,
@@ -179,7 +149,6 @@ const CartScreen = () => {
       const itemTotal = item.variant_price_at_time_of_addition * item.quantity;
       return total + itemTotal;
     }, 0);
-    console.log("chek address res", selectedRestaurant);
     const orderData: Order = {
       customer_id: id,
       restaurant_id: selectedRestaurant.id,
@@ -190,7 +159,7 @@ const CartScreen = () => {
       total_amount: totalAmount,
       order_items: selectedVariants.map((item) => ({
         item: item.item,
-        item_id: item.id, /// fiix this shit
+        item_id: item.id,
         name: item.variant_name,
         quantity: item.quantity,
         price_at_time_of_order: item.variant_price_at_time_of_addition,
@@ -201,9 +170,9 @@ const CartScreen = () => {
       restaurant_note: "SOS restaurant",
       order_time: new Date().getTime(),
     };
-
     navigation.navigate("Checkout", { orderItem: orderData });
   };
+
   return (
     <FFSafeAreaView>
       <View className="flex-1 gap-4 pb-24">
@@ -219,14 +188,19 @@ const CartScreen = () => {
             >
               Your cart is empty
             </FFText>
-            <FFButton variant="link" onPress={() => {}}>
+            <FFButton
+              variant="link"
+              onPress={() => {
+                navigation.navigate("BottomTabs", { screenIndex: 0 }); // Điều hướng tới Home (index 0)
+              }}
+            >
               Browse some food
             </FFButton>
           </View>
         ) : (
           <FlatList
             style={{ padding: 12 }}
-            keyExtractor={(item) => item} // This is fine if the keys of groupedCartList are unique
+            keyExtractor={(item) => item}
             data={Object.keys(groupedCartList)}
             renderItem={({ item }) => {
               const restaurantItems = groupedCartList[item];
@@ -236,15 +210,7 @@ const CartScreen = () => {
                 <FFView
                   colorDark="#333"
                   colorLight="#fff"
-                  style={{
-                    padding: 8,
-                    borderRadius: 10,
-                    elevation: 4,
-                    backgroundColor: !restaurantItems[0].item.restaurantDetails
-                      .id
-                      ? "#ddd"
-                      : undefined,
-                  }}
+                  style={{ padding: 8, borderRadius: 10, elevation: 4 }}
                 >
                   <View className="flex-row items-center gap-2">
                     <FFAvatar
@@ -264,7 +230,6 @@ const CartScreen = () => {
                       {restaurant.restaurant_name}
                     </FFText>
                   </View>
-
                   <FlatList
                     data={restaurantItems}
                     renderItem={({ item, index }) => {
@@ -273,7 +238,6 @@ const CartScreen = () => {
                         cartItem?.item?.restaurantDetails;
                       const isExpanded =
                         expandedRestaurantId === restaurantDetails.id;
-                      console.log("check cart item", cartItem.variants[0]);
 
                       return (
                         <View
@@ -307,92 +271,82 @@ const CartScreen = () => {
                           </Pressable>
                           {isExpanded && (
                             <View className="flex-1">
-                              {cartItem.variants.map((variant, index) => {
-                                return (
-                                  <FFView
-                                    key={
-                                      variant.id ||
-                                      `${cartItem.item.id}-${index}`
+                              {cartItem.variants.map((variant) => (
+                                <FFView
+                                  key={
+                                    variant.id ||
+                                    `${cartItem.item.id}-${variant.variant_id}`
+                                  }
+                                  onPress={() => {
+                                    const { id } = selectedRestaurant;
+                                    if (
+                                      id === "" ||
+                                      id ===
+                                        restaurantItems[0].item
+                                          .restaurantDetails.id
+                                    ) {
+                                      handleSelectVariants(
+                                        variant,
+                                        restaurantItems[0].item
+                                          .restaurantDetails,
+                                        cartItem
+                                      );
+                                    } else {
+                                      setIsShowModal(true);
                                     }
-                                    onPress={() => {
-                                      const { id } = selectedRestaurant;
-
-                                      // Check if selectedRestaurant.id is empty or matches the restaurant item ID
-                                      if (
-                                        id === "" ||
-                                        id ===
-                                          restaurantItems[0].item
-                                            .restaurantDetails.id
-                                      ) {
-                                        handleSelectVariants(
-                                          variant,
-                                          restaurantItems[0].item
-                                            .restaurantDetails,
-                                          cartItem
-                                        );
-                                      } else {
-                                        setIsShowModal(true);
-                                      }
-                                    }}
-                                    colorDark="#000"
-                                    style={{
-                                      marginBottom: 8,
-                                      padding: 8,
-                                      borderRadius: 10,
-                                      borderWidth: selectedVariants.some(
-                                        (item) =>
-                                          item.variant_id === variant.variant_id
-                                      )
-                                        ? 1
-                                        : 0.5,
-                                      borderColor: selectedVariants.some(
-                                        (item) =>
-                                          item.variant_id === variant.variant_id
-                                      )
-                                        ? "#4caf50" // green-400
-                                        : "#e0e0e0", // gray-200
-                                      backgroundColor: selectedVariants.some(
-                                        (item) =>
-                                          item.variant_id === variant.variant_id
-                                      )
-                                        ? "#e8f5e9" // green-50
-                                        : undefined,
-                                    }}
+                                  }}
+                                  colorDark="#000"
+                                  style={{
+                                    marginBottom: 8,
+                                    padding: 8,
+                                    borderRadius: 10,
+                                    borderWidth: selectedVariants.some(
+                                      (item) =>
+                                        item.variant_id === variant.variant_id
+                                    )
+                                      ? 1
+                                      : 0.5,
+                                    borderColor: selectedVariants.some(
+                                      (item) =>
+                                        item.variant_id === variant.variant_id
+                                    )
+                                      ? "#4caf50"
+                                      : "#e0e0e0",
+                                    backgroundColor: selectedVariants.some(
+                                      (item) =>
+                                        item.variant_id === variant.variant_id
+                                    )
+                                      ? "#e8f5e9"
+                                      : undefined,
+                                  }}
+                                >
+                                  <FFText
+                                    fontWeight="400"
+                                    style={{ color: "#888" }}
                                   >
+                                    {variant.variant_name}
+                                  </FFText>
+                                  <View className="flex-row items-center justify-between">
+                                    <FFText
+                                      style={{ color: "#4d9c39", marginTop: 1 }}
+                                    >
+                                      $
+                                      {variant?.variant_price_at_time_of_addition
+                                        ? (
+                                            variant.variant_price_at_time_of_addition *
+                                            variant.quantity
+                                          ).toFixed(2)
+                                        : "0.00"}
+                                    </FFText>
                                     <FFText
                                       fontWeight="400"
-                                      style={{ color: "#888" }}
+                                      style={{ color: "#4d9c39", marginTop: 1 }}
                                     >
-                                      {variant.variant_name}
+                                      {variant.quantity}
                                     </FFText>
-                                    <View className="flex-row items-center justify-between">
-                                      <FFText
-                                        style={{
-                                          color: "#4d9c39",
-                                          marginTop: 1,
-                                        }}
-                                      >
-                                        $
-                                        {variant?.variant_price_at_time_of_addition
-                                          ? (
-                                              variant.variant_price_at_time_of_addition *
-                                              variant.quantity
-                                            ).toFixed(2)
-                                          : "0.00"}
-                                      </FFText>
-                                      <FFText
-                                        fontWeight="400"
-                                        style={{
-                                          color: "#4d9c39",
-                                          marginTop: 1,
-                                        }}
-                                      >
-                                        {variant.quantity}
-                                      </FFText>
-                                    </View>
-                                  </FFView>
-                                );
-                              })}
+                                  </View>
+                                </FFView>
+                              ))}
                             </View>
                           )}
                         </View>

@@ -1,5 +1,5 @@
 import { Avatar } from "../common";
-import { Enum_OrderStatus, Enum_TrackingInfo } from "../Orders";
+import { Enum_OrderStatus, Enum_OrderTrackingInfo } from "../Orders";
 
 export interface OrderTracking {
   customer: {
@@ -57,13 +57,13 @@ export interface OrderTracking {
   restaurant_note: string;
   status: Enum_OrderStatus; // Adjust based on actual statuses
   total_amount: string; // You may want to convert this to number or decimal
-  tracking_info: Enum_TrackingInfo;
+  tracking_info: Enum_OrderTrackingInfo;
 }
 
 export interface Driver {
   active_points: number;
   available_for_work: boolean;
-  avatar: string | null; // Adjust based on the actual structure
+  avatar: { url: string; key: string } | null; // Adjust based on the actual structure
   contact_email: string[];
   contact_phone: string[];
   created_at: number;
@@ -73,10 +73,14 @@ export interface Driver {
   is_on_delivery: boolean;
   last_login: number | null;
   last_name: string;
-  rating: any; // Adjust based on the structure of rating
+  rating: { review_count: number; average_rating: number }; // Adjust based on the structure of rating
   updated_at: number;
   user_id: string;
-  vehicle: any; // Adjust based on the structure of vehicle
+  vehicle: {
+    license_plate: string;
+    color: string;
+    model: string;
+  }; // Adjust based on the structure of vehicle
 }
 
 export interface Restaurant {
