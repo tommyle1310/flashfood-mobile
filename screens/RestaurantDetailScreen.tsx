@@ -72,6 +72,18 @@ const RestaurantDetail = () => {
       const response = await axiosInstance.get(`/restaurants/${restaurantId}`);
       const { EC, EM, data } = response.data;
       if (EC === 0) {
+        //  const replaceLonWithLng = data.map(
+        //    (restaurant: any) => ({
+        //      ...restaurant,
+        //      address: {
+        //        ...restaurant.address,
+        //        location: {
+        //          lat: restaurant.address.location.lat,
+        //          lng: restaurant.address.location.lon, // Đổi lon thành lng
+        //        },
+        //      },
+        //    })
+        //  );
         setRestaurantDetails(data);
       }
     };
@@ -236,6 +248,15 @@ const RestaurantDetail = () => {
                 />
                 <View className="flex-row gap-2 items-center">
                   <FFBadge
+                    onPress={() =>
+                      navigation.navigate(
+                        "RouteToRestaurant",
+                        restaurantDetails?.address?.location as {
+                          lng: number;
+                          lat: number;
+                        }
+                      )
+                    }
                     title="Popular"
                     textColor="#59bf47"
                     backgroundColor="#DBF2D8"
@@ -267,7 +288,7 @@ const RestaurantDetail = () => {
               <View className="flex-row items-center gap-2">
                 <IconAntDesign size={20} name="star" color={"#E9A000"} />
                 <FFText fontWeight="400" colorLight="#777">
-                  4.8 rating
+                  {restaurantDetails?.ratings?.average_rating ?? "5.0 rating"}
                 </FFText>
                 <IconFeather
                   className="ml-4"
@@ -275,7 +296,11 @@ const RestaurantDetail = () => {
                   name="check-square"
                   color={"#59bf47"}
                 />
-                <FFText fontWeight="400">2000+ orders</FFText>
+                <FFText fontWeight="400">
+                  {restaurantDetails && restaurantDetails?.total_orders > 99
+                    ? "+99 orders"
+                    : `${restaurantDetails?.total_orders ?? 0} orders`}
+                </FFText>
               </View>
 
               {/* Description */}

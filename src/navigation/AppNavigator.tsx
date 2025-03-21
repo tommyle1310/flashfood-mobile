@@ -23,6 +23,9 @@ import AddressDetailsScreen from "@/screens/AddressDetailsScreen";
 import { Type_Address } from "../types/Address";
 import SupportCenterScreen from "@/screens/SupportCenterScreen";
 import FChatScreen from "@/screens/FChatScreen";
+import NearYouScreen from "@/screens/NearYouScreen";
+import { Restaurant } from "../types/screens/Home";
+import RouteToRestaurantScreen from "@/screens/RouteToRestaurantScreen";
 
 export type RootStackParamList = {
   Login: undefined;
@@ -37,6 +40,8 @@ export type MainStackParamList = {
   SupportCenter: undefined;
   Checkout: { orderItem: Order };
   Profile: undefined;
+  NearYou: Restaurant[];
+  RouteToRestaurant: { lng: number; lat: number };
   AddressList: undefined;
   AddressDetails?: { addressDetail?: Type_Address; is_create_type?: boolean };
 };
@@ -67,6 +72,16 @@ const MainStackScreen = () => {
         options={{ headerShown: false }}
         name="Profile"
         component={ProfileScreen}
+      />
+      <MainStack.Screen
+        options={{ headerShown: false }}
+        name="NearYou"
+        component={NearYouScreen}
+      />
+      <MainStack.Screen
+        options={{ headerShown: false }}
+        name="RouteToRestaurant"
+        component={RouteToRestaurantScreen}
       />
       <MainStack.Screen
         options={{ headerShown: false }}

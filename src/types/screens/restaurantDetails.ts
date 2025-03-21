@@ -7,8 +7,9 @@ export interface Props_RestaurantDetails {
     postal_code: number;
     street: string;
     title: string;
-    location: { lat: number; lon: number };
+    location: { lat: number; lng: number };
   };
+  total_orders: number;
   description: string;
   avatar: { url: string; key: string };
   contact_email: { email: string; is_default: boolean; title: string }[];
@@ -24,6 +25,7 @@ export interface Props_RestaurantDetails {
     name: string;
   };
   restaurant_name: string;
+  ratings: null | { average_rating: number; review_count: number };
   specialize_in: { id: string; description: string; name: string }[];
 }
 

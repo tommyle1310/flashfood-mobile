@@ -8,6 +8,9 @@ import { RootState } from "@/src/store/store";
 import * as ImagePicker from "expo-image-picker";
 import useUploadImage from "@/src/hooks/useUploadImage";
 import { setAvatar, setAvatarInAsyncStorage } from "@/src/store/authSlice";
+import Spinner from "../../FFSpinner";
+import FFModal from "../../FFModal";
+import FFText from "../../FFText";
 
 const EditProfileComponent = ({
   firstName,
@@ -30,11 +33,13 @@ const EditProfileComponent = ({
 }) => {
   const { avatar, id } = useSelector((state: RootState) => state.auth);
   const dispatch = useDispatch();
+  const [isShowModal, setIsShowModal] = useState(false);
 
-  const { imageUri, setImageUri, uploadImage, responseData } = useUploadImage(
-    "CUSTOMER",
-    id || "CUS_ee0966ee-d3dd-49e6-bc20-73e2dab6a593"
-  );
+  const { imageUri, setImageUri, uploadImage, responseData, loading } =
+    useUploadImage(
+      "CUSTOMER",
+      id || "CUS_ee0966ee-d3dd-49e6-bc20-73e2dab6a593"
+    );
 
   const selectImage = async () => {
     let result = await ImagePicker.launchImageLibraryAsync({
@@ -52,56 +57,72 @@ const EditProfileComponent = ({
   };
   useEffect(() => {
     if (responseData?.EC === 0) {
+      setIsShowModal(true);
       dispatch(setAvatar(responseData.data.avatar)); // This updates Redux state
       dispatch(setAvatarInAsyncStorage(responseData.data.avatar)); // This updates AsyncStorage
     }
   }, [responseData]);
 
-  return (
-    <View
-      style={{ elevation: 10 }}
-      className="bg-white rounded-xl border gap-4 border-gray-200 p-4"
-    >
-      <View className="items-center">
-        <TouchableOpacity onPress={selectImage}>
-          {imageUri ? (
-            <FFAvatar onPress={selectImage} size={80} avatar={imageUri} />
-          ) : (
-            <FFAvatar onPress={selectImage} avatar={avatar?.url} size={80} />
-          )}
-        </TouchableOpacity>
-      </View>
+  if (loading) {
+    return <Spinner isVisible isOverlay />;
+  }
 
-      <FFInputControl
-        value={firstName}
-        setValue={setFirstName}
-        label="First Name"
-        placeholder="Tommy"
-        error=""
-      />
-      <FFInputControl
-        value={lastName}
-        setValue={setLastName}
-        label="Last Name"
-        placeholder="Teo"
-        error=""
-      />
-      <FFInputControl
-        value={email}
-        setValue={setEmail}
-        label="Email"
-        disabled
-        placeholder="teo@gmail.com"
-        error=""
-      />
-      <FFInputControl
-        value={phone}
-        setValue={setPhone}
-        label="Phone Number"
-        placeholder="(+84) 707171164"
-        error=""
-      />
-    </View>
+  return (
+    <>
+      <View
+        style={{
+          elevation: 10,
+          backgroundColor: "#fff",
+          borderRadius: 12,
+          padding: 12,
+          borderColor: "#eee",
+          borderWidth: 1,
+        }}
+      >
+        <View className="items-center">
+          <TouchableOpacity onPress={selectImage}>
+            {imageUri ? (
+              <FFAvatar onPress={selectImage} size={80} avatar={imageUri} />
+            ) : (
+              <FFAvatar onPress={selectImage} avatar={avatar?.url} size={80} />
+            )}
+          </TouchableOpacity>
+        </View>
+
+        <FFInputControl
+          value={firstName}
+          setValue={setFirstName}
+          label="First Name"
+          placeholder="Tommy"
+          error=""
+        />
+        <FFInputControl
+          value={lastName}
+          setValue={setLastName}
+          label="Last Name"
+          placeholder="Teo"
+          error=""
+        />
+        <FFInputControl
+          value={email}
+          setValue={setEmail}
+          label="Email"
+          disabled
+          placeholder="teo@gmail.com"
+          error=""
+        />
+        <FFInputControl
+          value={phone}
+          setValue={setPhone}
+          label="Phone Number"
+          placeholder="(+84) 707171164"
+          error=""
+        />
+      </View>
+      <FFModal onClose={() => setIsShowModal(false)} visible={isShowModal}>
+        <FFText>{"Your avatar has been updated successfully! ⭐"}</FFText>
+      </FFModal>
+    </>
   );
 };
 

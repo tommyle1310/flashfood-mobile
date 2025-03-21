@@ -1,4 +1,4 @@
-import { View, Text } from "react-native";
+import { View, Text, Pressable } from "react-native";
 import React from "react";
 
 type FFBadgeProps = {
@@ -7,6 +7,7 @@ type FFBadgeProps = {
   rounded?: "sm" | "md" | "lg" | "full";
   textColor?: string;
   children?: React.ReactNode; // Add children prop
+  onPress?: () => void; // Optional onPress prop
 };
 
 const FFBadge: React.FC<FFBadgeProps> = ({
@@ -15,6 +16,7 @@ const FFBadge: React.FC<FFBadgeProps> = ({
   rounded = "full",
   textColor = "blue",
   children,
+  onPress,
 }) => {
   // Map rounded value to proper radius values
   const roundedMap = {
@@ -24,7 +26,7 @@ const FFBadge: React.FC<FFBadgeProps> = ({
     full: 9999, // To create fully rounded badge
   };
 
-  return (
+  const BadgeContent = (
     <View
       style={{
         backgroundColor,
@@ -43,6 +45,13 @@ const FFBadge: React.FC<FFBadgeProps> = ({
         </Text>
       )}
     </View>
+  );
+
+  // If onPress is provided, wrap the badge in a Pressable
+  return onPress ? (
+    <Pressable onPress={onPress}>{BadgeContent}</Pressable>
+  ) : (
+    BadgeContent
   );
 };
 

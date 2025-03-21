@@ -37,18 +37,21 @@ import { Enum_OrderStatus, Enum_OrderTrackingInfo } from "@/src/types/Orders";
 import { useNavigation } from "@react-navigation/native";
 import { StackNavigationProp } from "@react-navigation/stack";
 import { MainStackParamList } from "@/src/navigation/AppNavigator";
+import Spinner from "@/src/components/FFSpinner";
 
 interface OrderTabContentProps {
   type: "ACTIVE" | "COMPLETED" | "CANCELLED";
   orders: OrderTracking[];
   refetchOrders?: () => void;
   navigation?: OrderScreenNavigationProp;
+  isLoading?: boolean;
 }
 
 // Hàm render nội dung cho từng tab
 const OrderTabContent: React.FC<OrderTabContentProps> = ({
   type,
   orders,
+  isLoading,
   navigation,
   refetchOrders,
 }) => {
@@ -533,6 +536,10 @@ const OrderTabContent: React.FC<OrderTabContentProps> = ({
   );
   console.log("check detailed order", detailedOrder);
 
+  if (isLoading) {
+    return <Spinner isVisible isOverlay />;
+  }
+
   return (
     <ScrollView className="gap-4 p-4">
       <View className="gap-4">
@@ -579,6 +586,7 @@ const OrdersScreen: React.FC = () => {
       const res = await axiosInstance.get(`/customers/orders/${id}`);
       setOrders(res.data.data);
     } catch (error) {
+      setLoading(false);
       console.error("Error fetching orders:", error);
     } finally {
       setLoading(false);
@@ -608,6 +616,7 @@ const OrdersScreen: React.FC = () => {
       orders={activeOrders}
     />,
     <OrderTabContent
+      isLoading={loading}
       key="completed"
       type="COMPLETED"
       orders={completedOrders}

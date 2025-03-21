@@ -26,30 +26,9 @@ import { MainStackParamList } from "@/src/navigation/AppNavigator";
 import FFView from "@/src/components/FFView";
 import Spinner from "@/src/components/FFSpinner";
 import { IMAGE_LINKS } from "@/src/assets/imageLinks";
+import { FoodCategory, Restaurant } from "@/src/types/screens/Home";
 
 // Type Definitions
-type FoodCategory = { id: string; name: string; description: string };
-type Promotion = {
-  id: string;
-  name: string;
-  start_date: number;
-  end_date: number;
-  status: string;
-};
-type Restaurant = {
-  id: string;
-  restaurant_name: string;
-  address: {
-    id: string;
-    street: string;
-    city: string;
-    nationality: string;
-    title: string;
-  };
-  specialize_in: FoodCategory[];
-  avatar: { url: string; key: string; promotions: string[] };
-  promotions: Promotion[];
-};
 
 type HomeRestaurantSreenNavigationProp = StackNavigationProp<
   MainStackParamList,
@@ -93,7 +72,19 @@ const HomeScreen = () => {
         }
 
         if (restaurantsResponse.data.EC === 0) {
-          setListRestaurants(restaurantsResponse.data.data);
+          const mappedRestaurants = restaurantsResponse.data.data.map(
+            (restaurant: any) => ({
+              ...restaurant,
+              address: {
+                ...restaurant.address,
+                location: {
+                  lat: restaurant.address.location.lat,
+                  lng: restaurant.address.location.lon, // Đổi lon thành lng
+                },
+              },
+            })
+          );
+          setListRestaurants(mappedRestaurants);
         }
       } catch (error) {
         console.error("Error fetching data:", error);
@@ -101,6 +92,7 @@ const HomeScreen = () => {
         setIsLoading(false); // Stop loading when fetching completes
       }
     };
+    console.log("check lí res", listRestaurants?.[0]?.address);
 
     // Only fetch data if globalState.user_id is available and not already loading
     if (globalState.user_id && isLoading) {
@@ -242,7 +234,11 @@ const HomeScreen = () => {
         <View>
           <View className="flex-row items-center justify-between">
             <FFText>Near You</FFText>
-            <TouchableOpacity>
+            <TouchableOpacity
+              onPress={() =>
+                navigation.navigate("NearYou", renderedRestaurants ?? [])
+              }
+            >
               <FFText
                 style={{ color: "#3FB854", fontWeight: "400", fontSize: 12 }}
               >
@@ -250,8 +246,8 @@ const HomeScreen = () => {
               </FFText>
             </TouchableOpacity>
           </View>
-          <ScrollView horizontal className="mt-2">
-            {(renderedRestaurants ?? []).map((item) => (
+          <ScrollView horizontal className="mt-2 py-2">
+            {(renderedRestaurants ?? []).slice(0, 5).map((item) => (
               <FFView
                 onPress={() =>
                   navigation.navigate("RestaurantDetail", {
@@ -267,7 +263,6 @@ const HomeScreen = () => {
                   marginRight: 8,
                   paddingTop: 8,
                 }}
-                // className="p-2 rounded-lg shadow-md bg-white w-36 h-48 mr-2"
               >
                 <ImageBackground
                   source={{
@@ -321,7 +316,7 @@ const HomeScreen = () => {
                     {item.restaurant_name}
                   </FFText>
                   <FFText style={{ color: "#aaa", fontSize: 11 }}>
-                    {item?.address?.title}
+                    {item?.address?.street}
                   </FFText>
                 </View>
               </FFView>

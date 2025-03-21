@@ -15,8 +15,14 @@ const ReadonlyProfileComponents = ({
 
   return (
     <View
-      style={{ elevation: 10 }}
-      className="bg-white rounded-xl border gap-2 border-gray-200 p-4"
+      style={{
+        elevation: 10,
+        backgroundColor: "#fff",
+        borderRadius: 12,
+        padding: 12,
+        borderColor: "#eee",
+        borderWidth: 1,
+      }}
     >
       <View className="flex-row justify-between gap-4">
         <FFAvatar avatar={avatar?.url} />
