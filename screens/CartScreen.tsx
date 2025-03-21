@@ -160,6 +160,7 @@ const CartScreen = () => {
       order_items: selectedVariants.map((item) => ({
         item: item.item,
         item_id: item.id,
+        menu_item: item.item,
         name: item.variant_name,
         quantity: item.quantity,
         price_at_time_of_order: item.variant_price_at_time_of_addition,

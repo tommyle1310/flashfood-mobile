@@ -1,5 +1,5 @@
 import { View } from "react-native";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { RouteProp, useNavigation, useRoute } from "@react-navigation/native";
 import FFTab from "@/src/components/FFTab";
 import FFSafeAreaView from "@/src/components/FFSafeAreaView";
@@ -21,6 +21,7 @@ import {
   subtractItemFromCart,
 } from "@/src/store/userPreferenceSlice";
 import Spinner from "@/src/components/FFSpinner";
+import { Promotion } from "@/src/types/Promotion";
 
 type CheckoutRouteProps = RouteProp<MainStackParamList, "Checkout">;
 type CheckoutScreenNavigationProp = StackNavigationProp<
@@ -43,8 +44,33 @@ const CheckoutScreen = () => {
   const globalState = useSelector((state: RootState) => state.auth);
   const [selectedPaymentMethod, setSelectedPaymentMethod] =
     useState<string>("");
+  const [selectedPromotion, setSelectedPromotion] = useState<string>("");
   const [selectedAddress, setSelectedAddress] = useState<string>("");
   const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [promotionList, setPromotionList] = useState<Promotion[]>();
+
+  const fetchRestaurantDetails = async () => {
+    setIsLoading(true);
+    try {
+      const response = await axiosInstance.get(
+        `/restaurants/${orderItem.restaurant_id}`
+      );
+      const responseData = response.data;
+      const { EC, EM, data } = responseData;
+      if (EC === 0) {
+        setPromotionList(data.promotions);
+      }
+    } catch (error) {
+      console.log("error", error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+  useEffect(() => {
+    if (orderItem.restaurant_id) {
+      fetchRestaurantDetails();
+    }
+  }, [orderItem]);
 
   const handleSelectPaymentMethod = (option: string) => {
     setSelectedPaymentMethod(option);
@@ -52,6 +78,10 @@ const CheckoutScreen = () => {
 
   const handleSelectAddress = (option: string) => {
     setSelectedAddress(option);
+  };
+
+  const handleSelectPromotion = (option: string) => {
+    setSelectedPromotion(option);
   };
 
   const handlePlaceOrder = async () => {
@@ -78,9 +108,12 @@ const CheckoutScreen = () => {
         price_at_time_of_order: item.price_at_time_of_order,
         quantity: item.quantity,
       })),
+      status: "PENDING",
       payment_status: "PENDING",
       delivery_time: new Date().getTime(),
+      promotions_applied: [selectedPromotion],
     };
+
     const response = await axiosInstance.post(`/orders`, requestData, {
       // This will ensure axios does NOT reject on non-2xx status codes
       validateStatus: () => true, // Always return true so axios doesn't throw on errors
@@ -99,6 +132,7 @@ const CheckoutScreen = () => {
       setModalContentType("ERROR");
       console.log("cehck", response.data);
     }
+    setIsLoading(false);
   };
 
   const tabContent = [
@@ -107,6 +141,9 @@ const CheckoutScreen = () => {
       deliveryFee={deliveryFee}
       serviceFee={serviceFee}
       setTotalAmountParent={setTotalAmount}
+      selectedPromotion={selectedPromotion}
+      promotionList={promotionList}
+      handleSelectPromotion={handleSelectPromotion}
     />,
     <PaymentInformation
       selected={selectedPaymentMethod}

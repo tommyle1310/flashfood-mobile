@@ -48,6 +48,7 @@ export type OrderItem = {
   item_id: string | null;
   name: string | null;
   quantity: number | null;
+  menu_item: any;
   price_at_time_of_order: number | null;
   variant_id: string | null;
   item: {

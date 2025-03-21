@@ -33,7 +33,14 @@ import FFButton from "@/src/components/FFButton";
 // Icons
 import IconFeather from "react-native-vector-icons/Feather";
 import IconIonicons from "react-native-vector-icons/Ionicons";
-import { Enum_OrderStatus, Enum_OrderTrackingInfo } from "@/src/types/Orders";
+import {
+  Enum_OrderStatus,
+  Enum_OrderTrackingInfo,
+  Enum_PaymentMethod,
+  Enum_PaymentStatus,
+  Order,
+  OrderItem,
+} from "@/src/types/Orders";
 import { useNavigation } from "@react-navigation/native";
 import { StackNavigationProp } from "@react-navigation/stack";
 import { MainStackParamList } from "@/src/navigation/AppNavigator";
@@ -46,6 +53,74 @@ interface OrderTabContentProps {
   navigation?: OrderScreenNavigationProp;
   isLoading?: boolean;
 }
+
+const mapOrderTrackingToOrder = (orderTracking: OrderTracking): Order => {
+  // Map status từ Enum_OrderStatus sang Enum_PaymentStatus
+  const mapStatus = (status: string): Enum_PaymentStatus => {
+    switch (status) {
+      case "PENDING":
+        return Enum_PaymentStatus.PENDING;
+      case "DELIVERED":
+        return Enum_PaymentStatus.PAID; // Giả sử delivered = paid
+      case "CANCELLED":
+        return Enum_PaymentStatus.CANCELLED;
+      case "DELIVERY_FAILED":
+        return Enum_PaymentStatus.FAILED;
+      default:
+        return Enum_PaymentStatus.PENDING; // Default fallback
+    }
+  };
+
+  // Map payment_method từ string sang Enum_PaymentMethod
+  const mapPaymentMethod = (method: string): Enum_PaymentMethod => {
+    switch (method.toUpperCase()) {
+      case "COD":
+        return Enum_PaymentMethod.COD;
+      case "FWALLET":
+        return Enum_PaymentMethod.FWallet;
+      default:
+        return Enum_PaymentMethod.COD; // Default fallback
+    }
+  };
+
+  // Map order_items từ OrderTracking sang Order
+  const mapOrderItems = (items: OrderTracking["order_items"]): OrderItem[] => {
+    console.log("check itesm here", items);
+
+    return items.map((item) => {
+      console.log("check item.item", item.menu_item);
+
+      return {
+        item_id: item.item_id,
+        name: item.name,
+        menu_item: item.item,
+        quantity: item.quantity,
+        price_at_time_of_order: item.menu_item.price,
+        variant_id: item.variant_id,
+        item: {
+          id: item.menu_item.id || "",
+          name: item.menu_item?.name || "",
+          avatar: item.menu_item?.avatar || { url: "", key: "" },
+        },
+      };
+    });
+  };
+
+  return {
+    customer_id: orderTracking.customer_id,
+    restaurant_id: orderTracking.restaurant_id,
+    customer_location: orderTracking.customer_location,
+    restaurant_location: orderTracking.restaurant_location,
+    status: mapStatus(orderTracking.status),
+    payment_method: mapPaymentMethod(orderTracking.payment_method),
+    total_amount: parseFloat(orderTracking.total_amount) || 0, // Chuyển string sang number
+    order_items: mapOrderItems(orderTracking.order_items),
+    tracking_info: orderTracking.tracking_info,
+    customer_note: orderTracking.customer_note,
+    restaurant_note: orderTracking.restaurant_note,
+    order_time: parseInt(orderTracking.order_time) || 0, // Chuyển string sang number (Unix timestamp)
+  };
+};
 
 // Hàm render nội dung cho từng tab
 const OrderTabContent: React.FC<OrderTabContentProps> = ({
@@ -109,6 +184,8 @@ const OrderTabContent: React.FC<OrderTabContentProps> = ({
     }
   };
 
+  console.log("cehck driverd etials", driverDetails);
+
   // Hàm mới để lấy text và emoji tương ứng với status
   const getTrackingText = (
     status?: Enum_OrderStatus,
@@ -135,6 +212,12 @@ const OrderTabContent: React.FC<OrderTabContentProps> = ({
       default:
         return "Something’s cooking... stay tuned! ❓";
     }
+  };
+
+  const handleReOrder = (data: OrderTracking) => {
+    const mappedData = mapOrderTrackingToOrder(data);
+    console.log("check dât map ", mappedData);
+    navigation?.navigate("Checkout", { orderItem: mappedData });
   };
 
   const renderOrderCard = (order: OrderTracking) => (
@@ -183,7 +266,11 @@ const OrderTabContent: React.FC<OrderTabContentProps> = ({
         <FFButton variant="outline" className="w-full" style={{ flex: 1 }}>
           Rate
         </FFButton>
-        <FFButton className="w-full" style={{ flex: 1 }}>
+        <FFButton
+          onPress={() => handleReOrder(order)}
+          className="w-full"
+          style={{ flex: 1 }}
+        >
           Re-Order
         </FFButton>
       </View>
@@ -451,7 +538,7 @@ const OrderTabContent: React.FC<OrderTabContentProps> = ({
                       rounded="sm"
                       size={40}
                       avatar={
-                        item.menu_item?.avatar?.url ??
+                        item?.menu_item?.avatar?.url ??
                         IMAGE_LINKS.DEFAULT_AVATAR_FOOD
                       }
                     />
@@ -526,7 +613,9 @@ const OrderTabContent: React.FC<OrderTabContentProps> = ({
                   <FFText fontWeight="400" style={{ color: "#aaa" }}>
                     Total
                   </FFText>
-                  <FFText style={{ color: "#4c9f3a" }}>$100</FFText>
+                  <FFText style={{ color: "#4c9f3a" }}>
+                    ${Number(activeOrderDetails?.total_amount).toFixed(2)}
+                  </FFText>
                 </View>
               </FFView>
             </>
@@ -618,6 +707,7 @@ const OrdersScreen: React.FC = () => {
     <OrderTabContent
       isLoading={loading}
       key="completed"
+      navigation={navigation}
       type="COMPLETED"
       orders={completedOrders}
     />,

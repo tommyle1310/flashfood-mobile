@@ -1,5 +1,5 @@
 import { Avatar } from "../common";
-import { Enum_OrderStatus, Enum_OrderTrackingInfo } from "../Orders";
+import { Enum_OrderStatus, Enum_OrderTrackingInfo, OrderItem } from "../Orders";
 
 export interface OrderTracking {
   customer: {
@@ -47,7 +47,7 @@ export interface OrderTracking {
   driver: Driver | null;
   driver_id: string | null;
   id: string;
-  order_items: any[]; // You can adjust the type based on the actual structure of order_items
+  order_items: OrderItem[]; // You can adjust the type based on the actual structure of order_items
   order_time: string; // You may want to convert this to Date in your application if necessary
   payment_method: string;
   payment_status: "PENDING" | "COMPLETED" | "FAILED"; // Adjust if there are more statuses

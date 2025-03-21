@@ -5,22 +5,33 @@ import FFText from "../../FFText";
 import { Order } from "@/src/types/Orders";
 import IconIonicons from "react-native-vector-icons/Ionicons";
 import { DELIVERY_FEE, SERVICE_FEE } from "@/src/utils/constants";
+import axiosInstance from "@/src/utils/axiosConfig";
+import { Promotion } from "@/src/types/Promotion";
+import FFDropdown from "../../FFDropdown";
 
 const OrderSummary = ({
   orderItem,
   setTotalAmountParent,
   serviceFee,
   deliveryFee,
+  promotionList,
+  handleSelectPromotion,
+  selectedPromotion,
 }: {
   orderItem: Order;
   setTotalAmountParent: React.Dispatch<React.SetStateAction<number>>;
   deliveryFee: number;
   serviceFee: number;
+  selectedPromotion: string;
+
+  promotionList?: Promotion[];
+  handleSelectPromotion: (option: string) => void;
 }) => {
   const [subTotal, setSubTotal] = useState<number>(0);
   const [promotionSubtractValue, setpromotionSubtractValue] =
     useState<number>(0);
   const [voucherSubtractValue, setVoucherSubtractValue] = useState<number>(0);
+  console.log("cehck order item", orderItem.order_items[0].item);
 
   const [totalAmount, setTotalAmount] = useState<number>(0);
   useEffect(() => {
@@ -69,7 +80,7 @@ const OrderSummary = ({
                   <FFAvatar
                     rounded="sm"
                     size={50}
-                    avatar={item?.item?.avatar?.url ?? ""}
+                    avatar={item?.item?.avatar?.url}
                   />
                   <FFText
                     style={{
@@ -116,13 +127,29 @@ const OrderSummary = ({
           paddingVertical: 8,
         }}
       >
-        <Pressable className="p-4 bg-gray-200 rounded-lg flex-row items-center justify-between">
+        <FFDropdown
+          onSelect={handleSelectPromotion}
+          options={
+            promotionList?.map((item) => ({
+              label: item.name,
+              value: item.id,
+              description: item.description,
+              imageUrl: item?.avatar?.url,
+            })) ?? []
+          }
+          placeholder="Select a promotion"
+          selectedOption={selectedPromotion}
+        />
+        {/* <Pressable
+          style={{ backgroundColor: "#ddd" }}
+          className="p-4  rounded-lg flex-row items-center justify-between"
+        >
           <View className="flex-row items-center gap-2">
             <IconIonicons name="ticket-outline" size={14} />
             <Text className="text-gray-400">Enter your voucher code</Text>
           </View>
           <IconIonicons name="chevron-forward-outline" />
-        </Pressable>
+        </Pressable> */}
         <View className="flex-row justify-between items-center">
           <FFText style={{ color: "#aaa" }} fontWeight="400">
             Subtotal
