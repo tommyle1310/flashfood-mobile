@@ -8,6 +8,10 @@ import {
   removeOrderTracking,
   updateAndSaveOrderTracking,
 } from "@/src/store/orderTrackingRealtimeSlice";
+import { useNavigation } from "@react-navigation/native";
+import { StackNavigationProp } from "@react-navigation/stack";
+import { MainStackParamList } from "../navigation/AppNavigator";
+import { Avatar } from "../types/common";
 
 type OrderTrackingSocket = {
   orderId: string;
@@ -15,11 +19,18 @@ type OrderTrackingSocket = {
   tracking_info: Enum_OrderTrackingInfo;
   updated_at: number;
   customer_id: string;
+  driver_avatar: Avatar;
+  restaurant_avatar: Avatar;
   driver_id: string;
   restaurant_id: string;
 };
 
+type OrderScreenNavigationProp = StackNavigationProp<
+  MainStackParamList,
+  "BottomTabs"
+>;
 export const useActiveOrderTrackingSocket = () => {
+  const navigation = useNavigation<OrderScreenNavigationProp>();
   const [socket, setSocket] = useState<Socket | null>(null);
   const { accessToken, id } = useSelector((state: RootState) => state.auth);
   const dispatch = useDispatch();
@@ -55,6 +66,17 @@ export const useActiveOrderTrackingSocket = () => {
     const handleOrderUpdate = (data: OrderTrackingSocket) => {
       console.log("Event received:", data);
       if (data.status === Enum_OrderStatus.DELIVERED) {
+        navigation.navigate("Rating", {
+          driver: {
+            id: data.driver_id,
+            avatar: data.driver_avatar,
+          },
+          restaurant: {
+            id: data.restaurant_id,
+            avatar: data.restaurant_avatar,
+          },
+          orderId: data.orderId,
+        });
         dispatch(removeOrderTracking(data.orderId));
       } else {
         dispatch(updateAndSaveOrderTracking(data));

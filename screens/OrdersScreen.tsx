@@ -33,6 +33,7 @@ import FFButton from "@/src/components/FFButton";
 // Icons
 import IconFeather from "react-native-vector-icons/Feather";
 import IconIonicons from "react-native-vector-icons/Ionicons";
+import IconFontAwesome5 from "react-native-vector-icons/FontAwesome5";
 import {
   Enum_OrderStatus,
   Enum_OrderTrackingInfo,
@@ -45,12 +46,15 @@ import { useNavigation } from "@react-navigation/native";
 import { StackNavigationProp } from "@react-navigation/stack";
 import { MainStackParamList } from "@/src/navigation/AppNavigator";
 import Spinner from "@/src/components/FFSpinner";
+import FFModal from "@/src/components/FFModal";
 
 interface OrderTabContentProps {
   type: "ACTIVE" | "COMPLETED" | "CANCELLED";
   orders: OrderTracking[];
   refetchOrders?: () => void;
+  setIsLoading?: React.Dispatch<React.SetStateAction<boolean>>;
   navigation?: OrderScreenNavigationProp;
+  orderStatusStages?: Enum_OrderStatus[];
   isLoading?: boolean;
 }
 
@@ -111,7 +115,7 @@ const mapOrderTrackingToOrder = (orderTracking: OrderTracking): Order => {
     restaurant_id: orderTracking.restaurant_id,
     customer_location: orderTracking.customer_location,
     restaurant_location: orderTracking.restaurant_location,
-    status: mapStatus(orderTracking.status),
+    status: mapStatus(orderTracking?.status),
     payment_method: mapPaymentMethod(orderTracking.payment_method),
     total_amount: parseFloat(orderTracking.total_amount) || 0, // Chuyển string sang number
     order_items: mapOrderItems(orderTracking.order_items),
@@ -127,8 +131,10 @@ const OrderTabContent: React.FC<OrderTabContentProps> = ({
   type,
   orders,
   isLoading,
+  setIsLoading,
   navigation,
   refetchOrders,
+  orderStatusStages,
 }) => {
   const { orders: realtimeOrders } = useSelector(
     (state: RootState) => state.orderTrackingRealtime
@@ -137,16 +143,54 @@ const OrderTabContent: React.FC<OrderTabContentProps> = ({
   const [detailedOrder, setDetailedOrder] = useState<OrderTracking | null>(
     null
   );
+  const [tipAmount, setTipAmount] = useState<number | string>(0);
   const [driverDetails, setDriverDetails] = useState<Driver | null>(null);
+  const [isShowTipToDriverModal, setShowTipToDriverModal] = useState(false);
   const [activeOrderDetails, setActiveOrderDetails] =
     useState<OrderTracking | null>(null);
   const firstActiveOrder = realtimeOrders[0] || null;
-
+  const [isTippedSuccessful, setIsTippedSuccessful] = useState(false);
+  const [currentOrderStage, setCurrentOrderStage] = useState<number>(0);
+  const handleTipToDriver = async () => {
+    if (!setIsLoading) return;
+    setIsLoading(true);
+    try {
+      const response = await axiosInstance.post("/orders/tip", {
+        orderId: firstActiveOrder?.orderId || activeOrderDetails?.id,
+        tip: tipAmount,
+      });
+      console.log("tip to driver response", response.data);
+      const { EC, EM, data } = response.data;
+      if (EC === 0) {
+        setIsTippedSuccessful(true);
+      }
+    } catch (error) {
+    } finally {
+      setIsLoading(false);
+    }
+  };
   useEffect(() => {
+    setCurrentOrderStage(() => {
+      switch (firstActiveOrder?.status) {
+        case Enum_OrderStatus.PENDING:
+          return 1;
+        case Enum_OrderStatus.PREPARING:
+          return 2;
+        case Enum_OrderStatus.DISPATCHED:
+          return 3;
+        case Enum_OrderStatus.READY_FOR_PICKUP:
+          return 4;
+        case Enum_OrderStatus.RESTAURANT_PICKUP:
+          return 5;
+        case Enum_OrderStatus.EN_ROUTE:
+          return 6;
+        default:
+          return 0;
+      }
+    });
     if (
-      firstActiveOrder?.status === Enum_OrderStatus.CANCELLED &&
-      firstActiveOrder?.tracking_info === Enum_OrderTrackingInfo.DELIVERED &&
-      refetchOrders
+      refetchOrders &&
+      firstActiveOrder?.status === Enum_OrderStatus.DISPATCHED
     ) {
       refetchOrders();
     }
@@ -183,8 +227,6 @@ const OrderTabContent: React.FC<OrderTabContentProps> = ({
         return IMAGE_LINKS.DEFAULT_AVATAR_FOOD;
     }
   };
-
-  console.log("cehck driverd etials", driverDetails);
 
   // Hàm mới để lấy text và emoji tương ứng với status
   const getTrackingText = (
@@ -297,8 +339,8 @@ const OrderTabContent: React.FC<OrderTabContentProps> = ({
             <View className="w-full p-4">
               <FFProgressStage
                 stageText="Arriving at 10:15"
-                completedSegments={3}
-                totalSegments={5}
+                completedSegments={currentOrderStage}
+                totalSegments={orderStatusStages?.length ?? 0}
               />
             </View>
             <View
@@ -389,6 +431,7 @@ const OrderTabContent: React.FC<OrderTabContentProps> = ({
                     <Text>Send a Message</Text>
                   </TouchableOpacity>
                   <TouchableOpacity
+                    onPress={() => setShowTipToDriverModal(true)}
                     style={{
                       paddingHorizontal: 12,
                       height: 50,
@@ -621,6 +664,60 @@ const OrderTabContent: React.FC<OrderTabContentProps> = ({
             </>
           ))}
       </View>
+      <FFModal
+        onClose={() => {
+          setShowTipToDriverModal(false);
+          setIsTippedSuccessful(false);
+          setTipAmount(0);
+          setIsTippedSuccessful(false);
+        }}
+        visible={isShowTipToDriverModal}
+      >
+        {isTippedSuccessful ? (
+          <View style={{ alignItems: "center" }}>
+            <View
+              style={{
+                backgroundColor: "#63c550",
+                width: 40,
+                height: 40,
+                borderRadius: 9999,
+                alignItems: "center",
+                justifyContent: "center",
+              }}
+            >
+              <IconFontAwesome5 name="check" color={"#fff"} size={20} />
+            </View>
+            <FFText>
+              You have tipped your driver
+              <FFText style={{ color: "#4c9f3a" }}> ${tipAmount}</FFText>!
+            </FFText>
+          </View>
+        ) : (
+          <>
+            <FFText style={{ textAlign: "center" }}>Tip to driver</FFText>
+            <FFText
+              fontSize="sm"
+              fontWeight="400"
+              style={{ color: "#aaa", textAlign: "center" }}
+            >
+              Your driver will receive 100% tips. 😇
+            </FFText>
+            <FFInputControl
+              value={tipAmount}
+              isNumeric={true}
+              setValue={setTipAmount}
+              label=""
+            />
+            <FFButton
+              style={{ marginTop: 24 }}
+              className="w-full"
+              onPress={handleTipToDriver}
+            >
+              Confirm
+            </FFButton>
+          </>
+        )}
+      </FFModal>
     </>
   );
   console.log("check detailed order", detailedOrder);
@@ -668,6 +765,15 @@ const OrdersScreen: React.FC = () => {
   const [cancelledOrders, setCancelledOrders] = useState<OrderTracking[]>([]);
   const [loading, setLoading] = useState(true);
   const navigation = useNavigation<OrderScreenNavigationProp>();
+  const orderStatusStages: Enum_OrderStatus[] = [
+    Enum_OrderStatus["PENDING"],
+    Enum_OrderStatus["PREPARING"],
+    Enum_OrderStatus["READY_FOR_PICKUP"],
+    Enum_OrderStatus["RESTAURANT_PICKUP"],
+    Enum_OrderStatus["DISPATCHED"],
+    Enum_OrderStatus["EN_ROUTE"],
+    Enum_OrderStatus["DELIVERED"],
+  ];
 
   const fetchOrders = async () => {
     try {
@@ -689,18 +795,22 @@ const OrdersScreen: React.FC = () => {
   useEffect(() => {
     setActiveOrders(
       orders.filter(
-        (order) => order.status !== "DELIVERED" && order.status !== "CANCELLED"
+        (order) =>
+          order?.status !== "DELIVERED" && order?.status !== "CANCELLED"
       )
     );
-    setCompletedOrders(orders.filter((order) => order.status === "DELIVERED"));
-    setCancelledOrders(orders.filter((order) => order.status === "CANCELLED"));
+    setCompletedOrders(orders.filter((order) => order?.status === "DELIVERED"));
+    setCancelledOrders(orders.filter((order) => order?.status === "CANCELLED"));
   }, [orders]);
 
   const tabContent = [
     <OrderTabContent
+      orderStatusStages={orderStatusStages}
       navigation={navigation}
       refetchOrders={fetchOrders}
+      isLoading={loading}
       key="active"
+      setIsLoading={setLoading}
       type="ACTIVE"
       orders={activeOrders}
     />,

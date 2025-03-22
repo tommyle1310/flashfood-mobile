@@ -26,6 +26,8 @@ import FChatScreen from "@/screens/FChatScreen";
 import NearYouScreen from "@/screens/NearYouScreen";
 import { Restaurant } from "../types/screens/Home";
 import RouteToRestaurantScreen from "@/screens/RouteToRestaurantScreen";
+import RatingScreen from "@/screens/RatingScreen";
+import { Avatar } from "../types/common";
 
 export type RootStackParamList = {
   Login: undefined;
@@ -36,6 +38,17 @@ export type RootStackParamList = {
 export type MainStackParamList = {
   FChat: { withUserId?: string; type?: "SUPPORT" | "ORDER"; orderId?: string };
   RestaurantDetail: { restaurantId: string };
+  Rating: {
+    driver: {
+      id: string;
+      avatar: Avatar;
+    };
+    restaurant: {
+      id: string;
+      avatar: Avatar;
+    };
+    orderId?: string;
+  };
   BottomTabs: { screenIndex?: number }; // Thêm tham số screenIndex
   SupportCenter: undefined;
   Checkout: { orderItem: Order };
@@ -77,6 +90,11 @@ const MainStackScreen = () => {
         options={{ headerShown: false }}
         name="NearYou"
         component={NearYouScreen}
+      />
+      <MainStack.Screen
+        options={{ headerShown: false }}
+        name="Rating"
+        component={RatingScreen}
       />
       <MainStack.Screen
         options={{ headerShown: false }}

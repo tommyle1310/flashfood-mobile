@@ -6,11 +6,12 @@
     "orientation": "portrait",
     "scheme": "myapp",
     "userInterfaceStyle": "automatic",
-    "newArchEnabled": true,
+    "newArchEnabled": false,
     "ios": {
       "supportsTablet": true
     },
     "android": {
+      "package": "com.flashstrom.ffcustomer",
       "adaptiveIcon": {
         "backgroundColor": "#ffffff"
       }
@@ -24,6 +25,7 @@
       [
         "expo-splash-screen",
         {
+          "image": "./assets/splash.png",
           "imageWidth": 200,
           "resizeMode": "contain",
           "backgroundColor": "#ffffff"
@@ -32,10 +34,18 @@
     ],
     "experiments": {
       "typedRoutes": true
+    },
+    "extra": {
+      "router": {
+        "origin": false
+      },
+      "eas": {
+        "projectId": "d0d05b61-b8cf-4ee6-92c4-1a15e02555d4"
+      }
     }
   },
   "updates": {
-  "enabled": true,
-  "checkAutomatically": "ON_LOAD"
-}
+    "enabled": true,
+    "checkAutomatically": "ON_LOAD"
+  }
 }
