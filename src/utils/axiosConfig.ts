@@ -9,7 +9,7 @@ const axiosInstance = axios.create({
     "Content-Type": "application/json",
   },
   // withCredentials: true,
-  timeout: 20000, // Set a timeout (optional)
+  // timeout: 20000, // Set a timeout (optional)
 });
 
 export default axiosInstance;

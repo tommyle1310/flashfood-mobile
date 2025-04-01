@@ -28,6 +28,7 @@ import { Restaurant } from "../types/screens/Home";
 import RouteToRestaurantScreen from "@/screens/RouteToRestaurantScreen";
 import RatingScreen from "@/screens/RatingScreen";
 import { Avatar } from "../types/common";
+import PaymentMethodScreen from "@/screens/PaymentMethodScreen";
 
 export type RootStackParamList = {
   Login: undefined;
@@ -53,6 +54,7 @@ export type MainStackParamList = {
   SupportCenter: undefined;
   Checkout: { orderItem: Order };
   Profile: undefined;
+  PaymentMethod: undefined;
   NearYou: Restaurant[];
   RouteToRestaurant: { lng: number; lat: number };
   AddressList: undefined;
@@ -80,6 +82,11 @@ const MainStackScreen = () => {
         options={{ headerShown: false }}
         name="Checkout"
         component={CheckoutScreen}
+      />
+      <MainStack.Screen
+        options={{ headerShown: false }}
+        name="PaymentMethod"
+        component={PaymentMethodScreen}
       />
       <MainStack.Screen
         options={{ headerShown: false }}

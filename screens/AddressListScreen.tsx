@@ -43,11 +43,11 @@ interface Props_Address {
 
 const AddressListScreen = () => {
   const navigation = useNavigation<AddressListSreenNavigationProp>();
-  const { address, user_id } = useSelector((state: RootState) => state.auth);
+  const { address, id } = useSelector((state: RootState) => state.auth);
   const dispatch = useDispatch();
   const handleSelectAddress = async (item: Props_Address) => {
     const response = await axiosInstance.patch(
-      `/customers/address/${user_id}/${item.id}`,
+      `/customers/address/${id}/${item.id}`,
       {
         // This will ensure axios does NOT reject on non-2xx status codes
         validateStatus: () => true, // Always return true so axios doesn't throw on errors
@@ -56,9 +56,11 @@ const AddressListScreen = () => {
 
     // Now you can safely access the EC field
     const { EC, EM, data } = response.data;
+    console.log("check res", response.data);
+
     if (EC === 0) {
       dispatch(setDefaultAddress(item));
-      dispatch(setDefaultAddressInStorage(item));
+      dispatch(setDefaultAddressInStorage(item as any));
     } else {
       console.log("st h wrnt wrong");
     }

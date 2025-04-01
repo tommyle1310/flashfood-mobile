@@ -72,6 +72,8 @@ const Login = () => {
             user_type: userData.user_type || [], // Ensure this is an array
             address: userData.address || [],
             id: userData.id || "",
+            fWallet_id: userData.fWallet_id || "",
+            fWallet_balance: userData.fWallet_balance || 0,
             // cart_items: userData.cart_items || [],
           })
         );

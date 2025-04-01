@@ -41,7 +41,7 @@ export const useActiveOrderTrackingSocket = () => {
       return;
     }
 
-    const socketInstance = io(`${BACKEND_URL}customer`, {
+    const socketInstance = io(`${BACKEND_URL}/customer`, {
       transports: ["websocket"],
       extraHeaders: {
         auth: `Bearer ${accessToken}`,
@@ -59,7 +59,7 @@ export const useActiveOrderTrackingSocket = () => {
     });
 
     socketInstance.on("connect_error", (error) => {
-      console.error("Connection error:", error);
+      console.error("Connection error:", error.name, error.cause);
       setSocket(null);
     });
 
