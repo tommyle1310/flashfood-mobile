@@ -11,10 +11,29 @@ import IconMaterialIcons from "react-native-vector-icons/MaterialIcons";
 
 import moment from "moment"; // Import moment for date formatting
 import { useEffect, useState } from "react";
-import { Image, StyleSheet, TouchableOpacity, View } from "react-native";
+import {
+  Image,
+  StyleSheet,
+  TouchableOpacity,
+  View,
+  Linking,
+} from "react-native";
 import { ScrollView } from "react-native-gesture-handler";
+import { IMAGE_LINKS } from "@/src/assets/imageLinks";
+import { truncateString } from "@/src/utils/functions";
+import FFScreenTopSection from "@/src/components/FFScreenTopSection";
+import { StackNavigationProp } from "@react-navigation/stack";
+import { MainStackParamList } from "@/src/navigation/AppNavigator";
+import { useNavigation } from "@react-navigation/native";
+import * as IntentLauncher from "expo-intent-launcher";
+
+type HomeRestaurantSreenNavigationProp = StackNavigationProp<
+  MainStackParamList,
+  "PaymentMethod"
+>;
 
 const PaymentMethodScreen = () => {
+  const navigation = useNavigation<HomeRestaurantSreenNavigationProp>();
   const [isShowAddPaymentModal, setIsShowAddPaymentModal] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [transactions, setTransactions] = useState([]); // State to store transaction data
@@ -62,8 +81,21 @@ const PaymentMethodScreen = () => {
     return transaction.source === fWallet_id ? "Sent" : "Received";
   };
 
+  const openFWallet = async () => {
+    try {
+      await IntentLauncher.startActivityAsync("android.intent.action.MAIN", {
+        packageName: "com.tommyle1310.FWallet",
+        className: "com.tommyle1310.FWallet.MainActivity", // Chỉ định activity chính xác
+      });
+      console.log("Mở app thành công");
+    } catch (error) {
+      console.log("Lỗi: ", error);
+    }
+  };
+
   return (
     <FFSafeAreaView>
+      <FFScreenTopSection title="Payment methods" navigation={navigation} />
       <Spinner isVisible={isLoading} isOverlay />
 
       <ScrollView contentContainerStyle={styles.container}>
@@ -78,7 +110,7 @@ const PaymentMethodScreen = () => {
             </FFText>
           </View>
           <FFButton
-            onPress={() => {}}
+            onPress={openFWallet}
             style={styles.topUpButton}
             isLinear
             className="flex-row items-center gap-2"
@@ -103,15 +135,15 @@ const PaymentMethodScreen = () => {
         <View style={styles.paymentMethodCard}>
           <Image
             source={{
-              uri: "https://upload.wikimedia.org/wikipedia/commons/0/04/Mastercard-logo.png",
+              uri: IMAGE_LINKS.DEFAULT_AVATAR_FOOD,
             }}
             style={styles.cardImage}
           />
           <FFText fontSize="md" fontWeight="500">
-            Mastercard
+            FWallet
           </FFText>
           <FFText fontSize="sm" style={styles.cardNumber}>
-            6895 3526 8456 ****
+            {truncateString(fWallet_id || "", 20)}
           </FFText>
         </View>
 

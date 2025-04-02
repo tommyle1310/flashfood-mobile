@@ -47,8 +47,19 @@ const FFAuthForm = ({
 
   return (
     <View style={styles.container}>
+      <View
+        style={{
+          position: "absolute",
+          right: 0,
+          left: 0,
+          top: -40,
+
+          transform: [{ translateX: "40%" }],
+        }}
+      >
+        <FFAvatar avatar="https://res.cloudinary.com/dpubnzap3/image/upload/v1738820317/g2nvwg7zrqkevpdarn3r.png" />
+      </View>
       <Text style={styles.headerText}>{isSignUp ? "Sign Up" : "Login"}</Text>
-      <FFAvatar avatar="https://res.cloudinary.com/dpubnzap3/image/upload/v1738820317/g2nvwg7zrqkevpdarn3r.png" />
       <View style={styles.switchAuthContainer}>
         <Text style={styles.switchAuthText}>
           {isSignUp ? "Already have an account?" : "Don't have an account?"}
@@ -100,6 +111,8 @@ const styles = StyleSheet.create({
     backgroundColor: "#fff",
     padding: 16,
     borderRadius: 16,
+    position: "relative",
+    paddingTop: 40,
     width: "90%",
     shadowColor: "#b5b3a1",
     shadowOpacity: 0.1,
