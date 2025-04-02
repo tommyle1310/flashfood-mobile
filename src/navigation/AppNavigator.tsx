@@ -30,6 +30,7 @@ import RatingScreen from "@/screens/RatingScreen";
 import { Avatar } from "../types/common";
 import PaymentMethodScreen from "@/screens/PaymentMethodScreen";
 import ChangePasswordScreen from "@/screens/ChangePasswordScreen";
+import SearchScreen from "@/screens/SearchScreen";
 
 export type RootStackParamList = {
   Login: undefined;
@@ -57,6 +58,7 @@ export type MainStackParamList = {
   Profile: undefined;
   PaymentMethod: undefined;
   ChangePassword: undefined;
+  Search: undefined;
   NearYou: Restaurant[];
   RouteToRestaurant: { lng: number; lat: number };
   AddressList: undefined;
@@ -84,6 +86,11 @@ const MainStackScreen = () => {
         options={{ headerShown: false }}
         name="Checkout"
         component={CheckoutScreen}
+      />
+      <MainStack.Screen
+        options={{ headerShown: false }}
+        name="Search"
+        component={SearchScreen}
       />
       <MainStack.Screen
         options={{ headerShown: false }}

@@ -5,24 +5,28 @@ import {
   TextInput,
   TouchableOpacity,
   Pressable,
+  StyleProp,
+  ViewStyle,
 } from "react-native";
 import React, { useState, useRef } from "react";
 import IconIonicons from "react-native-vector-icons/Ionicons";
 import FFText from "@/src/components/FFText";
 
-interface FFInputControlProps {
-  value: string | number; // Hỗ trợ cả string và number
-  setValue?: React.Dispatch<React.SetStateAction<string | number>>; // Hỗ trợ cả string và number
+// Dùng generic T để type của value và setValue khớp nhau
+interface FFInputControlProps<T extends string | number> {
+  value: T; // value có thể là string hoặc number
+  setValue?: React.Dispatch<React.SetStateAction<T>>; // setValue khớp với type của value
   error?: string | null | undefined;
   placeholder?: string;
   secureTextEntry?: boolean;
-  label: string;
+  label?: string;
   disabled?: boolean;
   readonly?: boolean;
   isNumeric?: boolean; // Thêm prop để ép kiểu number (optional)
+  style?: StyleProp<ViewStyle>; // Thêm prop style cho container chính
 }
 
-const FFInputControl: React.FC<FFInputControlProps> = ({
+const FFInputControl = <T extends string | number>({
   value,
   setValue,
   error,
@@ -31,8 +35,9 @@ const FFInputControl: React.FC<FFInputControlProps> = ({
   label,
   disabled = false,
   readonly = false,
-  isNumeric = false, // Mặc định không ép number
-}) => {
+  isNumeric = false,
+  style, // Thêm style vào destructuring
+}: FFInputControlProps<T>) => {
   const [isPasswordVisible, setIsPasswordVisible] = useState<boolean>(false);
   const inputRef = useRef<TextInput>(null);
 
@@ -48,16 +53,16 @@ const FFInputControl: React.FC<FFInputControlProps> = ({
     }
   };
 
-  // Xử lý giá trị nhập vào khi là số
+  // Xử lý giá trị nhập vào
   const handleChangeText = (text: string) => {
     if (!setValue) return; // Nếu không có setValue thì bỏ qua
 
     if (isNumeric) {
       // Chuyển text thành number, cho phép thập phân
       const numericValue = text === "" ? "" : parseFloat(text);
-      setValue(Number.isNaN(numericValue) ? "" : numericValue); // Nếu không parse được thì để rỗng
+      setValue((Number.isNaN(numericValue) ? "" : numericValue) as T);
     } else {
-      setValue(text); // Giữ nguyên string nếu không phải số
+      setValue(text as T); // Giữ nguyên string, ép về T
     }
   };
 
@@ -68,7 +73,7 @@ const FFInputControl: React.FC<FFInputControlProps> = ({
   // Nếu readonly, dùng FFText
   if (readonly) {
     return (
-      <View>
+      <View style={style}>
         <Text style={styles.inputLabel}>{label}</Text>
         <FFText fontSize="sm" fontWeight="400" style={styles.readonlyText}>
           {displayValue}
@@ -80,7 +85,11 @@ const FFInputControl: React.FC<FFInputControlProps> = ({
 
   // Nếu không readonly, dùng TextInput
   return (
-    <Pressable onPress={handleInputContainerPress} disabled={disabled}>
+    <Pressable
+      onPress={handleInputContainerPress}
+      disabled={disabled}
+      style={style} // Áp dụng style cho container chính
+    >
       <Text style={styles.inputLabel}>{label}</Text>
       <View
         style={[

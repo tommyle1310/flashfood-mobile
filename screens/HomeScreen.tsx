@@ -161,7 +161,11 @@ const HomeScreen = () => {
         {/* Top Section */}
         <View className="flex-row justify-between items-center">
           <View className="flex-row items-center gap-2">
-            <FFAvatar avatar={globalState?.avatar?.url ?? ""} size={50} />
+            <FFAvatar
+              onPress={() => navigation.navigate("Profile")}
+              avatar={globalState?.avatar?.url ?? ""}
+              size={50}
+            />
             <View>
               <FFText>{globalState?.email}</FFText>
               <FFText
@@ -178,7 +182,10 @@ const HomeScreen = () => {
         </View>
 
         {/* Search */}
-        <Pressable className="bg-gray-200 rounded-lg border border-gray-300 p-4">
+        <Pressable
+          onPress={() => navigation.navigate("Search")}
+          className="bg-gray-200 rounded-lg border border-gray-300 p-4"
+        >
           <FFText style={{ fontSize: 14, color: "#aaa" }}>
             Search anything...
           </FFText>
