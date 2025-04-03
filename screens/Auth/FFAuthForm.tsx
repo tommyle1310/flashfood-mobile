@@ -15,7 +15,12 @@ import FFInputControl from "@/src/components/FFInputControl";
 
 type FFAuthFormProps = {
   isSignUp: boolean;
-  onSubmit: (email: string, password: string) => void;
+  onSubmit: (
+    email: string,
+    password: string,
+    firstName: string,
+    lastName: string
+  ) => void;
   navigation?: any; // Optional navigation prop, used only in SignUp for navigation,
   error?: string;
 };
@@ -28,6 +33,8 @@ const FFAuthForm = ({
 }: FFAuthFormProps) => {
   const [email, setEmail] = useState("customer@gmail.com");
   const [password, setPassword] = useState("000000");
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
   const [isPasswordVisible, setIsPasswordVisible] = useState(false); // State to toggle password visibility
   const passwordInputRef = useRef<TextInput>(null);
 
@@ -36,7 +43,7 @@ const FFAuthForm = ({
   };
 
   const handleSubmit = () => {
-    onSubmit(email, password);
+    onSubmit(email, password, firstName, lastName);
   };
 
   const handleInputContainerPress = () => {
@@ -80,6 +87,24 @@ const FFAuthForm = ({
         setValue={setEmail}
         value={email}
       />
+      {isSignUp && (
+        <>
+          <FFInputControl
+            error={error}
+            label="First name"
+            placeholder="Tom"
+            setValue={setFirstName}
+            value={firstName}
+          />
+          <FFInputControl
+            error={error}
+            label="Last name"
+            placeholder="Morn"
+            setValue={setLastName}
+            value={lastName}
+          />
+        </>
+      )}
 
       <FFInputControl
         error={error}

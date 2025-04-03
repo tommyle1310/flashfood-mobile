@@ -34,7 +34,12 @@ const Signup = () => {
   const [isOpenVerificationModal, setIsOpenVerificationModal] =
     useState<boolean>(false);
 
-  const handleSignupSubmit = (email: string, password: string) => {
+  const handleSignupSubmit = (
+    email: string,
+    password: string,
+    firstName: string,
+    lastName: string
+  ) => {
     // Set loading to true when starting the request
     setLoading(true);
 
@@ -42,6 +47,8 @@ const Signup = () => {
     const requestBody = {
       email: email,
       password: password,
+      first_name: firstName,
+      last_name: lastName,
     };
 
     // Make the POST request
@@ -56,8 +63,8 @@ const Signup = () => {
         if (response.data) {
           const { EC, EM } = response.data; // Access EC directly
 
-
           if (EC === 0) {
+            setError("");
             // Success
             setEmail(email); // Ensure email state is set
             setIsOpenVerificationModal(true); // Open the verification modal
@@ -183,16 +190,19 @@ const Signup = () => {
               size={30}
               className="text-center"
             />
-         <View>
-             <Text className="text-lg font-bold text-center">
-              Your email is verified
-            </Text>
-            <Text className="text-sm text-gray-500">
-              Thank you for joining us at Flashfood! We're excited to have you
-              on board and hope you have a wonderful experience with us!
-            </Text>
-         </View>
-            <TouchableOpacity onPress={() => navigation.navigate('Login')} className="flex-row gap-1 items-center justify-center">
+            <View>
+              <Text className="text-lg font-bold text-center">
+                Your email is verified
+              </Text>
+              <Text className="text-sm text-gray-500">
+                Thank you for joining us at Flashfood! We're excited to have you
+                on board and hope you have a wonderful experience with us!
+              </Text>
+            </View>
+            <TouchableOpacity
+              onPress={() => navigation.navigate("Login")}
+              className="flex-row gap-1 items-center justify-center"
+            >
               <Text className="text-[#a140e1] text-underline text-center font-semibold text-lg">
                 Go to Login
               </Text>

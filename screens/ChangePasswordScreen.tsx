@@ -1,9 +1,12 @@
 import React, { useState } from "react";
-import { View, StyleSheet, Image } from "react-native";
+import { View, StyleSheet, Image, Linking } from "react-native";
 import FFSafeAreaView from "@/src/components/FFSafeAreaView";
 import FFText from "@/src/components/FFText";
 import FFButton from "@/src/components/FFButton";
 import FFInputControl from "@/src/components/FFInputControl";
+import Spinner from "@/src/components/FFSpinner";
+import axiosInstance from "@/src/utils/axiosConfig";
+import FFModal from "@/src/components/FFModal";
 
 const ChangePasswordScreen = () => {
   const [step, setStep] = useState<
@@ -12,15 +15,57 @@ const ChangePasswordScreen = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+  const [modalDetails, setModalDetails] = useState<{
+    status: "SUCCESS" | "ERROR" | "HIDDEN" | "INFO" | "YESNO";
+    title: string;
+    desc: string;
+  }>({ status: "HIDDEN", title: "", desc: "" });
 
-  const handleSendInstructions = () => {
-    // Simulate sending instructions
-    setStep("checkEmail");
+  const handleSendInstructions = async () => {
+    setIsLoading(true);
+    try {
+      const response = await axiosInstance.post(
+        `/auth/request-reset-password`,
+        { email },
+        {
+          validateStatus: () => true,
+        }
+      );
+      if (response.data.EC === 0) {
+        setModalDetails({
+          status: "SUCCESS",
+          title: "Reset password confirmation mail sent",
+          desc: `Please check your mail to proceed password resetting. (${email})`,
+        });
+      }
+      setStep("checkEmail");
+    } catch (error) {
+      console.log("Error sending instructions:", error);
+      setModalDetails({
+        status: "ERROR",
+        title: "Error",
+        desc: "Failed to send instructions.",
+      });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
-  const handleOpenEmailApp = () => {
-    // Simulate opening email app
-    console.log("Opening email app...");
+  const handleOpenEmailApp = async () => {
+    try {
+      const emailUrl = "mailto:";
+      const supported = await Linking.canOpenURL(emailUrl);
+
+      if (supported) {
+        await Linking.openURL(emailUrl);
+        console.log("Opening email app...");
+      } else {
+        console.log("No email app is available on this device.");
+      }
+    } catch (error) {
+      console.error("Error opening email app:", error);
+    }
   };
 
   const handleResetPassword = () => {
@@ -31,6 +76,10 @@ const ChangePasswordScreen = () => {
       console.log("Passwords do not match!");
     }
   };
+
+  if (isLoading) {
+    return <Spinner isVisible isOverlay />;
+  }
 
   return (
     <FFSafeAreaView>
@@ -108,6 +157,28 @@ const ChangePasswordScreen = () => {
           </FFButton>
         </View>
       )}
+
+      {/* <FFModal
+        visible={modalDetails.status !== "HIDDEN"}
+        onClose={() =>
+          setModalDetails({ status: "HIDDEN", title: "", desc: "" })
+        }
+      >
+        <FFText fontSize="lg" fontWeight="700" style={styles.title}>
+          {modalDetails.title}
+        </FFText>
+        <FFText fontSize="sm" style={styles.description}>
+          {modalDetails.desc}
+        </FFText>
+        <FFButton
+          onPress={() =>
+            setModalDetails({ status: "HIDDEN", title: "", desc: "" })
+          }
+          style={styles.button}
+        >
+          Close
+        </FFButton>
+      </FFModal> */}
     </FFSafeAreaView>
   );
 };
@@ -131,8 +202,7 @@ const styles = StyleSheet.create({
     color: "#888",
   },
   input: {
-    width: 300,
-    backgroundColor: "red",
+    width: "100%",
     marginBottom: 16,
   },
   button: {
