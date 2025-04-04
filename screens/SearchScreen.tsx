@@ -166,7 +166,7 @@ const SearchScreen = () => {
       )}
 
       {/* Explore the City */}
-      <View style={styles.section}>
+      {/* <View style={styles.section}>
         <FFText fontSize="lg" fontWeight="600" style={styles.sectionTitle}>
           Explore the city
         </FFText>
@@ -185,7 +185,7 @@ const SearchScreen = () => {
             </TouchableOpacity>
           ))}
         </View>
-      </View>
+      </View> */}
     </FFSafeAreaView>
   );
 };

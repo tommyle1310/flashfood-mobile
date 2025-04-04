@@ -6,6 +6,8 @@ interface AuthState {
   isAuthenticated: boolean;
   email: string | null;
   id: string | null;
+  first_name: string | null;
+  last_name: string | null;
   fWallet_id: string | null;
   app_preferences: object | null;
   preferred_category: string[];
@@ -38,6 +40,8 @@ const initialState: AuthState = {
   isAuthenticated: false,
   email: null,
   id: null,
+  first_name: null,
+  last_name: null,
   fWallet_id: null,
   fWallet_balance: null,
   address: null,
@@ -58,6 +62,8 @@ export const loadTokenFromAsyncStorage = createAsyncThunk(
     const fWallet_balance = await AsyncStorage.getItem("fWallet_balance");
     const app_preferences = await AsyncStorage.getItem("app_preferences");
     const email = await AsyncStorage.getItem("email");
+    const first_name = await AsyncStorage.getItem("first_name");
+    const last_name = await AsyncStorage.getItem("last_name");
     const preferred_category = await AsyncStorage.getItem("preferred_category");
     const favorite_items = await AsyncStorage.getItem("favorite_items");
     const avatar = await AsyncStorage.getItem("avatar");
@@ -72,6 +78,8 @@ export const loadTokenFromAsyncStorage = createAsyncThunk(
       id,
       fWallet_balance,
       fWallet_id,
+      first_name,
+      last_name,
       app_preferences: app_preferences ? JSON.parse(app_preferences) : {},
       email,
       preferred_category: preferred_category
@@ -97,6 +105,8 @@ export const saveTokenToAsyncStorage = createAsyncThunk(
     fWallet_id: string;
     app_preferences: object;
     email: string;
+    first_name: string;
+    last_name: string;
     preferred_category: string[];
     favorite_items: string[];
     avatar: { url: string; key: string };
@@ -118,6 +128,8 @@ export const saveTokenToAsyncStorage = createAsyncThunk(
   }) => {
     await AsyncStorage.setItem("accessToken", data.accessToken);
     await AsyncStorage.setItem("id", data.id);
+    await AsyncStorage.setItem("first_name", data.first_name);
+    await AsyncStorage.setItem("last_name", data.last_name);
     await AsyncStorage.setItem("fWallet_balance", `${data.fWallet_balance}`);
     await AsyncStorage.setItem("fWallet_id", data.fWallet_id);
     await AsyncStorage.setItem(
@@ -145,6 +157,22 @@ export const saveTokenToAsyncStorage = createAsyncThunk(
     return data;
   }
 );
+export const saveProfileDataToAsyncStorage = createAsyncThunk(
+  "auth/saveToken",
+  async (data: {
+    email: string;
+    avatar: { url: string; key: string };
+    first_name: string;
+    last_name: string;
+  }) => {
+    await AsyncStorage.setItem("email", data.email);
+    await AsyncStorage.setItem("avatar", JSON.stringify(data.avatar));
+    await AsyncStorage.setItem("first_name", JSON.stringify(data.avatar));
+    await AsyncStorage.setItem("last_name", JSON.stringify(data.avatar));
+
+    return data;
+  }
+);
 
 export const setAvatarInAsyncStorage = createAsyncThunk(
   "auth/setAvatarInAsyncStorage",
@@ -163,6 +191,8 @@ export const setDefaultAddressInStorage = createAsyncThunk(
       id: string;
       fWallet_balance: number;
       fWallet_id: string;
+      first_name: string;
+      last_name: string;
       street: string;
       city: string;
       nationality: string;
@@ -197,6 +227,8 @@ export const addAddressInAsyncStorage = createAsyncThunk(
       id: string;
       fWallet_balance: number;
       fWallet_id: string;
+      first_name: string;
+      last_name: string;
       street: string;
       city: string;
       nationality: string;
@@ -233,6 +265,8 @@ export const logout = createAsyncThunk(
     // Clear all user-related data from AsyncStorage
     await AsyncStorage.removeItem("accessToken");
     await AsyncStorage.removeItem("id");
+    await AsyncStorage.removeItem("first_name");
+    await AsyncStorage.removeItem("last_name");
     await AsyncStorage.removeItem("fWallet_id");
     await AsyncStorage.removeItem("fWallet_balance");
     await AsyncStorage.removeItem("app_preferences");
@@ -265,6 +299,8 @@ export const updateSingleAddress = createAsyncThunk(
     updatedAddress: {
       location: { lng: number; lat: number };
       id: string;
+      first_name: string;
+      last_name: string;
       fWallet_id: string;
       fWallet_balance: number;
       street: string;
@@ -344,6 +380,8 @@ const authSlice = createSlice({
       const {
         id,
         fWallet_id,
+        first_name,
+        last_name,
         fWallet_balance,
         accessToken,
         app_preferences,
@@ -359,6 +397,8 @@ const authSlice = createSlice({
       state.accessToken = accessToken;
       state.isAuthenticated = true;
       state.app_preferences = app_preferences;
+      state.first_name = first_name;
+      state.last_name = last_name;
       state.fWallet_balance = fWallet_balance;
       state.email = email;
       state.id = id;
@@ -374,6 +414,8 @@ const authSlice = createSlice({
 
     clearAuthState: (state) => {
       state.accessToken = null;
+      state.first_name = null;
+      state.last_name = null;
       state.isAuthenticated = false;
       state.app_preferences = {};
       state.email = null;
@@ -420,6 +462,8 @@ const authSlice = createSlice({
         const {
           id,
           fWallet_id,
+          first_name,
+          last_name,
           fWallet_balance,
           accessToken,
           app_preferences,
@@ -437,6 +481,8 @@ const authSlice = createSlice({
           state.accessToken = accessToken;
           state.isAuthenticated = true;
           state.app_preferences = app_preferences;
+          state.first_name = first_name;
+          state.last_name = last_name;
           state.email = email;
           state.fWallet_id = fWallet_id;
           state.fWallet_balance = +(fWallet_balance || 0);
@@ -455,6 +501,8 @@ const authSlice = createSlice({
       .addCase(saveTokenToAsyncStorage.fulfilled, (state, action) => {
         const {
           id,
+          first_name,
+          last_name,
           fWallet_id,
           fWallet_balance,
           accessToken,
@@ -472,6 +520,8 @@ const authSlice = createSlice({
         state.accessToken = accessToken;
         state.isAuthenticated = true;
         state.app_preferences = app_preferences;
+        state.first_name = first_name;
+        state.last_name = last_name;
         state.email = email;
         state.fWallet_balance = fWallet_balance;
         state.id = id;
@@ -486,6 +536,8 @@ const authSlice = createSlice({
       })
       .addCase(logout.fulfilled, (state) => {
         state.accessToken = null;
+        state.first_name = null;
+        state.last_name = null;
         state.isAuthenticated = false;
         state.app_preferences = {};
         state.email = null;

@@ -64,6 +64,8 @@ const Login = () => {
             accessToken: data.access_token, // Saving the actual access token
             app_preferences: userData.app_preferences || {}, // Fallback to empty object if not present
             email: userData.email || "", // Default to empty string if email is missing
+            first_name: userData.first_name || "", // Default to empty string if email is missing
+            last_name: userData.last_name || "", // Default to empty string if email is missing
             preferred_category: userData.preferred_category || [], // Ensure this is an array
             favorite_items: userData.favorite_items || [], // Ensure this is an array
             avatar: userData.avatar || null, // Use null if no avatar data is available

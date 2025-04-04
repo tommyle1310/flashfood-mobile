@@ -38,11 +38,17 @@ const ProfileScreen = () => {
   const [screenStatus, setScreenStatus] = useState<"READONLY" | "EDIT_PROFILE">(
     "READONLY"
   );
+  const [isLoading, setIsLoading] = useState(false);
   const [firstName, setFirstName] = useState<string>("");
   const [lastName, setLastName] = useState<string>("");
   const [email, setEmail] = useState<string>("");
   const [phone, setPhone] = useState<string>("");
-  const { user_id } = useSelector((state: RootState) => state.auth);
+  const [modalDetails, setModalDetails] = useState<{
+    status: "SUCCESS" | "ERROR" | "HIDDEN" | "INFO" | "YESNO";
+    title: string;
+    desc: string;
+  }>({ status: "HIDDEN", title: "", desc: "" });
+  const { id } = useSelector((state: RootState) => state.auth);
   const [profileData, setProfileData] = useState<Props_ProfileData>({
     id: "",
     user_Id: "",
@@ -61,14 +67,25 @@ const ProfileScreen = () => {
   });
   useEffect(() => {
     const fetchProfileData = async () => {
-      const response = await axiosInstance.get(`/customers/${user_id}`);
-      const { EC, EM, data } = response.data;
-      if (EC === 0) {
-        setProfileData(data);
+      setIsLoading(true);
+      try {
+        const response = await axiosInstance.get(`/customers/${id}`);
+        const { EC, EM, data } = response.data;
+        if (EC === 0) {
+          setProfileData(data);
+        }
+      } catch (error) {
+        setModalDetails({
+          status: "ERROR",
+          desc: "Something went wrong!",
+          title: "Error while retrieving your profile data.",
+        });
+      } finally {
+        setIsLoading(false);
       }
     };
     fetchProfileData();
-  }, [user_id]);
+  }, [id]);
   useEffect(() => {
     const { id, address, avatar, first_name, last_name, user, user_Id } =
       profileData;
@@ -91,6 +108,7 @@ const ProfileScreen = () => {
       setLastName(lastNameState);
     }
   }, [profileData]);
+  console.log("check profile data", profileData);
 
   return (
     <FFSafeAreaView>
@@ -98,6 +116,10 @@ const ProfileScreen = () => {
       <View className="p-4">
         {screenStatus === "READONLY" ? (
           <ReadonlyProfileComponents
+            email={profileData.user.email}
+            firstName={profileData.first_name}
+            lastName={profileData.last_name}
+            phone={phone}
             toggleStatus={() => setScreenStatus("EDIT_PROFILE")}
           />
         ) : (

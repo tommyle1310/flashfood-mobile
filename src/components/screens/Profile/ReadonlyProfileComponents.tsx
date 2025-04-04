@@ -7,8 +7,16 @@ import { useSelector } from "@/src/store/types";
 import { RootState } from "@/src/store/store";
 
 const ReadonlyProfileComponents = ({
+  firstName,
+  lastName,
+  email,
+  phone,
   toggleStatus,
 }: {
+  firstName: string;
+  lastName: string;
+  email: string;
+  phone: string;
   toggleStatus: () => void;
 }) => {
   const { user_id, avatar } = useSelector((state: RootState) => state.auth);
@@ -27,9 +35,11 @@ const ReadonlyProfileComponents = ({
       <View className="flex-row justify-between gap-4">
         <FFAvatar avatar={avatar?.url} />
         <View className="flex-1">
-          <FFText fontSize="lg">Tommy Teo</FFText>
+          <FFText fontSize="lg">
+            {lastName} {firstName}
+          </FFText>
           <FFText fontWeight="400" style={{ color: "#aaa" }}>
-            abc@gmail.com
+            {email}
           </FFText>
         </View>
         <TouchableOpacity
@@ -51,7 +61,7 @@ const ReadonlyProfileComponents = ({
         <FFText style={{ color: "#aaa" }} fontWeight="400">
           Phone Number:
         </FFText>
-        <FFText fontWeight="400">(+84) 707171164</FFText>
+        <FFText fontWeight="400">{phone}</FFText>
       </View>
       <View className="flex-row gap-2 items-center">
         <FFText style={{ color: "#aaa" }} fontWeight="400">

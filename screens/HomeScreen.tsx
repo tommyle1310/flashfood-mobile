@@ -26,7 +26,11 @@ import { MainStackParamList } from "@/src/navigation/AppNavigator";
 import FFView from "@/src/components/FFView";
 import Spinner from "@/src/components/FFSpinner";
 import { IMAGE_LINKS } from "@/src/assets/imageLinks";
-import { FoodCategory, Restaurant } from "@/src/types/screens/Home";
+import {
+  AvailablePromotionWithRestaurants,
+  FoodCategory,
+  Restaurant,
+} from "@/src/types/screens/Home";
 
 // Type Definitions
 
@@ -50,6 +54,10 @@ const HomeScreen = () => {
   const [listRestaurants, setListRestaurants] = useState<Restaurant[] | null>(
     null
   );
+  const [
+    availablePromotionWithRestaurants,
+    setAvailablePromotionWithRestaurants,
+  ] = useState<AvailablePromotionWithRestaurants[] | null>(null);
 
   const [isLoading, setIsLoading] = useState(true);
 
@@ -61,12 +69,15 @@ const HomeScreen = () => {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [foodCategoriesResponse, restaurantsResponse] = await Promise.all(
-          [
-            axiosInstance.get("/food-categories"),
-            axiosInstance.get(`/customers/restaurants/${globalState.id}`),
-          ]
-        );
+        const [
+          foodCategoriesResponse,
+          restaurantsResponse,
+          promotionsWithRestaurantsResponse,
+        ] = await Promise.all([
+          axiosInstance.get("/food-categories"),
+          axiosInstance.get(`/customers/restaurants/${globalState.id}`),
+          axiosInstance.get(`/promotions/valid`),
+        ]);
         if (foodCategoriesResponse.data.EC === 0) {
           setListFoodCategories(foodCategoriesResponse.data.data);
         }
@@ -85,6 +96,12 @@ const HomeScreen = () => {
             })
           );
           setListRestaurants(mappedRestaurants);
+        }
+
+        if (promotionsWithRestaurantsResponse.data.EC === 0) {
+          setAvailablePromotionWithRestaurants(
+            promotionsWithRestaurantsResponse.data.data
+          );
         }
       } catch (error) {
         console.error("Error fetching data:", error);
@@ -151,13 +168,15 @@ const HomeScreen = () => {
   const renderedRestaurants =
     filteredRestaurants?.length > 0 ? filteredRestaurants : listRestaurants;
 
+  console.log("check list pro", availablePromotionWithRestaurants);
+
   if (isLoading) {
     return <Spinner isVisible />; // Or your custom loading spinner
   }
 
   return (
     <FFSafeAreaView>
-      <View className="p-4 gap-6">
+      <ScrollView className="p-4 gap-6">
         {/* Top Section */}
         <View className="flex-row justify-between items-center">
           <View className="flex-row items-center gap-2">
@@ -176,15 +195,23 @@ const HomeScreen = () => {
             </View>
           </View>
           <View className="flex-row items-center gap-2">
-            <IconAntDesign size={20} name="questioncircleo" />
-            <IconFeather size={20} name="bell" />
+            <TouchableOpacity
+              onPress={() => navigation.navigate("SupportCenter")}
+            >
+              <IconAntDesign size={20} name="questioncircleo" />
+            </TouchableOpacity>
+            <TouchableOpacity
+              onPress={() => navigation.navigate("Notifications")}
+            >
+              <IconFeather size={20} name="bell" />
+            </TouchableOpacity>
           </View>
         </View>
 
         {/* Search */}
         <Pressable
           onPress={() => navigation.navigate("Search")}
-          className="bg-gray-200 rounded-lg border border-gray-300 p-4"
+          className="bg-gray-200 rounded-lg border border-gray-300 p-4 my-4"
         >
           <FFText style={{ fontSize: 14, color: "#aaa" }}>
             Search anything...
@@ -192,7 +219,7 @@ const HomeScreen = () => {
         </Pressable>
 
         {/* Hot Categories */}
-        <View>
+        <View className="my-4">
           <View className="flex-row items-center justify-between">
             <FFText>Hot Categories</FFText>
             <TouchableOpacity>
@@ -253,7 +280,7 @@ const HomeScreen = () => {
               </FFText>
             </TouchableOpacity>
           </View>
-          <ScrollView horizontal className="mt-2 py-2">
+          <ScrollView horizontal className="mt-2 py-2 px-2 -ml-2">
             {(renderedRestaurants ?? []).slice(0, 5).map((item) => (
               <FFView
                 onPress={() =>
@@ -268,6 +295,7 @@ const HomeScreen = () => {
                   paddingHorizontal: 8,
                   width: 140,
                   marginRight: 8,
+                  height: 140,
                   paddingTop: 8,
                 }}
               >
@@ -275,7 +303,11 @@ const HomeScreen = () => {
                   source={{
                     uri: item?.avatar?.url ?? IMAGE_LINKS.DEFAULT_AVATAR_FOOD,
                   }}
-                  style={{ flex: 1, borderRadius: 8, backgroundColor: "gray" }}
+                  style={{
+                    height: 80,
+                    borderRadius: 8,
+                    backgroundColor: "gray",
+                  }}
                   imageStyle={{ borderRadius: 8 }}
                 >
                   {/* Rating and Favorite Icon */}
@@ -316,13 +348,20 @@ const HomeScreen = () => {
                   </Pressable>
                 </ImageBackground>
 
-                <View className="h-1/3">
+                <View style={{ paddingTop: 4, flex: 1 }}>
                   <FFText
-                    style={{ fontWeight: "600", fontSize: 14, marginTop: 4 }}
+                    style={{
+                      fontWeight: "600",
+                      fontSize: 14,
+                      marginTop: 4,
+                      lineHeight: 14,
+                    }}
                   >
                     {item.restaurant_name}
                   </FFText>
-                  <FFText style={{ color: "#aaa", fontSize: 11 }}>
+                  <FFText
+                    style={{ color: "#aaa", fontSize: 11, marginBottom: 4 }}
+                  >
                     {item?.address?.street}
                   </FFText>
                 </View>
@@ -333,7 +372,132 @@ const HomeScreen = () => {
             )}
           </ScrollView>
         </View>
-      </View>
+
+        <View style={{ paddingBottom: 100 }}>
+          <ScrollView className="mt-2 px-2 py-2 -ml-2">
+            {availablePromotionWithRestaurants?.map((promotion) => (
+              <View key={promotion.id} className="mb-6">
+                <View className="flex-row items-center justify-between">
+                  <FFText style={{ fontWeight: "600", fontSize: 16 }}>
+                    {promotion.name}
+                  </FFText>
+                  <TouchableOpacity
+                  // onPress={() =>
+                  //   navigation.navigate(
+                  //     "NearYou",
+                  //     promotion.restaurants ?? []
+                  //   )
+                  // }
+                  >
+                    <FFText
+                      style={{
+                        color: "#3FB854",
+                        fontWeight: "400",
+                        fontSize: 12,
+                      }}
+                    >
+                      Show All
+                    </FFText>
+                  </TouchableOpacity>
+                </View>
+                <ScrollView horizontal className="mt-2 py-2 px-2 -ml-2">
+                  {promotion.restaurants.slice(0, 5).map((item) => (
+                    <FFView
+                      onPress={() =>
+                        navigation.navigate("RestaurantDetail", {
+                          restaurantId: item.id,
+                        })
+                      }
+                      key={item.id}
+                      style={{
+                        elevation: 6,
+                        borderRadius: 12,
+                        height: 140,
+                        paddingHorizontal: 8,
+                        width: 140,
+                        marginRight: 8,
+                        paddingTop: 8,
+                      }}
+                    >
+                      <ImageBackground
+                        source={{
+                          uri:
+                            item?.avatar?.url ??
+                            IMAGE_LINKS.DEFAULT_AVATAR_FOOD,
+                        }}
+                        style={{
+                          flex: 1,
+                          borderRadius: 8,
+                          backgroundColor: "gray",
+                        }}
+                        imageStyle={{ borderRadius: 8 }}
+                      >
+                        {/* Rating and Favorite Icon */}
+                        <View
+                          className="flex-row absolute items-center gap-1 top-1 left-1"
+                          style={{
+                            backgroundColor: "rgba(0, 0, 0, 0.3)",
+                            padding: 4,
+                            borderRadius: 8,
+                          }}
+                        >
+                          <IconAntDesign name="star" color="#7dbf72" />
+                          <FFText
+                            style={{
+                              fontSize: 10,
+                              fontWeight: "600",
+                              color: "#eee",
+                            }}
+                          >
+                            4.8
+                          </FFText>
+                        </View>
+
+                        <Pressable
+                          onPress={() => handleToggleFavorite(item.id)}
+                          className="flex-row absolute items-center gap-1 top-1 right-1"
+                          style={{
+                            backgroundColor: "rgba(0, 0, 0, 0.3)",
+                            padding: 4,
+                            borderRadius: 8,
+                          }}
+                        >
+                          <IconAntDesign
+                            name={
+                              listFavoriteRestaurants?.includes(item.id)
+                                ? "heart"
+                                : "hearto"
+                            }
+                            size={16}
+                            color="#7dbf72"
+                          />
+                        </Pressable>
+                      </ImageBackground>
+
+                      <View className="h-1/3">
+                        <FFText
+                          style={{
+                            fontWeight: "600",
+                            fontSize: 14,
+                            marginTop: 4,
+                            lineHeight: 14,
+                            flex: 1,
+                          }}
+                        >
+                          {item.restaurant_name}
+                        </FFText>
+                      </View>
+                    </FFView>
+                  ))}
+                  {promotion.restaurants.length === 0 && (
+                    <FFText>No restaurants found for this promotion</FFText>
+                  )}
+                </ScrollView>
+              </View>
+            ))}
+          </ScrollView>
+        </View>
+      </ScrollView>
     </FFSafeAreaView>
   );
 };
