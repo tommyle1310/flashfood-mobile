@@ -47,6 +47,7 @@ export interface OrderTracking {
   driver: Driver | null;
   driver_id: string | null;
   id: string;
+  orderId?: string;
   order_items: OrderItem[]; // You can adjust the type based on the actual structure of order_items
   order_time: string; // You may want to convert this to Date in your application if necessary
   payment_method: string;

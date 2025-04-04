@@ -5,6 +5,7 @@ import FFText from "../../FFText";
 import IconFontAwesome5 from "react-native-vector-icons/FontAwesome5";
 import { useSelector } from "@/src/store/types";
 import { RootState } from "@/src/store/store";
+import FFSkeleton from "../../FFSkeleton";
 
 const ReadonlyProfileComponents = ({
   firstName,
@@ -35,12 +36,21 @@ const ReadonlyProfileComponents = ({
       <View className="flex-row justify-between gap-4">
         <FFAvatar avatar={avatar?.url} />
         <View className="flex-1">
-          <FFText fontSize="lg">
-            {lastName} {firstName}
-          </FFText>
-          <FFText fontWeight="400" style={{ color: "#aaa" }}>
-            {email}
-          </FFText>
+          {!firstName && !lastName ? (
+            <>
+              <FFSkeleton />
+              <FFSkeleton width={100} style={{ marginTop: 8 }} />
+            </>
+          ) : (
+            <>
+              <FFText fontSize="lg">
+                {lastName} {firstName}
+              </FFText>
+              <FFText fontWeight="400" style={{ color: "#aaa" }}>
+                {email}
+              </FFText>
+            </>
+          )}
         </View>
         <TouchableOpacity
           onPress={toggleStatus}

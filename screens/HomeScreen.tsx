@@ -31,6 +31,7 @@ import {
   FoodCategory,
   Restaurant,
 } from "@/src/types/screens/Home";
+import FFSkeleton from "@/src/components/FFSkeleton";
 
 // Type Definitions
 
@@ -168,12 +169,6 @@ const HomeScreen = () => {
   const renderedRestaurants =
     filteredRestaurants?.length > 0 ? filteredRestaurants : listRestaurants;
 
-  console.log("check list pro", availablePromotionWithRestaurants);
-
-  if (isLoading) {
-    return <Spinner isVisible />; // Or your custom loading spinner
-  }
-
   return (
     <FFSafeAreaView>
       <ScrollView className="p-4 gap-6">
@@ -262,6 +257,12 @@ const HomeScreen = () => {
               </TouchableOpacity>
             ))}
           </ScrollView>
+          {isLoading && (
+            <View style={{ width: "100%", gap: 12, flexDirection: "row" }}>
+              <FFSkeleton width={100} height={30} />
+              <FFSkeleton width={100} height={30} />
+            </View>
+          )}
         </View>
 
         {/* Near You */}
@@ -371,6 +372,12 @@ const HomeScreen = () => {
               <FFText>No restaurant found</FFText>
             )}
           </ScrollView>
+          {isLoading && (
+            <View style={{ width: "100%", gap: 12, flexDirection: "row" }}>
+              <FFSkeleton width={140} height={140} />
+              <FFSkeleton width={140} height={140} />
+            </View>
+          )}
         </View>
 
         <View style={{ paddingBottom: 100 }}>
@@ -493,6 +500,14 @@ const HomeScreen = () => {
                     <FFText>No restaurants found for this promotion</FFText>
                   )}
                 </ScrollView>
+                {isLoading && (
+                  <View
+                    style={{ width: "100%", gap: 12, flexDirection: "row" }}
+                  >
+                    <FFSkeleton width={100} height={30} />
+                    <FFSkeleton width={100} height={30} />
+                  </View>
+                )}
               </View>
             ))}
           </ScrollView>

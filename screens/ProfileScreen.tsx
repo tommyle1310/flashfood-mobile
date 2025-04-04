@@ -11,38 +11,33 @@ import { RootState } from "@/src/store/store";
 import axiosInstance from "@/src/utils/axiosConfig";
 import EditProfileComponent from "@/src/components/screens/Profile/EditProfileComponent";
 import FFView from "@/src/components/FFView";
+import FFAvatar from "@/src/components/FFAvatar";
+import FFSkeleton from "@/src/components/FFSkeleton";
 
-// Định nghĩa type cho favorite_restaurants
-interface OpeningHours {
-  [day: string]: {
-    from: number;
-    to: number;
+// Định nghĩa type cho favorite_restaurants từ API
+interface Address {
+  id: string;
+  street: string;
+  city: string;
+  postal_code: number;
+  location: {
+    lat: number;
+    lng: number;
   };
 }
 
-interface RestaurantStatus {
-  is_accepted_orders: boolean;
-  is_active: boolean;
-  is_open: boolean;
+interface FoodCategory {
+  id: string;
+  name: string;
+  // Thêm các field khác nếu cần
 }
 
 interface FavoriteRestaurant {
-  address_id: string;
-  avatar: { url: string; key: string } | null;
-  contact_email: any[];
-  contact_phone: any[];
-  created_at: number;
-  description: string | null;
   id: string;
-  images_gallery: string[] | null;
-  opening_hours: OpeningHours;
-  owner_id: string;
-  owner_name: string;
-  ratings: any | null;
   restaurant_name: string;
-  status: RestaurantStatus;
-  total_orders: number;
-  updated_at: number;
+  avatar: { url: string; key: string } | null;
+  address: Address;
+  specialize_in: FoodCategory[];
 }
 
 type ProfileSreenNavigationProp = StackNavigationProp<
@@ -102,6 +97,10 @@ const ProfileScreen = () => {
       is_verified: false,
     },
   });
+  // Thêm state cho favoriteRestaurants
+  const [favoriteRestaurants, setFavoriteRestaurants] = useState<
+    FavoriteRestaurant[]
+  >([]);
 
   useEffect(() => {
     const fetchProfileData = async () => {
@@ -122,7 +121,33 @@ const ProfileScreen = () => {
         setIsLoading(false);
       }
     };
+
+    const fetchFavoriteRestaurantData = async () => {
+      setIsLoading(true);
+      try {
+        console.log("check id", id);
+        const response = await axiosInstance.get(
+          `/customers/favorite-restaurants/${id}`
+        );
+        console.log("check res", response.data);
+        const { EC, EM, data } = response.data;
+        if (EC === 0) {
+          console.log("check data", data);
+          setFavoriteRestaurants(data); // Set state với dữ liệu từ API
+        }
+      } catch (error) {
+        setModalDetails({
+          status: "ERROR",
+          desc: "Something went wrong!",
+          title: "Error while retrieving favorite restaurants.",
+        });
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
     fetchProfileData();
+    fetchFavoriteRestaurantData();
   }, [id]);
 
   useEffect(() => {
@@ -150,10 +175,26 @@ const ProfileScreen = () => {
 
   // Render item cho FlatList
   const renderRestaurantItem = ({ item }: { item: FavoriteRestaurant }) => (
-    <FFView style={{ elevation: 3, padding: 12, borderRadius: 12 }}>
-      <Text className="text-lg font-semibold">{item.restaurant_name}</Text>
-      <Text>{item.owner_name}</Text>
-      <Text>Status: {item?.status?.is_open ? "Open" : "Closed"}</Text>
+    <FFView
+      style={{
+        flexDirection: "row",
+        gap: 12,
+        borderRadius: 12,
+        marginVertical: 8,
+        marginHorizontal: 8,
+        elevation: 3,
+        padding: 12,
+      }}
+    >
+      <FFAvatar rounded="sm" avatar={item?.avatar?.url} />
+      <View>
+        <Text className="text-lg font-semibold">{item.restaurant_name}</Text>
+        <Text>{`${item.address.street}, ${item.address.city}`}</Text>
+        <Text>
+          Specialties:{" "}
+          {item.specialize_in.map((cat) => cat.name).join(", ") || "N/A"}
+        </Text>
+      </View>
     </FFView>
   );
 
@@ -186,10 +227,10 @@ const ProfileScreen = () => {
       <View className="p-4">
         <Text className="text-xl font-bold mb-2">Favorite Restaurants</Text>
         <FlatList
-          data={favorite_restaurants as unknown as FavoriteRestaurant[]}
+          data={favoriteRestaurants}
           renderItem={renderRestaurantItem}
           keyExtractor={(item) => item.id}
-          ListEmptyComponent={<Text>No favorite restaurants found.</Text>}
+          ListEmptyComponent={<FFSkeleton height={80} />}
         />
       </View>
     </FFSafeAreaView>
