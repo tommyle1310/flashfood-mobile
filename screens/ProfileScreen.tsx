@@ -1,4 +1,4 @@
-import { TouchableOpacity, View } from "react-native";
+import { TouchableOpacity, View, FlatList, Text } from "react-native";
 import React, { useEffect, useState } from "react";
 import FFSafeAreaView from "@/src/components/FFSafeAreaView";
 import FFScreenTopSection from "@/src/components/FFScreenTopSection";
@@ -10,6 +10,40 @@ import { useSelector } from "@/src/store/types";
 import { RootState } from "@/src/store/store";
 import axiosInstance from "@/src/utils/axiosConfig";
 import EditProfileComponent from "@/src/components/screens/Profile/EditProfileComponent";
+import FFView from "@/src/components/FFView";
+
+// Định nghĩa type cho favorite_restaurants
+interface OpeningHours {
+  [day: string]: {
+    from: number;
+    to: number;
+  };
+}
+
+interface RestaurantStatus {
+  is_accepted_orders: boolean;
+  is_active: boolean;
+  is_open: boolean;
+}
+
+interface FavoriteRestaurant {
+  address_id: string;
+  avatar: { url: string; key: string } | null;
+  contact_email: any[];
+  contact_phone: any[];
+  created_at: number;
+  description: string | null;
+  id: string;
+  images_gallery: string[] | null;
+  opening_hours: OpeningHours;
+  owner_id: string;
+  owner_name: string;
+  ratings: any | null;
+  restaurant_name: string;
+  status: RestaurantStatus;
+  total_orders: number;
+  updated_at: number;
+}
 
 type ProfileSreenNavigationProp = StackNavigationProp<
   MainStackParamList,
@@ -49,6 +83,9 @@ const ProfileScreen = () => {
     desc: string;
   }>({ status: "HIDDEN", title: "", desc: "" });
   const { id } = useSelector((state: RootState) => state.auth);
+  const { favorite_restaurants } = useSelector(
+    (state: RootState) => state.userPreference
+  );
   const [profileData, setProfileData] = useState<Props_ProfileData>({
     id: "",
     user_Id: "",
@@ -65,6 +102,7 @@ const ProfileScreen = () => {
       is_verified: false,
     },
   });
+
   useEffect(() => {
     const fetchProfileData = async () => {
       setIsLoading(true);
@@ -86,6 +124,7 @@ const ProfileScreen = () => {
     };
     fetchProfileData();
   }, [id]);
+
   useEffect(() => {
     const { id, address, avatar, first_name, last_name, user, user_Id } =
       profileData;
@@ -108,7 +147,15 @@ const ProfileScreen = () => {
       setLastName(lastNameState);
     }
   }, [profileData]);
-  console.log("check profile data", profileData);
+
+  // Render item cho FlatList
+  const renderRestaurantItem = ({ item }: { item: FavoriteRestaurant }) => (
+    <FFView style={{ elevation: 3, padding: 12, borderRadius: 12 }}>
+      <Text className="text-lg font-semibold">{item.restaurant_name}</Text>
+      <Text>{item.owner_name}</Text>
+      <Text>Status: {item?.status?.is_open ? "Open" : "Closed"}</Text>
+    </FFView>
+  );
 
   return (
     <FFSafeAreaView>
@@ -134,6 +181,16 @@ const ProfileScreen = () => {
             setPhone={setPhone}
           />
         )}
+      </View>
+      {/* Thêm FlatList để render favorite_restaurants */}
+      <View className="p-4">
+        <Text className="text-xl font-bold mb-2">Favorite Restaurants</Text>
+        <FlatList
+          data={favorite_restaurants as unknown as FavoriteRestaurant[]}
+          renderItem={renderRestaurantItem}
+          keyExtractor={(item) => item.id}
+          ListEmptyComponent={<Text>No favorite restaurants found.</Text>}
+        />
       </View>
     </FFSafeAreaView>
   );

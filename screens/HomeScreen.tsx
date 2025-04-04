@@ -280,7 +280,7 @@ const HomeScreen = () => {
               </FFText>
             </TouchableOpacity>
           </View>
-          <ScrollView horizontal className="mt-2 py-2 px-2 -ml-2">
+          <ScrollView horizontal className=" py-2 px-2 -ml-2">
             {(renderedRestaurants ?? []).slice(0, 5).map((item) => (
               <FFView
                 onPress={() =>
@@ -400,7 +400,7 @@ const HomeScreen = () => {
                     </FFText>
                   </TouchableOpacity>
                 </View>
-                <ScrollView horizontal className="mt-2 py-2 px-2 -ml-2">
+                <ScrollView horizontal className=" py-2 px-2 -ml-2">
                   {promotion.restaurants.slice(0, 5).map((item) => (
                     <FFView
                       onPress={() =>
