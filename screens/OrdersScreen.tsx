@@ -100,7 +100,6 @@ const OrdersScreen: React.FC = () => {
         tabTitles={["Ongoing", "Completed", "Cancelled"]}
         tabContent={tabContent}
         activeTabIndex={0}
-        onTabChange={(index) => console.log("Tab changed to:", index)}
       />
     </FFSafeAreaView>
   );

@@ -8,6 +8,7 @@ import { Enum_OrderStatus, Enum_OrderTrackingInfo } from "@/src/types/Orders";
 import { OrderScreenNavigationProp } from "@/screens/OrdersScreen";
 import { OrderCard } from "@/src/components/screens/Orders/OrderCard";
 import { DetailedOrder } from "@/src/components/screens/Orders/DetailedOrder";
+import FFSkeleton from "../../FFSkeleton";
 
 interface OrderTabContentProps {
   type: "ACTIVE" | "COMPLETED" | "CANCELLED";
@@ -30,6 +31,8 @@ export const OrderTabContent: React.FC<OrderTabContentProps> = ({
   orderStatusStages,
   onReOrder,
 }) => {
+  console.log("check type", type);
+
   const { orders: realtimeOrders } = useSelector(
     (state: RootState) => state.orderTrackingRealtime
   );
@@ -116,6 +119,13 @@ export const OrderTabContent: React.FC<OrderTabContentProps> = ({
               />
             </View>
           ))}
+        {isLoading && type === "COMPLETED" && (
+          <>
+            <FFSkeleton height={180} />
+            <FFSkeleton height={180} />
+            <FFSkeleton height={180} />
+          </>
+        )}
       </View>
       {(detailedOrder !== null || type === "ACTIVE") && (
         <DetailedOrder

@@ -172,6 +172,7 @@ const ProfileScreen = () => {
       setLastName(lastNameState);
     }
   }, [profileData]);
+  console.log("check list res", favoriteRestaurants?.[0]?.avatar);
 
   // Render item cho FlatList
   const renderRestaurantItem = ({ item }: { item: FavoriteRestaurant }) => (
@@ -185,6 +186,9 @@ const ProfileScreen = () => {
         elevation: 3,
         padding: 12,
       }}
+      onPress={() =>
+        navigation.navigate("RestaurantDetail", { restaurantId: item.id })
+      }
     >
       <FFAvatar rounded="sm" avatar={item?.avatar?.url} />
       <View>
@@ -224,15 +228,23 @@ const ProfileScreen = () => {
         )}
       </View>
       {/* Thêm FlatList để render favorite_restaurants */}
-      <View className="p-4">
-        <Text className="text-xl font-bold mb-2">Favorite Restaurants</Text>
-        <FlatList
-          data={favoriteRestaurants}
-          renderItem={renderRestaurantItem}
-          keyExtractor={(item) => item.id}
-          ListEmptyComponent={<FFSkeleton height={80} />}
-        />
-      </View>
+      {screenStatus === "READONLY" && (
+        <View className="p-4">
+          <Text className="text-xl font-bold mb-2">Favorite Restaurants</Text>
+          <FlatList
+            data={favoriteRestaurants}
+            renderItem={renderRestaurantItem}
+            keyExtractor={(item) => item.id}
+            ListEmptyComponent={
+              <View style={{ gap: 12 }}>
+                <FFSkeleton height={80} />
+                <FFSkeleton height={80} />
+                <FFSkeleton height={80} />
+              </View>
+            }
+          />
+        </View>
+      )}
     </FFSafeAreaView>
   );
 };
