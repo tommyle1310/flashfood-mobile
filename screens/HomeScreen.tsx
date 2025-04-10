@@ -121,7 +121,7 @@ const HomeScreen = () => {
   // Filter restaurants when categories or restaurants change
   useEffect(() => {
     if (listRestaurants && selectedFoodCategories) {
-      const filtered = listRestaurants.filter((restaurant) =>
+      const filtered = listRestaurants?.filter((restaurant) =>
         restaurant.specialize_in?.some((category) =>
           selectedFoodCategories.includes(category.id)
         )
@@ -233,7 +233,7 @@ const HomeScreen = () => {
                   setSelectedFoodCategories((prev) => {
                     const currentSelected = prev ?? [];
                     return currentSelected.includes(item.id)
-                      ? currentSelected.filter((id) => id !== item.id)
+                      ? currentSelected?.filter((id) => id !== item.id)
                       : [...currentSelected, item.id];
                   });
                 }}
