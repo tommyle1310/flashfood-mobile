@@ -118,15 +118,51 @@ const HomeScreen = () => {
     }
   }, [globalState.user_id]);
 
-  // Filter restaurants when categories or restaurants change
+  // Filter restaurants and promotions when categories change
   useEffect(() => {
-    if (listRestaurants && selectedFoodCategories) {
+    if (listRestaurants && selectedFoodCategories && selectedFoodCategories.length > 0) {
+      // Filter restaurants
       const filtered = listRestaurants?.filter((restaurant) =>
         restaurant.specialize_in?.some((category) =>
           selectedFoodCategories.includes(category.id)
         )
       );
       setFilteredRestaurants(filtered);
+
+      // Filter promotions
+      if (availablePromotionWithRestaurants) {
+        const filteredPromotions = availablePromotionWithRestaurants.map(promotion => {
+          // Find full restaurant details for each promotion restaurant
+          const restaurantsWithDetails = promotion.restaurants.filter(promoRest => 
+            listRestaurants?.some(fullRest => 
+              fullRest.id === promoRest.id && 
+              fullRest.specialize_in?.some(category => 
+                selectedFoodCategories.includes(category.id)
+              )
+            )
+          );
+          
+          return {
+            ...promotion,
+            restaurants: restaurantsWithDetails
+          };
+        });
+        setAvailablePromotionWithRestaurants(filteredPromotions);
+      }
+    } else {
+      // Reset filters when no categories are selected
+      setFilteredRestaurants([]);
+      const fetchPromotions = async () => {
+        try {
+          const response = await axiosInstance.get(`/promotions/valid`);
+          if (response.data.EC === 0) {
+            setAvailablePromotionWithRestaurants(response.data.data);
+          }
+        } catch (error) {
+          console.error("Error fetching promotions:", error);
+        }
+      };
+      fetchPromotions();
     }
   }, [selectedFoodCategories, listRestaurants]);
 
@@ -386,15 +422,9 @@ const HomeScreen = () => {
               <View key={promotion.id} className="mb-6">
                 <View className="flex-row items-center justify-between">
                   <FFText style={{ fontWeight: "600", fontSize: 16 }}>
-                    {promotion.name}
+                    {promotion.restaurants.length === 0 ? null :promotion.name}
                   </FFText>
-                  <TouchableOpacity
-                  // onPress={() =>
-                  //   navigation.navigate(
-                  //     "NearYou",
-                  //     promotion.restaurants ?? []
-                  //   )
-                  // }
+                {promotion.restaurants.length === 0 ||   <TouchableOpacity
                   >
                     <FFText
                       style={{
@@ -405,7 +435,7 @@ const HomeScreen = () => {
                     >
                       Show All
                     </FFText>
-                  </TouchableOpacity>
+                  </TouchableOpacity>}
                 </View>
                 <ScrollView horizontal className=" py-2 px-2 -ml-2">
                   {promotion.restaurants.slice(0, 5).map((item) => (
@@ -496,9 +526,7 @@ const HomeScreen = () => {
                       </View>
                     </FFView>
                   ))}
-                  {promotion.restaurants.length === 0 && (
-                    <FFText>No restaurants found for this promotion</FFText>
-                  )}
+                  {promotion.restaurants.length === 0 && null}
                 </ScrollView>
                 {isLoading && (
                   <View

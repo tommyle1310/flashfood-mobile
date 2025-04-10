@@ -9,6 +9,7 @@ import { OrderScreenNavigationProp } from "@/screens/OrdersScreen";
 import { OrderCard } from "@/src/components/screens/Orders/OrderCard";
 import { DetailedOrder } from "@/src/components/screens/Orders/DetailedOrder";
 import FFSkeleton from "../../FFSkeleton";
+import Spinner from "../../FFSpinner";
 
 interface OrderTabContentProps {
   type: "ACTIVE" | "COMPLETED" | "CANCELLED";
@@ -53,9 +54,11 @@ export const OrderTabContent: React.FC<OrderTabContentProps> = ({
     if (!setIsLoading) return;
     setIsLoading(true);
     try {
+      console.log('check tip amount', parseFloat(String(tipAmount)))
+      const tipValue = parseFloat(String(tipAmount)) || 0;
       const response = await axiosInstance.post("/orders/tip", {
         orderId: firstActiveOrder?.orderId || activeOrderDetails?.id,
-        tip: tipAmount,
+        tipAmount: tipValue,
       });
       console.log("tip to driver response", response.data);
       const { EC, EM, data } = response.data;
@@ -63,6 +66,7 @@ export const OrderTabContent: React.FC<OrderTabContentProps> = ({
         setIsTippedSuccessful(true);
       }
     } catch (error) {
+      console.error("Error tipping driver:", error);
     } finally {
       setIsLoading(false);
     }
@@ -101,6 +105,10 @@ export const OrderTabContent: React.FC<OrderTabContentProps> = ({
     }
     setActiveOrderDetails(orders[0]);
   }, [orders]);
+
+  if (isLoading) {
+    return <Spinner isVisible isOverlay />
+  }
 
   return (
     <ScrollView className="gap-4 p-4">

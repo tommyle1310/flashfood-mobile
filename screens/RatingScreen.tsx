@@ -88,7 +88,10 @@ const RatingScreen = () => {
           setTypeRating("RESTAURANT");
           return;
         }
-        navigation.navigate("BottomTabs", { screenIndex: 0 });
+        navigation.reset({
+          index: 0,
+          routes: [{ name: "BottomTabs", params: { screenIndex: 0 } }],
+        });
       }
     } catch (error) {
       console.error("Error submitting rating", error);
@@ -149,7 +152,10 @@ const RatingScreen = () => {
           <FFButton
             variant="link"
             onPress={() =>
-              navigation.navigate("BottomTabs", { screenIndex: 0 })
+              navigation.reset({
+                index: 0,
+                routes: [{ name: "BottomTabs", params: { screenIndex: 0 } }],
+              })
             }
             style={styles.skipButton}
           >

@@ -85,6 +85,7 @@ const CheckoutScreen = () => {
   };
 
   const handlePlaceOrder = async () => {
+    setIsLoading(true);
     if (!selectedPaymentMethod || !selectedAddress) {
       setIsShowModalStatusCheckout(true);
       setModalContentType("ERROR");
@@ -120,7 +121,6 @@ const CheckoutScreen = () => {
     });
     const { EC, EM, data } = response.data;
     if (EC === 0) {
-      setIsLoading(true);
       dispatch(subtractItemFromCart(response.data.data.order_items));
       dispatch(removeCartItemFromAsyncStorage(response.data.data.order_items));
       setIsLoading(false);

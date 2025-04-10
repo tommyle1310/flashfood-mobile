@@ -135,15 +135,16 @@ const RestaurantDetail = () => {
   );
 
   const handleAddToCart = async () => {
+    setIsLoading(true);
     const response = await axiosInstance.post(`/customers/cart-items/${id}`, {
       item_id: selectedMenuItem,
       variants: [{ variant_id: selectedVariant?.id, quantity }],
     });
 
+
     const { EC, EM, data } = response.data;
 
     if (EC === 0) {
-      setIsLoading(true);
       await dispatch(
         addItemToCart({
           id: data.id,
