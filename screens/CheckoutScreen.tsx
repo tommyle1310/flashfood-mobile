@@ -86,15 +86,15 @@ const CheckoutScreen = () => {
 
   const handlePlaceOrder = async () => {
     setIsLoading(true);
+    console.log("check res id", orderItem.order_items?.[0]?.item?.restaurantDetails?.id);
     if (!selectedPaymentMethod || !selectedAddress) {
       setIsShowModalStatusCheckout(true);
       setModalContentType("ERROR");
       return;
     }
-    console.log("check res location", orderItem?.restaurant_location);
     const requestData = {
       ...orderItem,
-      restaurant_location: orderItem?.restaurant_location,
+      restaurant_location: orderItem.order_items?.[0]?.item?.restaurantDetails?.address_id,
       payment_method: selectedPaymentMethod,
       customer_location: globalState?.address?.find(
         (item) => item.title === selectedAddress
@@ -109,10 +109,11 @@ const CheckoutScreen = () => {
         price_at_time_of_order: item.price_at_time_of_order,
         quantity: item.quantity,
       })),
+      restaurant_id: orderItem.order_items?.[0]?.item?.restaurantDetails?.id,
       status: "PENDING",
       payment_status: "PENDING",
       delivery_time: new Date().getTime(),
-      promotions_applied: [selectedPromotion],
+      promotion_applied: selectedPromotion,
     };
 
     const response = await axiosInstance.post(`/orders`, requestData, {
