@@ -19,6 +19,12 @@ export interface CartItem {
   created_at: number;
   updated_at: number;
   __v: number;
+  restaurant: {
+    id: string;
+    restaurant_name: string;
+    avatar: { url: string; key: string };
+    address_id: string;
+  },
   item: {
     avatar: { url: string; key: string };
     id: string;
@@ -30,6 +36,7 @@ export interface CartItem {
       avatar: { url: string; key: string };
       address_id: string;
     };
+   
     name: string;
     description: string;
     category: string[];
