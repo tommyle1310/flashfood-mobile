@@ -33,6 +33,7 @@ import { MainStackParamList } from "@/src/navigation/AppNavigator";
 import { IMAGE_LINKS } from "@/src/assets/imageLinks";
 import FFModal from "@/src/components/FFModal";
 import Spinner from "@/src/components/FFSpinner";
+import colors from "@/src/theme/colors";
 
 // Correct the typing for useRoute
 type RestaurantDetailRouteProp = RouteProp<
@@ -109,11 +110,11 @@ const RestaurantDetail = () => {
   // Update totalPrice when itemPrice or quantity or selectedVariant changes
   useEffect(() => {
     // If there's a selected variant, use its price, else fallback to itemPrice
-    const priceToUse = selectedVariant?.price ?? itemPrice;
+    const priceToUse = (selectedVariant?.price_after_applied_promotion ?? selectedVariant?.price) ?? itemPrice;
     if (quantity && priceToUse) {
       setTotalPrice(quantity * priceToUse);
     }
-  }, [quantity, itemPrice, selectedVariant?.price]);
+  }, [quantity, itemPrice, selectedVariant?.price_after_applied_promotion, selectedVariant?.price]);
   const dispatch = useDispatch();
 
   useEffect(() => {
@@ -135,11 +136,16 @@ const RestaurantDetail = () => {
   );
 
   const handleAddToCart = async () => {
+    if (!selectedVariant) {
+      setErr("Please select a variant");
+      return;
+    }
     setIsLoading(true);
     const response = await axiosInstance.post(`/customers/cart-items/${id}`, {
       item_id: selectedMenuItem,
       variants: [{ variant_id: selectedVariant?.id, quantity }],
     });
+
 
 
     const { EC, EM, data } = response.data;
@@ -335,9 +341,22 @@ const RestaurantDetail = () => {
                     <FFText fontSize="sm" colorLight="#bbb" fontWeight="400">
                       {item.purchased_count ?? "0"} sold
                     </FFText>
-                    <FFText fontSize="lg" colorLight="#59bf47" fontWeight="600">
-                      ${item?.variants?.[0]?.price}
-                    </FFText>
+                  <View className="flex-row gap-2 items-center">
+                  {item?.variants?.[0]?.price_after_applied_promotion ? (
+                       <>
+                         <FFText fontSize="sm" colorLight="#aaa" style={{textDecorationLine: "line-through", marginTop: 4}} fontWeight="600">
+                           ${item?.variants?.[0]?.price}
+                         </FFText>
+                         <FFText fontSize="lg" colorLight="#59bf47" fontWeight="600">
+                           ${item?.variants?.[0]?.price_after_applied_promotion}
+                         </FFText>
+                       </>
+                     ) : (
+                       <FFText fontSize="lg" fontWeight="600" style={{color: colors.primary}}>
+                         ${item?.variants?.[0]?.price}
+                       </FFText>
+                     )}
+                  </View>
                     <Pressable
                       onPress={() => {
                         setIsShowSlideUpModal(true);
@@ -449,7 +468,7 @@ const RestaurantDetail = () => {
               onPress={() => {
                 setErr("");
                 setSeletedVariant(item);
-                setItemPrice(item?.price);
+                setItemPrice(item?.price_after_applied_promotion ?? item?.price);
               }}
               className={`gap-4  p-4 ${
                 selectedVariant?.id === item.id
@@ -459,7 +478,15 @@ const RestaurantDetail = () => {
               key={item.id}
             >
               <FFText style={{ textAlign: "left" }}>
-                {item?.variant} - ${item?.price}
+                {item?.variant}{" "}
+                {item?.price_after_applied_promotion ? (
+                  <>
+                    - <FFText fontWeight="400" fontSize="sm" style={{textDecorationLine: "line-through", color: colors.error}}>${item?.price}</FFText>{" "}
+                    ${item?.price_after_applied_promotion}
+                  </>
+                ) : (
+                  <> - <FFText style={{color: colors.primary}}>${item?.price}</FFText></>
+                )}
               </FFText>
             </Pressable>
           ))}

@@ -106,9 +106,9 @@ export const OrderTabContent: React.FC<OrderTabContentProps> = ({
     setActiveOrderDetails(orders[0]);
   }, [orders]);
 
-  if (isLoading) {
-    return <Spinner isVisible isOverlay />
-  }
+  // if (isLoading) {
+  //   return <Spinner isVisible isOverlay />
+  // }
 
   return (
     <ScrollView className="gap-4 p-4">

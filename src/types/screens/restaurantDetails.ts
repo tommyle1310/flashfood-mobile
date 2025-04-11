@@ -38,12 +38,14 @@ export interface Props_MenuItem {
   availability: boolean;
   suggested_notes: string[];
   price: number;
+  price_after_applied_promotion: number;
   purchased_count: number;
   variants: {
     id: string;
     menu_id: string;
     variant: string;
     price: number;
+    price_after_applied_promotion: number;
     default_restaurant_notes: string[];
     purchase_count: number;
     created_at: number;
@@ -59,6 +61,7 @@ export interface MenuItemVariant {
   default_restaurant_notes: string[]; // You can adjust this type if you need specific structure for notes
   menu_id: string;
   price: number;
+  price_after_applied_promotion: number;
   updated_at: number;
   variant: string;
 }

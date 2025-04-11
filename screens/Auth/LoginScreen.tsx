@@ -84,7 +84,10 @@ const Login = () => {
         );
         dispatch(saveCartItemsToAsyncStorage(userData.cart_items));
 
-        navigation.navigate("MainStack");
+        navigation.reset({
+          index: 0,
+          routes: [{ name: "MainStack" }],
+        });
         setIsLoading(false);
       } else {
         setIsLoading(false);

@@ -138,6 +138,7 @@ const OrderSummary = ({
             })) ?? []
           }
           placeholder="Select a promotion"
+          fallbackText="No promotions available"
           selectedOption={selectedPromotion}
         />
         {/* <Pressable

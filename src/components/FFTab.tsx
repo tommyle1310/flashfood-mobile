@@ -23,34 +23,36 @@ const FFTab: React.FC<TabProps> = ({ tabTitles, tabContent }) => {
         }}
         className="flex-row items-center w-full  overflow-hidden"
       >
-        {tabTitles.map((title, index) => (
-          <TouchableOpacity
-            key={index}
-            onPress={() => setActiveTab(index)}
-            className={`${
-              activeTab === index
-                ? theme === "light"
-                  ? "bg-white border-b  border-gray-200"
-                  : "border bg-black border-gray-200"
-                : ""
-            } w-1/${tabTitles.length} items-center rounded-t-xl flex-1 p-4`}
-          >
-            <FFText
-              fontSize="sm"
-              style={{
-                textAlign: "center",
-                color:
-                  activeTab === index
-                    ? "#63c550"
-                    : theme === "light"
-                    ? "#111"
-                    : "#ddd",
-              }}
+        {tabContent.length === 0 ? <FFText>No Promotion available.</FFText> : (
+          tabTitles.map((title, index) => (
+            <TouchableOpacity
+              key={index}
+              onPress={() => setActiveTab(index)}
+              className={`${
+                activeTab === index
+                  ? theme === "light"
+                    ? "bg-white border-b  border-gray-200"
+                    : "border bg-black border-gray-200"
+                  : ""
+              } w-1/${tabTitles.length} items-center rounded-t-xl flex-1 p-4`}
             >
-              {title}
-            </FFText>
-          </TouchableOpacity>
-        ))}
+              <FFText
+                fontSize="sm"
+                style={{
+                  textAlign: "center",
+                  color:
+                    activeTab === index
+                      ? "#63c550"
+                      : theme === "light"
+                      ? "#111"
+                      : "#ddd",
+                }}
+              >
+                {title}
+              </FFText>
+            </TouchableOpacity>
+          ))
+        )}
       </View>
 
       {/* Tab Content */}

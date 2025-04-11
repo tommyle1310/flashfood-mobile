@@ -58,7 +58,7 @@ const CheckoutScreen = () => {
       const responseData = response.data;
       const { EC, EM, data } = responseData;
       if (EC === 0) {
-        setPromotionList(data.promotions);
+        setPromotionList(data.promotions.filter((item: any) => !(item.food_categories.length > 0)));
       }
     } catch (error) {
       console.log("error", error);

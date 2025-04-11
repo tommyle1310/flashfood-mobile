@@ -25,6 +25,7 @@ interface FFDropdownProps {
   selectedOption: string; // Giá trị hiện tại được chọn (vẫn là string)
   onSelect: (option: string) => void; // Callback trả về value
   placeholder: string; // Placeholder khi chưa chọn
+  fallbackText?: string; // Text to display when options array is empty
   style?: object;
   textStyle?: object;
   optionStyle?: object;
@@ -35,6 +36,7 @@ const FFDropdown: React.FC<FFDropdownProps> = ({
   selectedOption,
   onSelect,
   placeholder,
+  fallbackText,
   style,
   textStyle,
   optionStyle,
@@ -57,6 +59,9 @@ const FFDropdown: React.FC<FFDropdownProps> = ({
 
   // Tìm label tương ứng với selectedOption khi options là DropdownOption[]
   const getSelectedLabel = () => {
+    if (options.length === 0) {
+      return fallbackText || placeholder;
+    }
     if (
       Array.isArray(options) &&
       options.length > 0 &&
@@ -80,12 +85,18 @@ const FFDropdown: React.FC<FFDropdownProps> = ({
             borderColor: theme === "light" ? "#111" : "#fff",
             borderWidth: 1,
           },
+          options.length === 0 && styles.disabledButton,
         ]}
         onPress={toggleDropdown}
+        disabled={options.length === 0}
       >
         <FFText
           fontWeight="500"
-          style={{ ...styles.selectedText, ...textStyle }}
+          style={{
+            ...styles.selectedText,
+            ...textStyle,
+            ...(options.length === 0 && styles.disabledText)
+          }}
         >
           {getSelectedLabel()}
         </FFText>
@@ -190,6 +201,13 @@ const styles = StyleSheet.create({
   selectedText: {
     fontSize: 16,
     color: "#000",
+  },
+  disabledButton: {
+    backgroundColor: '#E0E0E0',
+    borderColor: '#CCCCCC',
+  },
+  disabledText: {
+    color: '#888888',
   },
   modalOverlay: {
     flex: 1,
