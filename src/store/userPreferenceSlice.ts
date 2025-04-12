@@ -1,6 +1,7 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { RootState } from "./store";
+import { IMAGE_LINKS } from "../assets/imageLinks";
 
 // Define the types of state we will use in this slice
 export interface Variant {
@@ -136,23 +137,51 @@ const userPreferenceSlice = createSlice({
       const existingItem = state.cart_items.find(
         (item) => item.id === newItem.id
       );
-
+    
       if (existingItem) {
-        console.log("check newItem", newItem, "existed item", existingItem);
+        console.log("Updating existing cart item:", newItem, existingItem);
         newItem.variants.forEach((newVariant: Variant) => {
           const existingVariant = existingItem.variants.find(
             (variant) => variant.variant_id === newVariant.variant_id
           );
-
+    
           if (existingVariant) {
-            console.log("check fall hrere", newVariant);
             existingVariant.quantity += newVariant.quantity;
+            existingVariant.variant_price_at_time_of_addition =
+              newVariant.variant_price_at_time_of_addition;
           } else {
-            existingItem.variants.push(newVariant);
+            existingItem.variants.push({
+              ...newVariant,
+              variant_price_at_time_of_addition:
+                newVariant.variant_price_at_time_of_addition || 0,
+            });
           }
         });
       } else {
-        state.cart_items.push(newItem);
+        state.cart_items.push({
+          ...newItem,
+          item: {
+            ...newItem.item,
+            avatar: {
+              url: newItem.item.avatar?.url || IMAGE_LINKS.DEFAULT_AVATAR_FOOD,
+              key: newItem.item.avatar?.key || "",
+            },
+            restaurantDetails: {
+              ...newItem.item.restaurantDetails,
+              avatar: {
+                url:
+                  newItem.item.restaurantDetails.avatar?.url ||
+                  IMAGE_LINKS.DEFAULT_AVATAR_FOOD,
+                key: newItem.item.restaurantDetails.avatar?.key || "",
+              },
+            },
+          },
+          variants: newItem.variants.map((variant: any) => ({
+            ...variant,
+            variant_price_at_time_of_addition:
+              variant.variant_price_at_time_of_addition || 0,
+          })),
+        });
       }
     },
 

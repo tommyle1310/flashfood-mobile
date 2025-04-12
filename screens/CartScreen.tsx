@@ -78,6 +78,7 @@ const CartScreen = () => {
     const groupByRestaurant = (cartList: CartItem[]): GroupedCartList => {
       return cartList.reduce((grouped, cartItem) => {
         const restaurantId = cartItem.item.restaurantDetails?.id;
+        if (!restaurantId) return grouped; // Skip if restaurantId is undefined
         if (!grouped[restaurantId]) {
           grouped[restaurantId] = [];
         }
@@ -108,21 +109,19 @@ const CartScreen = () => {
     menuItem: CartItem
   ) => {
     const newVariants = [...selectedVariants];
-    // Get the current variant from the cart item to ensure we have the latest quantity
-    const currentVariant = menuItem.variants.find(v => v.variant_id === variant.variant_id);
+    const currentVariant = menuItem.variants.find(
+      (v) => v.variant_id === variant.variant_id
+    );
     if (!currentVariant) return;
 
-    // Combine the variant data with the menu item data and current quantity
     const variantWithItemId = {
       ...currentVariant,
       item: menuItem.item,
-      id: menuItem.id
+      id: menuItem.id,
     };
 
     if (selectedVariants.some((item) => item.id === menuItem.id)) {
-      setSelectedVariants(
-        newVariants.filter((item) => item.id !== menuItem.id)
-      );
+      setSelectedVariants(newVariants.filter((item) => item.id !== menuItem.id));
       if (newVariants.length === 1) {
         setSelectedRestaurant(defaultSelectedRestaurant);
       }
@@ -144,18 +143,18 @@ const CartScreen = () => {
   };
 
   const handleSubmitCheckout = () => {
-    // Get the latest cart items from Redux store
-    
-    const updatedSelectedVariants = selectedVariants.map(selectedVariant => {
-      const cartItem = cartList.find(item => item.id === selectedVariant.id);
+    const updatedSelectedVariants = selectedVariants.map((selectedVariant) => {
+      const cartItem = cartList.find((item) => item.id === selectedVariant.id);
       if (!cartItem) return selectedVariant;
-      
-      const currentVariant = cartItem.variants.find(v => v.variant_id === selectedVariant.variant_id);
+
+      const currentVariant = cartItem.variants.find(
+        (v) => v.variant_id === selectedVariant.variant_id
+      );
       if (!currentVariant) return selectedVariant;
 
       return {
         ...selectedVariant,
-        quantity: currentVariant.quantity
+        quantity: currentVariant.quantity,
       };
     });
 
@@ -180,7 +179,7 @@ const CartScreen = () => {
         quantity: item.quantity,
         price_at_time_of_order: item.variant_price_at_time_of_addition,
         variant_id: item.variant_id,
-        variant_name: item.variant_name
+        variant_name: item.variant_name,
       })),
       tracking_info: Enum_OrderTrackingInfo.ORDER_PLACED,
       customer_note: "",
@@ -191,24 +190,26 @@ const CartScreen = () => {
   };
 
   const handleAddQuantity = (cartItem: CartItem, variant: Variant) => {
-    dispatch(updateItemQuantity({
-      itemId: cartItem?.id,
-      variantId: variant.variant_id,
-      quantity: variant.quantity + 1
-    }));
+    dispatch(
+      updateItemQuantity({
+        itemId: cartItem?.id,
+        variantId: variant.variant_id,
+        quantity: variant.quantity + 1,
+      })
+    );
   };
 
   const handleSubtractQuantity = (cartItem: CartItem, variant: Variant) => {
     if (variant.quantity <= 1) {
-      // If quantity would go to 0, remove the item
       dispatch(removeItemFromCart(cartItem?.id));
     } else {
-      // Otherwise decrease quantity by 1
-      dispatch(updateItemQuantity({
-        itemId: cartItem?.id,
-        variantId: variant.variant_id,
-        quantity: variant.quantity - 1
-      }));
+      dispatch(
+        updateItemQuantity({
+          itemId: cartItem?.id,
+          variantId: variant.variant_id,
+          quantity: variant.quantity - 1,
+        })
+      );
     }
   };
 
@@ -219,21 +220,23 @@ const CartScreen = () => {
     const isDisabled = selectedRestaurant?.id !== "" && !isSelected;
 
     return (
-      <Pressable 
+      <Pressable
         onPress={() => {
           if (!isDisabled) {
-            setSelectedRestaurant(isSelected ? defaultSelectedRestaurant : restaurant);
+            setSelectedRestaurant(
+              isSelected ? defaultSelectedRestaurant : restaurant
+            );
             setSelectedVariants(isSelected ? [] : item.variants);
             handleSelectVariants(variant, restaurant, item);
           }
         }}
-        style={{ 
-          flexDirection: "row", 
-          padding: 16, 
-          borderBottomWidth: 1, 
+        style={{
+          flexDirection: "row",
+          padding: 16,
+          borderBottomWidth: 1,
           borderBottomColor: "#E5E5E5",
           opacity: isDisabled ? 0.5 : 1,
-          backgroundColor: isSelected ? "#e8f5e9" : "transparent"
+          backgroundColor: isSelected ? "#e8f5e9" : "transparent",
         }}
       >
         <Image
@@ -247,19 +250,23 @@ const CartScreen = () => {
           <FFText fontSize="sm" style={{ color: "gray" }}>
             {variant.variant_name}
           </FFText>
-          <View style={{ flexDirection: "row", alignItems: "center", marginTop: 8 }}>
+          <View
+            style={{ flexDirection: "row", alignItems: "center", marginTop: 8 }}
+          >
             <FFText fontSize="md" fontWeight="bold">
               ${(variant.variant_price_at_time_of_addition * variant.quantity).toFixed(2)}
             </FFText>
-            <View style={{ 
-              flexDirection: "row", 
-              alignItems: "center", 
-              marginLeft: "auto",
-              borderWidth: 1,
-              borderColor: "#E5E5E5",
-              borderRadius: 8,
-              padding: 4
-            }}>
+            <View
+              style={{
+                flexDirection: "row",
+                alignItems: "center",
+                marginLeft: "auto",
+                borderWidth: 1,
+                borderColor: "#E5E5E5",
+                borderRadius: 8,
+                padding: 4,
+              }}
+            >
               <Pressable
                 onPress={(e) => {
                   e.stopPropagation(); // Prevent parent Pressable from triggering
@@ -268,7 +275,7 @@ const CartScreen = () => {
                 style={{
                   padding: 8,
                   backgroundColor: "#F5F5F5",
-                  borderRadius: 4
+                  borderRadius: 4,
                 }}
               >
                 <IconFeather name="minus" size={16} color="#333" />
@@ -284,7 +291,7 @@ const CartScreen = () => {
                 style={{
                   padding: 8,
                   backgroundColor: "#F5F5F5",
-                  borderRadius: 4
+                  borderRadius: 4,
                 }}
               >
                 <IconFeather name="plus" size={16} color="#333" />
@@ -299,67 +306,91 @@ const CartScreen = () => {
   return (
     <FFSafeAreaView>
       <View className="flex-1 gap-4 pb-24">
-        <View className="flex-1">
-          <FlatList
-            data={Object.keys(groupedCartList)}
-            renderItem={({ item }) => {
-              const restaurantItems = groupedCartList[item];
-              const restaurant = restaurantItems[0].restaurant;
-              return (
-                <FFView
-                  colorDark="#333"
-                  colorLight="#fff"
-                  style={{ 
-                    padding: 8, 
-                    borderRadius: 10, 
-                    elevation: 4
-                  }}
-                >
-                  <View className="flex-row items-center gap-2 px-4 mb-2">
-                    <FFAvatar
-                      avatar={
-                        restaurant?.avatar?.url ??
-                        IMAGE_LINKS.DEFAULT_AVATAR_FOOD
-                      }
-                      size={32}
-                      onPress={() =>
-                        navigation.navigate("RestaurantDetail", {
-                          restaurantId: restaurant?.id,
-                        })
-                      }
-                      rounded="sm"
-                    />
-                    <FFText colorDark="#aaa" fontWeight="500">
-                      {restaurantItems?.[0]?.restaurant?.restaurant_name}
-                    </FFText>
-                  </View>
-                  <FlatList
-                    data={restaurantItems}
-                    renderItem={renderCartItem}
-                    keyExtractor={(item, index) =>
-                      item?.id ? item?.id : `${index}`
-                    }
-                  />
-                </FFView>
-              );
-            }}
-            keyExtractor={(item) => item}
-          />
-        </View>
-        {isShowSubmitBtn && (
-            <FFButton
-            style={{marginBottom: 24}}
-              onPress={handleSubmitCheckout}
+        {cartList.length === 0 ? (
+          <View className="w-full justify-center flex-1 pb-12 p-4">
+            <Image
+              source={{ uri: IMAGE_LINKS.EMPTY_CART }}
+              style={{ width: "100%", aspectRatio: 1, borderRadius: 12 }}
+            />
+            <FFText
+              fontWeight="400"
+              style={{ textAlign: "center", marginVertical: 12, color: "#aaa" }}
             >
-              Proceed to Checkout
+              Your cart is empty
+            </FFText>
+            <FFButton
+              variant="link"
+              onPress={() => {
+                navigation.navigate("BottomTabs", { screenIndex: 0 });
+              }}
+            >
+              Browse some food
             </FFButton>
+          </View>
+        ) : (
+          <>
+            <View className="flex-1">
+              <FlatList
+                data={Object.keys(groupedCartList)}
+                renderItem={({ item }) => {
+                  const restaurantItems = groupedCartList[item];
+                  const restaurant = restaurantItems[0].restaurant;
+                  console.log('check rs name', restaurantItems?.[0]?.item?.restaurantDetails?.restaurant_name)
+                  return (
+                    <FFView
+                      colorDark="#333"
+                      colorLight="#fff"
+                      style={{
+                        padding: 8,
+                        margin: 12,
+                        borderRadius: 10,
+                        elevation: 4,
+                      }}
+                    >
+                      <View className="flex-row items-center gap-2 px-4 mb-2">
+                        <FFAvatar
+                          avatar={
+                            restaurantItems?.[0]?.item?.restaurantDetails?.avatar?.url ??
+                            IMAGE_LINKS.DEFAULT_AVATAR_FOOD
+                          }
+                          size={32}
+                          onPress={() =>
+                            navigation.navigate("RestaurantDetail", {
+                              restaurantId: restaurant?.id,
+                            })
+                          }
+                          rounded="sm"
+                        />
+                        <FFText colorDark="#aaa" fontWeight="500">
+                          {restaurantItems?.[0]?.item?.restaurantDetails?.restaurant_name}
+                        </FFText>
+                      </View>
+                      <FlatList
+                        data={restaurantItems}
+                        renderItem={renderCartItem}
+                        keyExtractor={(item, index) =>
+                          item?.id ? item?.id : `${index}`
+                        }
+                      />
+                    </FFView>
+                  );
+                }}
+                keyExtractor={(item) => item}
+              />
+            </View>
+            {isShowSubmitBtn && (
+              <FFButton
+                style={{ marginBottom: 24 }}
+                onPress={handleSubmitCheckout}
+              >
+                Proceed to Checkout
+              </FFButton>
+            )}
+          </>
         )}
       </View>
 
-      <FFModal
-        visible={isShowModal}
-        onClose={() => setIsShowModal(false)}
-      >
+      <FFModal visible={isShowModal} onClose={() => setIsShowModal(false)}>
         <FFText fontSize="md" fontWeight="400" style={{ color: "#aaa" }}>
           Oops. Flashfood only allow selecting items of an restaurant at a
           time.😣

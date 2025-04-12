@@ -136,64 +136,88 @@ const RestaurantDetail = () => {
   );
 
   const handleAddToCart = async () => {
-    if (!selectedVariant) {
-      setErr("Please select a variant");
+    if (!selectedVariant || !selectedMenuItem) {
+      setErr("Please select a variant and menu item");
+      setIsLoading(false);
       return;
     }
+  
     setIsLoading(true);
-    const response = await axiosInstance.post(`/customers/cart-items/${id}`, {
-      item_id: selectedMenuItem,
-      variants: [{ variant_id: selectedVariant?.id, quantity }],
-    });
-
-
-
-    const { EC, EM, data } = response.data;
-
-    if (EC === 0) {
-      await dispatch(
-        addItemToCart({
-          id: data.id,
-          customer_id: user_id,
-          variants: [
-            {
-              variant_id: selectedVariant?.id,
-              quantity,
-              variant_name: selectedVariant?.variant,
-              variant_price_at_time_of_addition:
-                data.variants[0].variant_price_at_time_of_addition,
-            },
-          ],
-          item: {
-            avatar: {
-              url: modalData?.menuItem?.avatar?.url,
-              key: modalData?.menuItem?.avatar?.key,
-            },
-            id: data.item_id,
-            restaurant_id: data.restaurant_id,
-            restaurantDetails: {
-              id: restaurantId,
-              restaurant_name: restaurantDetails?.restaurant_name,
-              avatar: {
-                url: restaurantDetails?.avatar.url,
-                key: restaurantDetails?.avatar.key,
+  
+    try {
+      const response = await Promise.race([
+        axiosInstance.post(`/customers/cart-items/${id}`, {
+          item_id: selectedMenuItem,
+          customer_id: id,
+          variants: [{ variant_id: selectedVariant.id, quantity }],
+        }),
+        new Promise((_, reject) =>
+          setTimeout(() => reject(new Error("Request timeout")), 10000)
+        ),
+      ]);
+  
+      const { EC, EM, data } = (response as { EC: number; EM: string; data: any }).data;
+      console.log("Response from backend:", data, EM);
+  
+      if (EC === 0) {
+        // Kiểm tra dữ liệu trước khi dispatch
+        if (!restaurantDetails || !modalData?.menuItem) {
+          throw new Error("Restaurant or menu item data is missing");
+        }
+        console.log('chkce', restaurantDetails.restaurant_name, restaurantDetails.avatar)
+        await dispatch(
+          addItemToCart({
+            id: data.id,
+            customer_id: id,
+            variants: [
+              {
+                variant_id: selectedVariant.id,
+                variant_name: selectedVariant.variant,
+                variant_price_at_time_of_addition:
+                  data.variants[0].variant_price_at_time_of_addition,
+                quantity,
               },
-              address_id: restaurantDetails?.address_id,
+            ],
+            item: {
+              avatar: {
+                url: modalData?.menuItem?.avatar?.url ?? IMAGE_LINKS.DEFAULT_AVATAR_FOOD,
+                key: modalData?.menuItem?.avatar?.key ?? "",
+              },
+              id: data.item_id,
+              restaurant_id: data.restaurant_id,
+              restaurantDetails: {
+                id: restaurantId,
+                restaurant_name: restaurantDetails?.restaurant_name ?? '' ,
+                avatar: {
+                  url: restaurantDetails?.avatar?.url ?? IMAGE_LINKS.DEFAULT_AVATAR_FOOD,
+                  key: restaurantDetails?.avatar?.key ?? "",
+                },
+                address_id: restaurantDetails?.address_id ?? "",
+              },
+              name: modalData?.menuItem.name ?? "",
+              // description: modalData?.menuItem.description ?? "",
+              category: modalData?.menuItem.category || [],
+              availability: true,
+              suggest_notes: modalData?.menuItem.suggest_notes || [],
+              purchase_count: 1,
             },
-            name: modalData?.menuItem.name,
-            description: "",
-            category: modalData?.menuItem.category,
-            availability: true,
-            suggest_notes: modalData?.menuItem.suggest_notes,
-            purchase_count: 1,
-          },
-        })
-      );
+          })
+        );
+        setIsShowStatusModal(true);
+        console.log("Cart item added:", data);
+      } else {
+        setErr(EM || "Failed to add item to cart");
+        console.error("Backend error:", EM);
+      }
+    } catch (error) {
+      const errorMessage = (error as Error).message || "An error occurred while adding to cart";
+      setErr(errorMessage);
+      console.error("Add to cart error:", error);
+    } finally {
       setIsLoading(false);
-      setIsShowStatusModal(true);
-      console.log("check data", data);
     }
   };
+  
   useEffect(() => {
     dispatch(loadCartItemsFromAsyncStorage());
   }, [dispatch]);
@@ -462,34 +486,41 @@ const RestaurantDetail = () => {
         </FFText>
 
         {modalData?.variants &&
-          modalData?.variants.length > 0 &&
-          modalData?.variants.map((item) => (
-            <Pressable
-              onPress={() => {
-                setErr("");
-                setSeletedVariant(item);
-                setItemPrice(item?.price_after_applied_promotion ?? item?.price);
-              }}
-              className={`gap-4  p-4 ${
-                selectedVariant?.id === item.id
-                  ? "bg-white border-green-600 border-2"
-                  : "bg-gray-100"
-              } rounded-lg my-2`}
-              key={item.id}
+  modalData?.variants.length > 0 &&
+  modalData?.variants.map((item) => (
+    <Pressable
+      onPress={() => {
+        setErr("");
+        setSeletedVariant(item);
+        setItemPrice(item?.price_after_applied_promotion ?? item?.price ?? 0);
+      }}
+      className={`gap-4 p-4 ${
+        selectedVariant?.id === item.id
+          ? "bg-white border-green-600 border-2"
+          : "bg-gray-100"
+      } rounded-lg my-2`}
+      key={item.id}
+    >
+      <FFText style={{ textAlign: "left" }}>
+        {item?.variant}{" "}
+        {item?.price_after_applied_promotion ? (
+          <>
+            -{" "}
+            <FFText
+              fontWeight="400"
+              fontSize="sm"
+              style={{ textDecorationLine: "line-through", color: colors.error }}
             >
-              <FFText style={{ textAlign: "left" }}>
-                {item?.variant}{" "}
-                {item?.price_after_applied_promotion ? (
-                  <>
-                    - <FFText fontWeight="400" fontSize="sm" style={{textDecorationLine: "line-through", color: colors.error}}>${item?.price}</FFText>{" "}
-                    ${item?.price_after_applied_promotion}
-                  </>
-                ) : (
-                  <> - <FFText style={{color: colors.primary}}>${item?.price}</FFText></>
-                )}
-              </FFText>
-            </Pressable>
-          ))}
+              ${item?.price}
+            </FFText>{" "}
+            ${item?.price_after_applied_promotion}
+          </>
+        ) : (
+          <> - <FFText style={{ color: colors.primary }}>${item?.price ?? 0}</FFText></>
+        )}
+      </FFText>
+    </Pressable>
+  ))}
         <FFButton onPress={handleAddToCart} isLinear className="w-full mt-4">
           <FFText style={{ color: "#fff" }}>Add to Cart</FFText>
         </FFButton>
