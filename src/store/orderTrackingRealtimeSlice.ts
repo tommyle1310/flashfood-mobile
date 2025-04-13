@@ -3,18 +3,56 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { OrderTracking as OrderTrackingScreen } from "@/src/types/screens/Order";
 import { Enum_OrderStatus, Enum_OrderTrackingInfo } from "@/src/types/Orders";
 
+// src/store/orderTrackingRealtimeSlice.ts
 export interface OrderTracking {
   orderId: string;
   status: Enum_OrderStatus;
   tracking_info: Enum_OrderTrackingInfo;
   updated_at: number;
   customer_id: string;
-  driver_id: string | null;
+  driver_id: string;
   restaurant_id: string;
-  restaurant_avatar: string | null;
-  driver_avatar: string | null;
-  restaurantFullAddress: string;
+  restaurant_avatar: { key: string; url: string } | null;
+  driver_avatar: { key: string; url: string } | null;
+  restaurantAddress: {
+    id: string;
+    street: string;
+    city: string;
+    nationality: string;
+    is_default: boolean;
+    created_at: number;
+    updated_at: number;
+    postal_code: number;
+    location: { lat: number; lon: number };
+    title: string;
+  } | null;
+  customerAddress: {
+    id: string;
+    street: string;
+    city: string;
+    nationality: string;
+    is_default: boolean;
+    created_at: number;
+    updated_at: number;
+    postal_code: number;
+    location: { lat: number; lon: number };
+    title: string;
+  } | null;
+  driverDetails: {
+    id: string;
+    first_name: string;
+    last_name: string;
+    avatar: { key: string; url: string } | null;
+    rating: { average_rating: string };
+    vehicle: {
+      color: string;
+      model: string;
+      license_plate: string;
+    };
+  } | null;
   customerFullAddress: string;
+  restaurantFullAddress: string;
+  distance?: string; // Optional, as it’s not always present in WebSocket payload
 }
 
 interface OrderTrackingRealtimeState {

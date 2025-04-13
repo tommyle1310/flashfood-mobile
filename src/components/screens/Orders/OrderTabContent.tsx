@@ -103,9 +103,20 @@ export const OrderTabContent: React.FC<OrderTabContentProps> = ({
     console.log("realtimeOrders:", realtimeOrders);
     if (realtimeOrders?.length > 0) {
       const order = realtimeOrders[0];
-      // Tìm order đầy đủ từ orders prop
+      // Find full order from orders prop
       const fullOrder = orders.find((o) => o.id === order.orderId) || null;
-      setDriverDetails(null); // Sẽ lấy driverDetails từ API nếu cần
+      console.log("check order here", order);
+
+      // Compute customerFullAddress and restaurantFullAddress
+      const computedCustomerFullAddress = order.customerAddress
+        ? `${order.customerAddress.street}, ${order.customerAddress.city}, ${order.customerAddress.nationality}`
+        : order.customerFullAddress || "N/A";
+      const computedRestaurantFullAddress = order.restaurantAddress
+        ? `${order.restaurantAddress.street}, ${order.restaurantAddress.city}, ${order.restaurantAddress.nationality}`
+        : order.restaurantFullAddress || "N/A";
+
+      // Use driverDetails from WebSocket payload if available
+      setDriverDetails(order.driverDetails || null);
       setActiveOrderDetails({
         ...order,
         id: order.orderId,
@@ -116,7 +127,7 @@ export const OrderTabContent: React.FC<OrderTabContentProps> = ({
           avatar: null,
           favorite_items: null,
         },
-        customerAddress: fullOrder?.customerAddress ?? {
+        customerAddress: order.customerAddress ?? {
           id: "",
           street: "",
           city: "",
@@ -128,7 +139,7 @@ export const OrderTabContent: React.FC<OrderTabContentProps> = ({
           location: { lat: 0, lon: 0 },
           title: "",
         },
-        restaurantAddress: fullOrder?.restaurantAddress ?? {
+        restaurantAddress: order.restaurantAddress ?? {
           id: "",
           street: "",
           city: "",
@@ -143,7 +154,7 @@ export const OrderTabContent: React.FC<OrderTabContentProps> = ({
         customer_id: order.customer_id,
         customer_location: fullOrder?.customer_location ?? "",
         customer_note: fullOrder?.customer_note ?? "",
-        distance: fullOrder?.distance ?? "",
+        distance: fullOrder?.distance ?? order.distance ?? "",
         delivery_time: fullOrder?.delivery_time ?? "",
         driver: null,
         driver_id: order.driver_id,
@@ -176,8 +187,8 @@ export const OrderTabContent: React.FC<OrderTabContentProps> = ({
         status: order.status as Enum_OrderStatus,
         total_amount: fullOrder?.total_amount ?? "0",
         tracking_info: order.tracking_info as Enum_OrderTrackingInfo,
-        customerFullAddress: order.customerFullAddress || "N/A",
-        restaurantFullAddress: order.restaurantFullAddress || "N/A",
+        customerFullAddress: computedCustomerFullAddress,
+        restaurantFullAddress: computedRestaurantFullAddress,
       });
     } else {
       setDriverDetails(null);
@@ -192,7 +203,7 @@ export const OrderTabContent: React.FC<OrderTabContentProps> = ({
       setDriverDetails(null);
     }
   }, [type]);
-
+  
   return (
     <ScrollView className="gap-4 p-4">
       <View className="gap-4">

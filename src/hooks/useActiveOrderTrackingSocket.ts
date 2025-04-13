@@ -33,10 +33,24 @@ interface OrderTrackingSocket {
   customer_id: string;
   driver_id: string | null;
   restaurant_id: string;
-  restaurant_avatar: string | null;
-  driver_avatar: string | null;
-  restaurantAddress: AddressBook;
-  customerAddress: AddressBook;
+  restaurant_avatar: { key: string; url: string } | null;
+  driver_avatar: { key: string; url: string } | null;
+  restaurantAddress: AddressBook | null;
+  customerAddress: AddressBook | null;
+  driverDetails: {
+    id: string;
+    first_name: string;
+    last_name: string;
+    avatar: { key: string; url: string } | null;
+    rating: { average_rating: string };
+    vehicle: {
+      color: string;
+      model: string;
+      license_plate: string;
+    };
+  } | null;
+  customerFullAddress: string;
+  restaurantFullAddress: string;
 }
 
 type OrderScreenNavigationProp = StackNavigationProp<
@@ -80,30 +94,37 @@ export const useActiveOrderTrackingSocket = () => {
 
     const handleOrderUpdate = (data: OrderTrackingSocket) => {
       console.log("Event received:", JSON.stringify(data, null, 2));
-      
-      // Chuẩn hóa dữ liệu trước khi dispatch
+
+      // Normalize data before dispatching
       const normalizedData = {
-        ...data,
+        orderId: data.orderId,
+        status: data.status,
+        tracking_info: data.tracking_info,
+        updated_at: data.updated_at,
+        customer_id: data.customer_id,
         driver_id: data.driver_id || null,
-        restaurantAddress: undefined, // Xóa đối tượng AddressBook
-        customerAddress: undefined,  // Xóa đối tượng AddressBook
-        restaurantFullAddress: data.restaurantAddress
-          ? `${data.restaurantAddress.street}, ${data.restaurantAddress.city}, ${data.restaurantAddress.nationality}`
-          : "N/A",
-        customerFullAddress: data.customerAddress
-          ? `${data.customerAddress.street}, ${data.customerAddress.city}, ${data.customerAddress.nationality}`
-          : "N/A",
+        restaurant_id: data.restaurant_id,
+        restaurant_avatar: data.restaurant_avatar || null,
+        driver_avatar: data.driver_avatar || null,
+        restaurantAddress: data.restaurantAddress || null,
+        customerAddress: data.customerAddress || null,
+        driverDetails: data.driverDetails || null,
+        restaurantFullAddress: data.restaurantFullAddress || "N/A",
+        customerFullAddress: data.customerFullAddress || "N/A",
       };
 
       if (data.status === Enum_OrderStatus.DELIVERED) {
         navigation.navigate("Rating", {
           driver: {
             id: data.driver_id || "unknown",
-            avatar: data.driver_avatar ? { url: data.driver_avatar, key: "" } : null,
+            avatar: data.driver_avatar || null,
+            // Include driverDetails for Rating screen if needed
+            first_name: data.driverDetails?.first_name || "Unknown",
+            last_name: data.driverDetails?.last_name || "",
           },
           restaurant: {
             id: data.restaurant_id,
-            avatar: data.restaurant_avatar ? { url: data.restaurant_avatar, key: "" } : null,
+            avatar: data.restaurant_avatar || null,
           },
           orderId: data.orderId,
         });
