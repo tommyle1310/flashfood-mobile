@@ -1,14 +1,20 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { OrderTracking as OrderTrackingScreen } from "@/src/types/screens/Order";
+import { Enum_OrderStatus, Enum_OrderTrackingInfo } from "@/src/types/Orders";
 
 export interface OrderTracking {
   orderId: string;
-  status: string;
-  tracking_info: string;
+  status: Enum_OrderStatus;
+  tracking_info: Enum_OrderTrackingInfo;
   updated_at: number;
   customer_id: string;
-  driver_id: string;
+  driver_id: string | null;
   restaurant_id: string;
+  restaurant_avatar: string | null;
+  driver_avatar: string | null;
+  restaurantFullAddress: string;
+  customerFullAddress: string;
 }
 
 interface OrderTrackingRealtimeState {
@@ -55,7 +61,7 @@ export const updateAndSaveOrderTracking = createAsyncThunk(
   }
 );
 
-// Các thunk khác giữ nguyên
+// Thunk để lưu orders vào AsyncStorage
 export const saveOrderTrackingToAsyncStorage = createAsyncThunk(
   "orderTrackingRealtime/saveOrderTracking",
   async (orders: OrderTracking[], { rejectWithValue }) => {
@@ -66,7 +72,7 @@ export const saveOrderTrackingToAsyncStorage = createAsyncThunk(
       const savedData = await AsyncStorage.getItem("orderTracking");
       console.log(
         "Data in AsyncStorage after save:",
-        JSON.parse(savedData ?? "")
+        JSON.parse(savedData ?? "[]")
       );
       return orders;
     } catch (error) {
@@ -76,6 +82,7 @@ export const saveOrderTrackingToAsyncStorage = createAsyncThunk(
   }
 );
 
+// Thunk để load orders từ AsyncStorage
 export const loadOrderTrackingFromAsyncStorage = createAsyncThunk(
   "orderTrackingRealtime/loadOrderTracking",
   async () => {
@@ -91,6 +98,7 @@ export const loadOrderTrackingFromAsyncStorage = createAsyncThunk(
   }
 );
 
+// Thunk để xóa orders từ AsyncStorage
 export const clearOrderTrackingFromAsyncStorage = createAsyncThunk(
   "orderTrackingRealtime/clearOrderTracking",
   async () => {

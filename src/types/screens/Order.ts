@@ -3,12 +3,14 @@ import { Enum_OrderStatus, Enum_OrderTrackingInfo, OrderItem } from "../Orders";
 
 export interface OrderTracking {
   customer: {
-    avatar: Avatar;
+    avatar: Avatar | null;
     favorite_items: any | null; // you can adjust the type based on the structure of favorite_items
     first_name: string;
     id: string;
     last_name: string;
   };
+  restaurantFullAddress?: string;
+  customerFullAddress?: string;
   customerAddress: {
     id: string;
     street: string;

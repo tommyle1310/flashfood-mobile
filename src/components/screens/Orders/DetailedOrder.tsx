@@ -61,9 +61,37 @@ export const DetailedOrder: React.FC<DetailedOrderProps> = ({
   isTippedSuccessful,
   setIsTippedSuccessful,
   handleTipToDriver,
-}) =>{
-  console.log('cehck detailed order', detailedOrder)
-  return  (
+}) => {
+  console.log("check detailed order", detailedOrder, firstActiveOrder, activeOrderDetails);
+
+  // Hàm helper để lấy order items
+  const getOrderItems = () => {
+    if (type === "ACTIVE" && activeOrderDetails) {
+      return activeOrderDetails.order_items ?? [];
+    }
+    return detailedOrder?.order_items ?? firstActiveOrder?.order_items ?? [];
+  };
+
+  // Hàm helper để lấy total amount
+  const getTotalAmount = () => {
+    if (type === "ACTIVE" && activeOrderDetails) {
+      return Number(activeOrderDetails.total_amount ?? 0).toFixed(2);
+    }
+    return Number(
+      detailedOrder?.total_amount ?? firstActiveOrder?.total_amount ?? 0
+    ).toFixed(2);
+  };
+
+  // Hàm helper để lấy restaurant info
+  const getRestaurantInfo = () => {
+    const order = type === "ACTIVE" ? activeOrderDetails : detailedOrder ?? firstActiveOrder;
+    if (!order) return "N/A";
+    const name = order.restaurant?.restaurant_name ?? "";
+    const address = order.restaurantFullAddress ?? "N/A";
+    return name ? `${name}, ${address}` : address;
+  };
+
+  return (
     <>
       {type !== "ACTIVE" && (
         <TouchableOpacity
@@ -101,15 +129,15 @@ export const DetailedOrder: React.FC<DetailedOrderProps> = ({
                 style={{ padding: 8, textAlign: "center", color: "#4a9e3e" }}
               >
                 {getTrackingText(
-                  firstActiveOrder?.status as Enum_OrderStatus,
-                  firstActiveOrder?.tracking_info as Enum_OrderTrackingInfo
+                  firstActiveOrder.status as Enum_OrderStatus,
+                  firstActiveOrder.tracking_info as Enum_OrderTrackingInfo
                 )}
               </FFText>
               <Image
                 source={{
                   uri: getTrackingImage(
-                    firstActiveOrder?.status as Enum_OrderStatus,
-                    firstActiveOrder?.tracking_info as Enum_OrderTrackingInfo
+                    firstActiveOrder.status as Enum_OrderStatus,
+                    firstActiveOrder.tracking_info as Enum_OrderTrackingInfo
                   ),
                 }}
                 style={{ width: "100%", height: 200, resizeMode: "cover" }}
@@ -127,7 +155,7 @@ export const DetailedOrder: React.FC<DetailedOrderProps> = ({
               >
                 <View className="flex-row gap-2 items-center">
                   <View className="relative">
-                    <FFAvatar size={50} avatar={driverDetails?.avatar?.url} />
+                    <FFAvatar size={50} avatar={driverDetails?.avatar?.url ?? null} />
                     <View className="absolute -bottom-2 left-3 p-1 rounded-lg bg-[#56a943]">
                       <FFText
                         fontSize="sm"
@@ -141,16 +169,16 @@ export const DetailedOrder: React.FC<DetailedOrderProps> = ({
                   <View>
                     <View className="flex-row items-center gap-2">
                       <FFText style={{ color: "#4c9f3a" }}>
-                        {driverDetails?.first_name ?? "df"},{" "}
-                        {driverDetails?.last_name ?? "dl"}
+                        {driverDetails?.first_name ?? "N/A"},{" "}
+                        {driverDetails?.last_name ?? "N/A"}
                       </FFText>
                       <FFText fontSize="sm" style={{ marginTop: 2 }}>
-                        {driverDetails?.vehicle?.license_plate}
+                        {driverDetails?.vehicle?.license_plate ?? "N/A"}
                       </FFText>
                     </View>
                     <FFText fontWeight="400" fontSize="sm">
-                      {driverDetails?.vehicle?.color}{" "}
-                      {driverDetails?.vehicle?.model}
+                      {driverDetails?.vehicle?.color ?? "N/A"}{" "}
+                      {driverDetails?.vehicle?.model ?? "N/A"}
                     </FFText>
                   </View>
                 </View>
@@ -192,7 +220,7 @@ export const DetailedOrder: React.FC<DetailedOrderProps> = ({
           </>
         )}
         {type === "ACTIVE" ? (
-          !detailedOrder && !firstActiveOrder ? (
+          !detailedOrder && !firstActiveOrder && !activeOrderDetails ? (
             <View className="w-full gap-4">
               {isLoading ? (
                 <>
@@ -243,30 +271,36 @@ export const DetailedOrder: React.FC<DetailedOrderProps> = ({
                 <FFInputControl
                   label="My address"
                   value={
-                    detailedOrder
-                      ? `${detailedOrder?.restaurantAddress?.street}, ${detailedOrder?.customerAddress?.city}, ${detailedOrder?.customerAddress?.nationality}`
-                      : `${activeOrderDetails?.customerAddress?.street}, ${activeOrderDetails?.customerAddress?.city}, ${activeOrderDetails?.customerAddress?.nationality}`
+                    type === "ACTIVE" && activeOrderDetails
+                      ? activeOrderDetails.customerFullAddress ?? "N/A"
+                      : detailedOrder?.customerFullAddress ??
+                        firstActiveOrder?.customerFullAddress ??
+                        "N/A"
                   }
                   readonly
                 />
                 <FFInputControl
                   label="Restaurant address"
                   value={
-                    detailedOrder
-                      ? `${detailedOrder?.restaurantAddress?.street}, ${detailedOrder?.restaurantAddress?.city}, ${detailedOrder?.restaurantAddress?.nationality}`
-                      : `${activeOrderDetails?.restaurantAddress?.street}, ${activeOrderDetails?.restaurantAddress?.city}, ${activeOrderDetails?.restaurantAddress?.nationality}`
+                    type === "ACTIVE" && activeOrderDetails
+                      ? activeOrderDetails.restaurantFullAddress ?? "N/A"
+                      : detailedOrder?.restaurantFullAddress ??
+                        firstActiveOrder?.restaurantFullAddress ??
+                        "N/A"
                   }
                   readonly
                 />
                 <FFInputControl
                   label="Total distance"
                   value={
-                    detailedOrder
-                      ? detailedOrder.distance
-                        ? `${parseFloat(detailedOrder.distance).toFixed(2)}km`
+                    type === "ACTIVE" && activeOrderDetails
+                      ? activeOrderDetails.distance
+                        ? `${parseFloat(activeOrderDetails.distance).toFixed(2)}km`
                         : "0km"
-                      : activeOrderDetails?.distance
-                      ? `${parseFloat(activeOrderDetails.distance).toFixed(2)}km`
+                      : detailedOrder?.distance
+                      ? `${parseFloat(detailedOrder.distance).toFixed(2)}km`
+                      : firstActiveOrder?.distance
+                      ? `${parseFloat(firstActiveOrder.distance).toFixed(2)}km`
                       : "0km"
                   }
                   readonly
@@ -274,15 +308,15 @@ export const DetailedOrder: React.FC<DetailedOrderProps> = ({
                 <FFInputControl
                   label="Order time"
                   value={
-                    detailedOrder
-                      ? detailedOrder.order_time
-                        ? formatTimestampToDate(Number(detailedOrder.order_time))
-                        : "undefined sth??"
-                      : activeOrderDetails?.order_time
-                      ? formatTimestampToDate(
-                          Number(activeOrderDetails.order_time)
-                        )
-                      : "undefined sth??"
+                    type === "ACTIVE" && activeOrderDetails
+                      ? activeOrderDetails.order_time
+                        ? formatTimestampToDate(Number(activeOrderDetails.order_time))
+                        : "N/A"
+                      : detailedOrder?.order_time
+                      ? formatTimestampToDate(Number(detailedOrder.order_time))
+                      : firstActiveOrder?.order_time
+                      ? formatTimestampToDate(Number(firstActiveOrder.order_time))
+                      : "N/A"
                   }
                   readonly
                 />
@@ -290,9 +324,11 @@ export const DetailedOrder: React.FC<DetailedOrderProps> = ({
                 <FFInputControl
                   label="My Note"
                   value={
-                    detailedOrder
-                      ? detailedOrder.customer_note ?? "undefined sth??"
-                      : activeOrderDetails?.customer_note ?? "undefined sth??"
+                    type === "ACTIVE" && activeOrderDetails
+                      ? activeOrderDetails.customer_note ?? "N/A"
+                      : detailedOrder?.customer_note ??
+                        firstActiveOrder?.customer_note ??
+                        "N/A"
                   }
                   readonly
                 />
@@ -315,63 +351,189 @@ export const DetailedOrder: React.FC<DetailedOrderProps> = ({
                   </TouchableOpacity>
                 </View>
                 <FFText fontWeight="400" style={{ color: "#aaa" }}>
-                  {detailedOrder
-                    ? `${detailedOrder?.restaurant?.restaurant_name}, ${detailedOrder?.restaurantAddress?.street}, ${detailedOrder?.restaurantAddress?.city}, ${detailedOrder?.restaurantAddress?.nationality}`
-                    : `${activeOrderDetails?.restaurant?.restaurant_name}, ${activeOrderDetails?.restaurantAddress?.street}, ${activeOrderDetails?.restaurantAddress?.city}, ${activeOrderDetails?.restaurantAddress?.nationality}`}
+                  {getRestaurantInfo()}
                 </FFText>
-                {(
-                  detailedOrder?.order_items || activeOrderDetails?.order_items
-                )?.map((item, i) => (
-                  <View key={i} className="flex-row gap-2 my-4">
-                    <FFAvatar
-                      rounded="sm"
-                      size={40}
-                      avatar={
-                        item.menu_item?.avatar?.url ??
-                        IMAGE_LINKS.DEFAULT_AVATAR_FOOD
-                      }
-                    />
-                    <View className="flex-1">
-                      <FFText style={{ color: "#aaa" }}>{item.name}</FFText>
-                      <FFText
-                        fontWeight="400"
-                        fontSize="sm"
-                        style={{ color: "#aaa" }}
-                      >
-                        x{item.quantity}
-                      </FFText>
-                    </View>
-                    <TouchableOpacity
-                      onPress={() => setIsExpandedOrderItem(!isExpandedOrderItem)}
-                      className="flex-row items-center justify-between"
-                    >
-                      <FFText fontWeight="400" fontSize="sm">
-                        Show More
-                      </FFText>
-                      <IconFeather
-                        size={20}
-                        name={isExpandedOrderItem ? "chevron-up" : "chevron-down"}
+                {getOrderItems().length > 0 ? (
+                  getOrderItems().map((item, i) => (
+                    <View key={i} className="flex-row gap-2 my-4">
+                      <FFAvatar
+                        rounded="sm"
+                        size={40}
+                        avatar={
+                          item.menu_item?.avatar?.url ??
+                          IMAGE_LINKS.DEFAULT_AVATAR_FOOD
+                        }
                       />
-                    </TouchableOpacity>
-                  </View>
-                ))}
+                      <View className="flex-1">
+                        <FFText style={{ color: "#aaa" }}>
+                          {item.name ?? "N/A"}
+                        </FFText>
+                        <FFText
+                          fontWeight="400"
+                          fontSize="sm"
+                          style={{ color: "#aaa" }}
+                        >
+                          x{item.quantity ?? 0}
+                        </FFText>
+                      </View>
+                      <TouchableOpacity
+                        onPress={() =>
+                          setIsExpandedOrderItem(!isExpandedOrderItem)
+                        }
+                        className="flex-row items-center justify-between"
+                      >
+                        <FFText fontWeight="400" fontSize="sm">
+                          Show More
+                        </FFText>
+                        <IconFeather
+                          size={20}
+                          name={
+                            isExpandedOrderItem ? "chevron-up" : "chevron-down"
+                          }
+                        />
+                      </TouchableOpacity>
+                    </View>
+                  ))
+                ) : (
+                  <FFText style={{ color: "#aaa" }}>
+                    Order items not available
+                  </FFText>
+                )}
                 <FFSeperator />
                 <View className="flex-row justify-between items-center">
                   <FFText fontWeight="400" style={{ color: "#aaa" }}>
                     Total
                   </FFText>
-                  <FFText style={{ color: "#4c9f3a" }}>
-                    $
-                    {Number(
-                      activeOrderDetails?.total_amount ||
-                        detailedOrder?.total_amount
-                    ).toFixed(2)}
-                  </FFText>
+                  <FFText style={{ color: "#4c9f3a" }}>${getTotalAmount()}</FFText>
                 </View>
               </FFView>
             </>
           )
-        ) : null}
+        ) : (
+          detailedOrder && (
+            <>
+              <FFView
+                style={{
+                  width: "100%",
+                  padding: 12,
+                  borderRadius: 12,
+                  gap: 4,
+                  elevation: 3,
+                }}
+              >
+                <FFText fontSize="lg">Delivery details</FFText>
+                <FFInputControl
+                  label="My address"
+                  value={detailedOrder.customerFullAddress ?? "N/A"}
+                  readonly
+                />
+                <FFInputControl
+                  label="Restaurant address"
+                  value={detailedOrder.restaurantFullAddress ?? "N/A"}
+                  readonly
+                />
+                <FFInputControl
+                  label="Total distance"
+                  value={
+                    detailedOrder.distance
+                      ? `${parseFloat(detailedOrder.distance).toFixed(2)}km`
+                      : "0km"
+                  }
+                  readonly
+                />
+                <FFInputControl
+                  label="Order time"
+                  value={
+                    detailedOrder.order_time
+                      ? formatTimestampToDate(Number(detailedOrder.order_time))
+                      : "N/A"
+                  }
+                  readonly
+                />
+                <FFSeperator />
+                <FFInputControl
+                  label="My Note"
+                  value={detailedOrder.customer_note ?? "N/A"}
+                  readonly
+                />
+              </FFView>
+              <FFView
+                style={{
+                  width: "100%",
+                  padding: 12,
+                  borderRadius: 12,
+                  gap: 4,
+                  elevation: 3,
+                }}
+              >
+                <View className="flex-row justify-between items-center">
+                  <FFText fontSize="lg">Order summary</FFText>
+                  <TouchableOpacity onPress={() => {}}>
+                    <FFText style={{ color: "#7dbf72" }} fontSize="sm">
+                      View Receipt
+                    </FFText>
+                  </TouchableOpacity>
+                </View>
+                <FFText fontWeight="400" style={{ color: "#aaa" }}>
+                  {getRestaurantInfo()}
+                </FFText>
+                {getOrderItems().length > 0 ? (
+                  getOrderItems().map((item, i) => (
+                    <View key={i} className="flex-row gap-2 my-4">
+                      <FFAvatar
+                        rounded="sm"
+                        size={40}
+                        avatar={
+                          item.menu_item?.avatar?.url ??
+                          IMAGE_LINKS.DEFAULT_AVATAR_FOOD
+                        }
+                      />
+                      <View className="flex-1">
+                        <FFText style={{ color: "#aaa" }}>
+                          {item.name ?? "N/A"}
+                        </FFText>
+                        <FFText
+                          fontWeight="400"
+                          fontSize="sm"
+                          style={{ color: "#aaa" }}
+                        >
+                          x{item.quantity ?? 0}
+                        </FFText>
+                      </View>
+                      <TouchableOpacity
+                        onPress={() =>
+                          setIsExpandedOrderItem(!isExpandedOrderItem)
+                        }
+                        className="flex-row items-center justify-between"
+                      >
+                        <FFText fontWeight="400" fontSize="sm">
+                          Show More
+                        </FFText>
+                        <IconFeather
+                          size={20}
+                          name={
+                            isExpandedOrderItem ? "chevron-up" : "chevron-down"
+                          }
+                        />
+                      </TouchableOpacity>
+                    </View>
+                  ))
+                ) : (
+                  <FFText style={{ color: "#aaa" }}>
+                    Order items not available
+                  </FFText>
+                )}
+                <FFSeperator />
+                <View className="flex-row justify-between items-center">
+                  <FFText fontWeight="400" style={{ color: "#aaa" }}>
+                    Total
+                  </FFText>
+                  <FFText style={{ color: "#4c9f3a" }}>${getTotalAmount()}</FFText>
+                </View>
+              </FFView>
+            </>
+          )
+        )}
       </View>
       <FFModal
         onClose={() => {
@@ -428,5 +590,5 @@ export const DetailedOrder: React.FC<DetailedOrderProps> = ({
         )}
       </FFModal>
     </>
-  )
+  );
 };

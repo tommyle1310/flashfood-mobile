@@ -108,6 +108,12 @@ const CartScreen = () => {
     },
     menuItem: CartItem
   ) => {
+    // Check if trying to select from a different restaurant
+    if (selectedRestaurant.id && selectedRestaurant.id !== restaurant.id) {
+      setIsShowModal(true);
+      return;
+    }
+
     const newVariants = [...selectedVariants];
     const currentVariant = menuItem.variants.find(
       (v) => v.variant_id === variant.variant_id
@@ -120,23 +126,25 @@ const CartScreen = () => {
       id: menuItem.id,
     };
 
-    if (selectedVariants.some((item) => item.id === menuItem.id)) {
-      setSelectedVariants(newVariants.filter((item) => item.id !== menuItem.id));
-      if (newVariants.length === 1) {
+    const isVariantSelected = selectedVariants.some((item) => item.id === menuItem.id);
+    
+    if (isVariantSelected) {
+      const filteredVariants = newVariants.filter((item) => item.id !== menuItem.id);
+      setSelectedVariants(filteredVariants);
+      // If removing the last item, reset the selected restaurant
+      if (filteredVariants.length === 0) {
         setSelectedRestaurant(defaultSelectedRestaurant);
       }
     } else {
       newVariants.push(variantWithItemId);
       setSelectedVariants(newVariants);
-      if (!selectedRestaurant?.id || selectedRestaurant?.id === restaurant?.id) {
+      // Set the selected restaurant if none is selected
+      if (!selectedRestaurant.id) {
         setSelectedRestaurant({
-          id: restaurant?.id,
-          avatar: {
-            url: restaurant?.avatar?.url,
-            key: restaurant?.avatar?.key,
-          },
-          restaurant_name: restaurant?.restaurant_name,
-          address_id: restaurant?.address_id,
+          id: restaurant.id,
+          avatar: restaurant.avatar,
+          restaurant_name: restaurant.restaurant_name,
+          address_id: restaurant.address_id,
         });
       }
     }
@@ -215,18 +223,14 @@ const CartScreen = () => {
 
   const renderCartItem = ({ item }: { item: CartItem }) => {
     const variant = item.variants[0]; // Assuming one variant per cart item for simplicity
-    const restaurant = item.restaurant;
-    const isSelected = selectedRestaurant?.id === restaurant?.id;
-    const isDisabled = selectedRestaurant?.id !== "" && !isSelected;
+    const restaurant = item.item.restaurantDetails;
+    const isSelected = selectedVariants.some((v) => v.id === item.id);
+    const isDisabled = selectedRestaurant.id !== "" && selectedRestaurant.id !== restaurant?.id;
 
     return (
       <Pressable
         onPress={() => {
           if (!isDisabled) {
-            setSelectedRestaurant(
-              isSelected ? defaultSelectedRestaurant : restaurant
-            );
-            setSelectedVariants(isSelected ? [] : item.variants);
             handleSelectVariants(variant, restaurant, item);
           }
         }}
@@ -239,10 +243,11 @@ const CartScreen = () => {
           backgroundColor: isSelected ? "#e8f5e9" : "transparent",
         }}
       >
-        <Image
-          source={{ uri: item.item.avatar.url }}
-          style={{ width: 80, height: 80, borderRadius: 8 }}
-        />
+      <FFAvatar 
+      rounded="md"
+      avatar={item.item.avatar.url}
+      size={40}
+      />
         <View style={{ flex: 1, marginLeft: 12 }}>
           <FFText fontSize="md" fontWeight="bold">
             {item.item?.name}
@@ -251,7 +256,7 @@ const CartScreen = () => {
             {variant.variant_name}
           </FFText>
           <View
-            style={{ flexDirection: "row", alignItems: "center", marginTop: 8 }}
+            style={{ flexDirection: "row", alignItems: "center",  }}
           >
             <FFText fontSize="md" fontWeight="bold">
               ${(variant.variant_price_at_time_of_addition * variant.quantity).toFixed(2)}
@@ -334,7 +339,7 @@ const CartScreen = () => {
                 data={Object.keys(groupedCartList)}
                 renderItem={({ item }) => {
                   const restaurantItems = groupedCartList[item];
-                  const restaurant = restaurantItems[0].restaurant;
+                  const restaurant = restaurantItems[0].item.restaurantDetails;
                   console.log('check rs name', restaurantItems?.[0]?.item?.restaurantDetails?.restaurant_name)
                   return (
                     <FFView
@@ -379,12 +384,13 @@ const CartScreen = () => {
               />
             </View>
             {isShowSubmitBtn && (
-              <FFButton
-                style={{ marginBottom: 24 }}
+             <View className="p-4">
+               <FFButton
                 onPress={handleSubmitCheckout}
               >
                 Proceed to Checkout
               </FFButton>
+             </View>
             )}
           </>
         )}

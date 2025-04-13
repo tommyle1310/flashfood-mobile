@@ -54,7 +54,7 @@ export const OrderTabContent: React.FC<OrderTabContentProps> = ({
     if (!setIsLoading) return;
     setIsLoading(true);
     try {
-      console.log('check tip amount', parseFloat(String(tipAmount)))
+      console.log("check tip amount", parseFloat(String(tipAmount)));
       const tipValue = parseFloat(String(tipAmount)) || 0;
       const response = await axiosInstance.post("/orders/tip", {
         orderId: firstActiveOrder?.orderId || activeOrderDetails?.id,
@@ -100,15 +100,98 @@ export const OrderTabContent: React.FC<OrderTabContentProps> = ({
   }, [firstActiveOrder, refetchOrders]);
 
   useEffect(() => {
-    if (orders?.[0]?.driver_id) {
-      setDriverDetails(orders[0].driver);
+    console.log("realtimeOrders:", realtimeOrders);
+    if (realtimeOrders?.length > 0) {
+      const order = realtimeOrders[0];
+      // Tìm order đầy đủ từ orders prop
+      const fullOrder = orders.find((o) => o.id === order.orderId) || null;
+      setDriverDetails(null); // Sẽ lấy driverDetails từ API nếu cần
+      setActiveOrderDetails({
+        ...order,
+        id: order.orderId,
+        customer: fullOrder?.customer ?? {
+          id: "",
+          first_name: "",
+          last_name: "",
+          avatar: null,
+          favorite_items: null,
+        },
+        customerAddress: fullOrder?.customerAddress ?? {
+          id: "",
+          street: "",
+          city: "",
+          nationality: "",
+          is_default: false,
+          created_at: 0,
+          updated_at: 0,
+          postal_code: 0,
+          location: { lat: 0, lon: 0 },
+          title: "",
+        },
+        restaurantAddress: fullOrder?.restaurantAddress ?? {
+          id: "",
+          street: "",
+          city: "",
+          nationality: "",
+          is_default: false,
+          created_at: 0,
+          updated_at: 0,
+          postal_code: 0,
+          location: { lat: 0, lon: 0 },
+          title: "",
+        },
+        customer_id: order.customer_id,
+        customer_location: fullOrder?.customer_location ?? "",
+        customer_note: fullOrder?.customer_note ?? "",
+        distance: fullOrder?.distance ?? "",
+        delivery_time: fullOrder?.delivery_time ?? "",
+        driver: null,
+        driver_id: order.driver_id,
+        order_items: fullOrder?.order_items ?? [],
+        order_time: fullOrder?.order_time ?? "",
+        payment_method: fullOrder?.payment_method ?? "",
+        payment_status: fullOrder?.payment_status ?? "PENDING",
+        restaurant: fullOrder?.restaurant ?? {
+          id: order.restaurant_id,
+          restaurant_name: "",
+          address_id: "",
+          avatar: null,
+          contact_email: [],
+          contact_phone: [],
+          created_at: 0,
+          specialize_in: [],
+          description: null,
+          images_gallery: null,
+          opening_hours: null,
+          owner_id: "",
+          owner_name: "",
+          promotions: null,
+          ratings: null,
+          status: null,
+          updated_at: 0,
+        },
+        restaurant_id: order.restaurant_id,
+        restaurant_location: fullOrder?.restaurant_location ?? "",
+        restaurant_note: fullOrder?.restaurant_note ?? "",
+        status: order.status as Enum_OrderStatus,
+        total_amount: fullOrder?.total_amount ?? "0",
+        tracking_info: order.tracking_info as Enum_OrderTrackingInfo,
+        customerFullAddress: order.customerFullAddress || "N/A",
+        restaurantFullAddress: order.restaurantFullAddress || "N/A",
+      });
+    } else {
+      setDriverDetails(null);
+      setActiveOrderDetails(null);
     }
-    setActiveOrderDetails(orders[0]);
-  }, [orders]);
+  }, [realtimeOrders, orders]);
 
-  // if (isLoading) {
-  //   return <Spinner isVisible isOverlay />
-  // }
+  useEffect(() => {
+    if (type !== "ACTIVE") {
+      setActiveOrderDetails(null);
+      setDetailedOrder(null);
+      setDriverDetails(null);
+    }
+  }, [type]);
 
   return (
     <ScrollView className="gap-4 p-4">

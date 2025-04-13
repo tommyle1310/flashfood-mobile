@@ -45,11 +45,11 @@ export type MainStackParamList = {
   Rating: {
     driver: {
       id: string;
-      avatar: Avatar;
+      avatar: Avatar | null;
     };
     restaurant: {
       id: string;
-      avatar: Avatar;
+      avatar: Avatar | null;
     };
     orderId?: string;
   };

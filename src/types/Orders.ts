@@ -46,13 +46,13 @@ export type OrderItem = {
   menu_item: any;
   price_at_time_of_order: number | null;
   variant_id: string | null;
-  restaurant: {
+  restaurant?: {
     id: string;
   }
   item: {
     id: string;
     name: string;
-    restaurantDetails: { address_id: string , id: string};
+    restaurantDetails?: { address_id: string , id: string};
     avatar: { url: string; key: string };
   };
 };
