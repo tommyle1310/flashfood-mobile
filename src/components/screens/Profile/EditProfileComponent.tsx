@@ -16,6 +16,7 @@ import Spinner from "../../FFSpinner";
 import FFModal from "../../FFModal";
 import FFText from "../../FFText";
 import FFButton from "../../FFButton";
+import FFView from "../../FFView";
 
 const EditProfileComponent = ({
   firstName,
@@ -133,10 +134,9 @@ const EditProfileComponent = ({
 
   return (
     <>
-      <View
+      <FFView
         style={{
           elevation: 10,
-          backgroundColor: "#fff",
           borderRadius: 12,
           padding: 12,
           borderColor: "#eee",
@@ -189,7 +189,7 @@ const EditProfileComponent = ({
         >
           Update
         </FFButton>
-      </View>
+      </FFView>
       <FFModal
         onClose={() =>
           setModalDetails({ desc: "", status: "HIDDEN", title: "" })

@@ -3,7 +3,16 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { RootState } from "./store";
 import { IMAGE_LINKS } from "../assets/imageLinks";
 
-// Define the types of state we will use in this slice
+// Định nghĩa type cho favorite_restaurants
+export interface FavoriteRestaurant {
+  id: string;
+  restaurant_name: string;
+  avatar: { url: string; key: string };
+  address_id: string;
+  // Thêm các trường khác nếu cần dựa trên dữ liệu API
+}
+
+// Định nghĩa các type khác (giữ nguyên)
 export interface Variant {
   variant_id: string;
   variant_name: string;
@@ -25,7 +34,7 @@ export interface CartItem {
     restaurant_name: string;
     avatar: { url: string; key: string };
     address_id: string;
-  },
+  };
   item: {
     avatar: { url: string; key: string };
     id: string;
@@ -37,7 +46,6 @@ export interface CartItem {
       avatar: { url: string; key: string };
       address_id: string;
     };
-   
     name: string;
     description: string;
     category: string[];
@@ -56,7 +64,7 @@ export interface CartItem {
 }
 
 interface UserPreferenceState {
-  favorite_restaurants: string[];
+  favorite_restaurants: FavoriteRestaurant[];
   cart_items: CartItem[];
 }
 
@@ -65,10 +73,12 @@ const initialState: UserPreferenceState = {
   cart_items: [],
 };
 
-// Async thunks (giữ nguyên)
+// Async thunks
 export const saveFavoriteRestaurantsToAsyncStorage = createAsyncThunk(
   "userPreference/saveFavoriteRestaurants",
-  async (favorite_restaurants: string[]) => {
+  async (_: void, { getState }) => {
+    const state = getState() as RootState;
+    const favorite_restaurants = state.userPreference.favorite_restaurants;
     await AsyncStorage.setItem(
       "favorite_restaurants",
       JSON.stringify(favorite_restaurants)
@@ -94,6 +104,7 @@ export const saveCartItemsToAsyncStorage = createAsyncThunk(
     return cart_items;
   }
 );
+
 export const removeCartItemFromAsyncStorage = createAsyncThunk(
   "userPreference/removeCartItems",
   async (itemsToRemove: { id: string }[], thunkAPI) => {
@@ -120,14 +131,16 @@ const userPreferenceSlice = createSlice({
   initialState,
   reducers: {
     toggleFavoriteRestaurant: (state, action) => {
-      const restaurantId = action.payload;
-      const index = state.favorite_restaurants.indexOf(restaurantId);
+      const restaurant = action.payload; // payload giờ là object FavoriteRestaurant
+      const index = state.favorite_restaurants.findIndex(
+        (fav) => fav.id === restaurant.id
+      );
 
       if (index === -1) {
-        state.favorite_restaurants.push(restaurantId);
+        state.favorite_restaurants.push(restaurant);
       } else {
         state.favorite_restaurants = state.favorite_restaurants.filter(
-          (id) => id !== restaurantId
+          (fav) => fav.id !== restaurant.id
         );
       }
     },
@@ -137,14 +150,14 @@ const userPreferenceSlice = createSlice({
       const existingItem = state.cart_items.find(
         (item) => item.id === newItem.id
       );
-    
+
       if (existingItem) {
         console.log("Updating existing cart item:", newItem, existingItem);
         newItem.variants.forEach((newVariant: Variant) => {
           const existingVariant = existingItem.variants.find(
             (variant) => variant.variant_id === newVariant.variant_id
           );
-    
+
           if (existingVariant) {
             existingVariant.quantity += newVariant.quantity;
             existingVariant.variant_price_at_time_of_addition =
@@ -203,12 +216,10 @@ const userPreferenceSlice = createSlice({
       }
     },
 
-    // Thêm action mới: subtractItemFromCart
-
     subtractItemFromCart: (state, action) => {
       const orderItems = action.payload;
       console.log("check orderitem", orderItems);
-      console.log("check current cart_items", state.cart_items); // Thêm log để xem state.cart_items
+      console.log("check current cart_items", state.cart_items);
 
       orderItems.forEach(
         (orderItem: {
@@ -280,7 +291,7 @@ export const {
   addItemToCart,
   removeItemFromCart,
   updateItemQuantity,
-  subtractItemFromCart, // Export action mới
+  subtractItemFromCart,
 } = userPreferenceSlice.actions;
 
 export default userPreferenceSlice.reducer;

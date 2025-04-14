@@ -1,11 +1,9 @@
-import { View, Text, Pressable, ScrollView } from "react-native";
+import { View, Pressable, ScrollView } from "react-native";
 import React, { useEffect, useState } from "react";
 import FFAvatar from "../../FFAvatar";
 import FFText from "../../FFText";
 import { Order } from "@/src/types/Orders";
 import IconIonicons from "react-native-vector-icons/Ionicons";
-import { DELIVERY_FEE, SERVICE_FEE } from "@/src/utils/constants";
-import axiosInstance from "@/src/utils/axiosConfig";
 import { Promotion } from "@/src/types/Promotion";
 import FFDropdown from "../../FFDropdown";
 
@@ -17,23 +15,21 @@ const OrderSummary = ({
   promotionList,
   handleSelectPromotion,
   selectedPromotion,
+  totalAmountActual,
 }: {
   orderItem: Order;
   setTotalAmountParent: React.Dispatch<React.SetStateAction<number>>;
   deliveryFee: number;
   serviceFee: number;
   selectedPromotion: string;
-
   promotionList?: Promotion[];
   handleSelectPromotion: (option: string) => void;
+  totalAmountActual: number; // Prop mới
 }) => {
   const [subTotal, setSubTotal] = useState<number>(0);
-  const [promotionSubtractValue, setpromotionSubtractValue] =
-    useState<number>(0);
+  const [promotionSubtractValue, setPromotionSubtractValue] = useState<number>(0);
   const [voucherSubtractValue, setVoucherSubtractValue] = useState<number>(0);
-  console.log("cehck order item", orderItem.order_items[0].item);
 
-  const [totalAmount, setTotalAmount] = useState<number>(0);
   useEffect(() => {
     const calculatedSubTotal = orderItem.order_items.reduce((total, item) => {
       return (
@@ -41,23 +37,8 @@ const OrderSummary = ({
       );
     }, 0);
     setSubTotal(calculatedSubTotal);
-  }, [orderItem]);
-  useEffect(() => {
-    setTotalAmount(
-      subTotal +
-        promotionSubtractValue +
-        voucherSubtractValue +
-        deliveryFee +
-        serviceFee
-    );
-    setTotalAmountParent(
-      subTotal +
-        promotionSubtractValue +
-        voucherSubtractValue +
-        deliveryFee +
-        serviceFee
-    );
-  }, [subTotal, promotionSubtractValue, voucherSubtractValue, deliveryFee]);
+    setTotalAmountParent(calculatedSubTotal); // Chỉ set subTotal
+  }, [orderItem, setTotalAmountParent]);
 
   return (
     <View className="flex-1">
@@ -141,16 +122,6 @@ const OrderSummary = ({
           fallbackText="No promotions available"
           selectedOption={selectedPromotion}
         />
-        {/* <Pressable
-          style={{ backgroundColor: "#ddd" }}
-          className="p-4  rounded-lg flex-row items-center justify-between"
-        >
-          <View className="flex-row items-center gap-2">
-            <IconIonicons name="ticket-outline" size={14} />
-            <Text className="text-gray-400">Enter your voucher code</Text>
-          </View>
-          <IconIonicons name="chevron-forward-outline" />
-        </Pressable> */}
         <View className="flex-row justify-between items-center">
           <FFText style={{ color: "#aaa" }} fontWeight="400">
             Subtotal
@@ -161,32 +132,32 @@ const OrderSummary = ({
           <FFText style={{ color: "#aaa" }} fontWeight="400">
             Promotion
           </FFText>
-          <FFText fontWeight="500">-${promotionSubtractValue}</FFText>
+          <FFText fontWeight="500">-${promotionSubtractValue.toFixed(2)}</FFText>
         </View>
         <View className="flex-row justify-between items-center">
           <FFText style={{ color: "#aaa" }} fontWeight="400">
             Voucher Discount
           </FFText>
-          <FFText fontWeight="500">-${voucherSubtractValue}</FFText>
+          <FFText fontWeight="500">-${voucherSubtractValue.toFixed(2)}</FFText>
         </View>
         <View className="flex-row justify-between items-center">
           <FFText style={{ color: "#aaa" }} fontWeight="400">
             Delivery Fee
           </FFText>
-          <FFText fontWeight="500">${deliveryFee}</FFText>
+          <FFText fontWeight="500">${deliveryFee.toFixed(2)}</FFText>
         </View>
         <View className="flex-row justify-between items-center">
           <FFText style={{ color: "#aaa" }} fontWeight="400">
             Service Fee
           </FFText>
-          <FFText fontWeight="500">${serviceFee}</FFText>
+          <FFText fontWeight="500">${serviceFee.toFixed(2)}</FFText>
         </View>
         <View className="flex-row justify-between items-center my-2">
           <FFText style={{ color: "#aaa" }} fontSize="lg" fontWeight="400">
             Total Amount
           </FFText>
           <FFText fontSize="lg" colorLight="#4d9c39" colorDark="#4c9f3a">
-            ${totalAmount.toFixed(2)}
+            ${totalAmountActual.toFixed(2)} {/* Dùng totalAmountActual */}
           </FFText>
         </View>
       </View>

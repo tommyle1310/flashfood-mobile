@@ -8,6 +8,7 @@ import FFAvatar from "@/src/components/FFAvatar";
 import FFButton from "@/src/components/FFButton";
 import { formatTimestampToDate2 } from "@/src/utils/dateConverter";
 import { IMAGE_LINKS } from "@/src/assets/imageLinks";
+import FFView from "../../FFView";
 
 interface OrderCardProps {
   order: OrderTracking;
@@ -23,10 +24,9 @@ export const OrderCard: React.FC<OrderCardProps> = ({
   onReOrder,
 }) => {
   return (
-    <Pressable
+    <FFView
       onPress={onPress}
-      style={{ elevation: 3 }}
-      className="flex-col gap-4 p-4 bg-white rounded-lg items-center"
+      style={{ elevation: 3 , padding: 12, borderRadius: 12, gap: 12}}
     >
       <View className="flex-row justify-between gap-2 items-center">
         <FFText fontSize="sm">
@@ -75,6 +75,6 @@ export const OrderCard: React.FC<OrderCardProps> = ({
           Re-Order
         </FFButton>
       </View>
-    </Pressable>
+    </FFView>
   );
 };

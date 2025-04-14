@@ -16,9 +16,6 @@ import IconFeather from "react-native-vector-icons/Feather";
 import FFAvatar from "@/src/components/FFAvatar";
 import {
   loadCartItemsFromAsyncStorage,
-  loadFavoriteRestaurantsFromAsyncStorage,
-  saveFavoriteRestaurantsToAsyncStorage,
-  toggleFavoriteRestaurant,
 } from "@/src/store/userPreferenceSlice";
 import { useNavigation } from "@react-navigation/native";
 import { StackNavigationProp } from "@react-navigation/stack";
@@ -35,11 +32,18 @@ import FFSkeleton from "@/src/components/FFSkeleton";
 import colors from "@/src/theme/colors";
 
 // Type Definitions
+interface FavoriteRestaurant {
+  id: string;
+  restaurant_name: string;
+  avatar: { url: string; key: string } | null;
+  address_id: string;
+}
 
 type HomeRestaurantSreenNavigationProp = StackNavigationProp<
   MainStackParamList,
   "BottomTabs"
 >;
+
 
 const HomeScreen = () => {
   const navigation = useNavigation<HomeRestaurantSreenNavigationProp>();
@@ -60,15 +64,15 @@ const HomeScreen = () => {
     availablePromotionWithRestaurants,
     setAvailablePromotionWithRestaurants,
   ] = useState<AvailablePromotionWithRestaurants[] | null>(null);
-
+  const [favoriteRestaurants, setFavoriteRestaurants] = useState<
+    FavoriteRestaurant[]
+  >([]);
   const [isLoading, setIsLoading] = useState(true);
 
   // Global State
-  const listFavoriteRestaurants = useSelector(
-    (state: RootState) => state.userPreference.favorite_restaurants
-  );
-
   const globalState = useSelector((state: RootState) => state.auth);
+
+  // Fetch initial data (categories, restaurants, promotions)
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -93,7 +97,7 @@ const HomeScreen = () => {
                 ...restaurant.address,
                 location: {
                   lat: restaurant.address.location.lat,
-                  lng: restaurant.address.location.lon, // Đổi lon thành lng
+                  lng: restaurant.address.location.lon,
                 },
               },
             })
@@ -108,21 +112,38 @@ const HomeScreen = () => {
         }
       } catch (error) {
         console.error("Error fetching data:", error);
-      } finally {
-        setIsLoading(false); // Stop loading when fetching completes
       }
     };
 
-    // Only fetch data if globalState.user_id is available and not already loading
+    // Fetch favorite restaurants
+    const fetchFavoriteRestaurantData = async () => {
+      try {
+        const response = await axiosInstance.get(
+          `/customers/favorite-restaurants/${globalState.id}`
+        );
+        const { EC, data } = response.data;
+        if (EC === 0) {
+          setFavoriteRestaurants(data);
+        }
+      } catch (error) {
+        console.error("Error fetching favorite restaurants:", error);
+      }
+    };
+
     if (globalState.user_id && isLoading) {
       fetchData();
+      fetchFavoriteRestaurantData();
+      setIsLoading(false);
     }
-  }, [globalState.user_id]);
+  }, [globalState.user_id, isLoading]);
 
   // Filter restaurants and promotions when categories change
   useEffect(() => {
-    if (listRestaurants && selectedFoodCategories && selectedFoodCategories.length > 0) {
-      // Filter restaurants
+    if (
+      listRestaurants &&
+      selectedFoodCategories &&
+      selectedFoodCategories.length > 0
+    ) {
       const filtered = listRestaurants?.filter((restaurant) =>
         restaurant.specialize_in?.some((category) =>
           selectedFoodCategories.includes(category.id)
@@ -130,28 +151,29 @@ const HomeScreen = () => {
       );
       setFilteredRestaurants(filtered);
 
-      // Filter promotions
       if (availablePromotionWithRestaurants) {
-        const filteredPromotions = availablePromotionWithRestaurants.map(promotion => {
-          // Find full restaurant details for each promotion restaurant
-          const restaurantsWithDetails = promotion.restaurants.filter(promoRest => 
-            listRestaurants?.some(fullRest => 
-              fullRest.id === promoRest.id && 
-              fullRest.specialize_in?.some(category => 
-                selectedFoodCategories.includes(category.id)
-              )
-            )
-          );
-          
-          return {
-            ...promotion,
-            restaurants: restaurantsWithDetails
-          };
-        });
+        const filteredPromotions = availablePromotionWithRestaurants.map(
+          (promotion) => {
+            const restaurantsWithDetails = promotion.restaurants.filter(
+              (promoRest) =>
+                listRestaurants?.some(
+                  (fullRest) =>
+                    fullRest.id === promoRest.id &&
+                    fullRest.specialize_in?.some((category) =>
+                      selectedFoodCategories.includes(category.id)
+                    )
+                )
+            );
+
+            return {
+              ...promotion,
+              restaurants: restaurantsWithDetails,
+            };
+          }
+        );
         setAvailablePromotionWithRestaurants(filteredPromotions);
       }
     } else {
-      // Reset filters when no categories are selected
       setFilteredRestaurants([]);
       const fetchPromotions = async () => {
         try {
@@ -167,41 +189,29 @@ const HomeScreen = () => {
     }
   }, [selectedFoodCategories, listRestaurants]);
 
-  // Load favorite restaurants from AsyncStorage
-  useEffect(() => {
-    dispatch(loadFavoriteRestaurantsFromAsyncStorage());
-  }, [dispatch]);
-
-  // Toggle favorite restaurant and update AsyncStorage
+  // Toggle favorite restaurant
   const handleToggleFavorite = async (restaurantId: string) => {
     try {
-      console.log("globalState.id", globalState.id, restaurantId);
-      const response = await axiosInstance.post(
+      const response = await axiosInstance.patch(
         `/customers/favorite-restaurant/${globalState.id}`,
         {
           favorite_restaurant: restaurantId,
         }
       );
-      console.log("response", response.data);
 
       if (response.data.EC === 0) {
-        dispatch(toggleFavoriteRestaurant(restaurantId));
-        await dispatch(
-          saveFavoriteRestaurantsToAsyncStorage(listFavoriteRestaurants)
+        // Refresh favorite restaurants from API
+        const fetchResponse = await axiosInstance.get(
+          `/customers/favorite-restaurants/${globalState.id}`
         );
+        if (fetchResponse.data.EC === 0) {
+          setFavoriteRestaurants(fetchResponse.data.data);
+        }
       }
     } catch (error) {
       console.error("Error toggling favorite:", error);
     }
   };
-  console.log('cehck ', listFavoriteRestaurants)
-  useEffect(() => {
-    // Only dispatch the action to save favorite_restaurants if the list has changed
-    if (listFavoriteRestaurants.length > 0) {
-      // Dispatch the action to save the updated favorite restaurants to AsyncStorage
-      dispatch(saveFavoriteRestaurantsToAsyncStorage(listFavoriteRestaurants));
-    }
-  }, [listFavoriteRestaurants, dispatch]); // This depends on listFavoriteRestaurants
 
   const renderedRestaurants =
     filteredRestaurants?.length > 0 ? filteredRestaurants : listRestaurants;
@@ -274,11 +284,10 @@ const HomeScreen = () => {
                       : [...currentSelected, item.id];
                   });
                 }}
-                className={`px-2 py-1 mr-2 rounded-md ${
-                  selectedFoodCategories?.includes(item.id)
-                    ? "bg-[#59bf47]"
-                    : "bg-white"
-                }`}
+                className={`px-2 py-1 mr-2 rounded-md ${selectedFoodCategories?.includes(item.id)
+                  ? "bg-[#59bf47]"
+                  : "bg-white"
+                  }`}
               >
                 <FFText
                   style={{
@@ -318,7 +327,7 @@ const HomeScreen = () => {
               </FFText>
             </TouchableOpacity>
           </View>
-          <ScrollView horizontal className=" py-2 px-2 -ml-2">
+          <ScrollView horizontal className="py-2 px-2 -ml-2">
             {(renderedRestaurants ?? []).slice(0, 5).map((item) => (
               <FFView
                 onPress={() =>
@@ -376,7 +385,9 @@ const HomeScreen = () => {
                   >
                     <IconAntDesign
                       name={
-                        listFavoriteRestaurants?.includes(item.id) ? "heart" : "hearto"
+                        favoriteRestaurants?.some((fav) => fav.id === item.id)
+                          ? "heart"
+                          : "hearto"
                       }
                       size={16}
                       color="#7dbf72"
@@ -420,7 +431,13 @@ const HomeScreen = () => {
             {availablePromotionWithRestaurants?.map((promotion, i) => (
               <View key={promotion.id} className="mb-6">
                 <View className="flex-row items-center justify-between mb-3">
-                  <FFText style={{ fontWeight: "700", fontSize: 18, color: i % 2 === 0 ? colors.warning : colors.primary }}>
+                  <FFText
+                    style={{
+                      fontWeight: "700",
+                      fontSize: 18,
+                      color: i % 2 === 0 ? colors.warning : colors.primary,
+                    }}
+                  >
                     {promotion.restaurants.length === 0 ? null : promotion.name}
                   </FFText>
                   {promotion.restaurants.length === 0 || (
@@ -431,7 +448,13 @@ const HomeScreen = () => {
                         borderRadius: 20,
                       }}
                     >
-                      <FFText style={{ color: i % 2 === 0 ? colors.warning : colors.primary, fontWeight: "500", fontSize: 12 }}>
+                      <FFText
+                        style={{
+                          color: i % 2 === 0 ? colors.warning : colors.primary,
+                          fontWeight: "500",
+                          fontSize: 12,
+                        }}
+                      >
                         Show All
                       </FFText>
                     </TouchableOpacity>
@@ -452,8 +475,7 @@ const HomeScreen = () => {
                         height: 200,
                         width: 200,
                         marginRight: 12,
-                        backgroundColor: '#fff',
-                        overflow: 'hidden'
+                        overflow: "hidden",
                       }}
                     >
                       <ImageBackground
@@ -467,47 +489,61 @@ const HomeScreen = () => {
                       >
                         <View
                           style={{
-                            position: 'absolute',
+                            position: "absolute",
                             top: 0,
                             left: 0,
                             right: 0,
                             height: 120,
-                            backgroundColor: 'rgba(255, 107, 107, 0.1)',
+                            backgroundColor: "rgba(255, 107, 107, 0.1)",
                           }}
                         />
                         {/* Discount Badge */}
                         <View
                           style={{
-                            position: 'absolute',
+                            position: "absolute",
                             top: 8,
                             left: 8,
-                            backgroundColor: i % 2 === 0 ? colors.warning : colors.primary,
+                            backgroundColor:
+                              i % 2 === 0 ? colors.warning : colors.primary,
                             paddingHorizontal: 8,
                             paddingVertical: 4,
                             borderRadius: 12,
                           }}
                         >
-                          <FFText style={{ color: 'white', fontWeight: '600', fontSize: 12 }}>
-                            {promotion.discount_type === 'PERCENTAGE' 
-                              ? `${(Number(promotion.discount_value)).toFixed(0.2)}% OFF`
-                              : `-$${(Number(promotion.discount_value))}`
-                            }
+                          <FFText
+                            style={{
+                              color: "white",
+                              fontWeight: "600",
+                              fontSize: 12,
+                            }}
+                          >
+                            {promotion.discount_type === "PERCENTAGE"
+                              ? `${Number(promotion.discount_value).toFixed(
+                                0.2
+                              )}% OFF`
+                              : `-$${Number(promotion.discount_value)}`}
                           </FFText>
                         </View>
                         {/* Favorite Icon */}
                         <Pressable
                           onPress={() => handleToggleFavorite(item.id)}
                           style={{
-                            position: 'absolute',
+                            position: "absolute",
                             top: 8,
                             right: 8,
-                            backgroundColor: 'white',
+                            backgroundColor: "white",
                             padding: 6,
                             borderRadius: 20,
                           }}
                         >
                           <IconAntDesign
-                            name={listFavoriteRestaurants?.includes(item.id) ? "heart" : "hearto"}
+                            name={
+                              favoriteRestaurants?.some(
+                                (fav) => fav.id === item.id
+                              )
+                                ? "heart"
+                                : "hearto"
+                            }
                             size={16}
                             color={i % 2 === 0 ? colors.warning : colors.primary}
                           />
@@ -525,14 +561,44 @@ const HomeScreen = () => {
                           {item.restaurant_name}
                         </FFText>
                         {/* Rating and Time */}
-                        <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 4 }}>
-                          <View style={{ flexDirection: 'row', alignItems: 'center', marginRight: 12 }}>
-                            <IconAntDesign name="star" size={14} color="#FFB800" />
-                            <FFText style={{ marginLeft: 4, color: '#666', fontSize: 12 }}>4.8</FFText>
+                        <View
+                          style={{
+                            flexDirection: "row",
+                            alignItems: "center",
+                            marginTop: 4,
+                          }}
+                        >
+                          <View
+                            style={{
+                              flexDirection: "row",
+                              alignItems: "center",
+                              marginRight: 12,
+                            }}
+                          >
+                            <IconAntDesign
+                              name="star"
+                              size={14}
+                              color="#FFB800"
+                            />
+                            <FFText
+                              style={{ marginLeft: 4, color: "#666", fontSize: 12 }}
+                            >
+                              4.8
+                            </FFText>
                           </View>
-                          <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                            <IconAntDesign name="clockcircle" size={14} color="#666" />
-                            <FFText style={{ marginLeft: 4, color: '#666', fontSize: 12 }}>20-30 min</FFText>
+                          <View
+                            style={{ flexDirection: "row", alignItems: "center" }}
+                          >
+                            <IconAntDesign
+                              name="clockcircle"
+                              size={14}
+                              color="#666"
+                            />
+                            <FFText
+                              style={{ marginLeft: 4, color: "#666", fontSize: 12 }}
+                            >
+                              20-30 min
+                            </FFText>
                           </View>
                         </View>
                       </View>
@@ -541,7 +607,9 @@ const HomeScreen = () => {
                   {promotion.restaurants.length === 0 && null}
                 </ScrollView>
                 {isLoading && (
-                  <View style={{ width: "100%", gap: 12, flexDirection: "row" }}>
+                  <View
+                    style={{ width: "100%", gap: 12, flexDirection: "row" }}
+                  >
                     <FFSkeleton width={100} height={30} />
                     <FFSkeleton width={100} height={30} />
                   </View>

@@ -6,6 +6,7 @@ import IconFontAwesome5 from "react-native-vector-icons/FontAwesome5";
 import { useSelector } from "@/src/store/types";
 import { RootState } from "@/src/store/store";
 import FFSkeleton from "../../FFSkeleton";
+import FFView from "../../FFView";
 
 const ReadonlyProfileComponents = ({
   firstName,
@@ -23,10 +24,10 @@ const ReadonlyProfileComponents = ({
   const { user_id, avatar } = useSelector((state: RootState) => state.auth);
 
   return (
-    <View
+    <FFView
       style={{
         elevation: 10,
-        backgroundColor: "#fff",
+        // backgroundColor: "#fff",
         borderRadius: 12,
         padding: 12,
         borderColor: "#eee",
@@ -79,7 +80,7 @@ const ReadonlyProfileComponents = ({
         </FFText>
         <FFText fontWeight="400">24/01/2025</FFText>
       </View>
-    </View>
+    </FFView>
   );
 };
 

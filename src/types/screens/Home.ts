@@ -8,6 +8,7 @@ export type Promotion = {
 };
 export type Restaurant = {
   id: string;
+  address_id?: string;
   restaurant_name: string;
   address: {
     id: string;

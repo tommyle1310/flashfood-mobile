@@ -8,7 +8,6 @@ import OrderConfirmation from "@/src/components/screens/Checkout/OrderConfirmati
 import PaymentInformation from "@/src/components/screens/Checkout/PaymentInformation";
 import { useDispatch, useSelector } from "@/src/store/types";
 import { RootState } from "@/src/store/store";
-import { DELIVERY_FEE, SERVICE_FEE } from "@/src/utils/constants";
 import FFModal from "@/src/components/FFModal";
 import axiosInstance from "@/src/utils/axiosConfig";
 import ModalStatusCheckout from "@/src/components/screens/Checkout/ModalStatusCheckout";
@@ -22,12 +21,19 @@ import {
 } from "@/src/store/userPreferenceSlice";
 import Spinner from "@/src/components/FFSpinner";
 import { Promotion } from "@/src/types/Promotion";
+import { DELIVERY_FEE } from "@/src/utils/constants";
 
 type CheckoutRouteProps = RouteProp<MainStackParamList, "Checkout">;
 type CheckoutScreenNavigationProp = StackNavigationProp<
   MainStackParamList,
   "Checkout"
 >;
+
+interface FinanceRules {
+  app_service_fee: number;
+  delivery_fee?: number;
+}
+
 const CheckoutScreen = () => {
   const dispatch = useDispatch();
   const route = useRoute<CheckoutRouteProps>();
@@ -36,11 +42,12 @@ const CheckoutScreen = () => {
     useState<boolean>(false);
   const [modalContentType, setModalContentType] = useState<
     "SUCCESS" | "ERROR" | "WARNING"
-  >("ERROR"); // Default can be "SUCCESS"
+  >("ERROR");
   const navigation = useNavigation<CheckoutScreenNavigationProp>();
-  const [deliveryFee, setDeliveryFee] = useState<number>(DELIVERY_FEE);
-  const [serviceFee, setServiceFee] = useState<number>(SERVICE_FEE);
-  const [totalAmount, setTotalAmount] = useState<number>(0);
+  const [deliveryFee, setDeliveryFee] = useState<number>(0);
+  const [serviceFee, setServiceFee] = useState<number>(0);
+  const [subTotal, setSubTotal] = useState<number>(0);
+  const [totalAmountActual, setTotalAmountActual] = useState<number>(0);
   const globalState = useSelector((state: RootState) => state.auth);
   const [selectedPaymentMethod, setSelectedPaymentMethod] =
     useState<string>("");
@@ -48,29 +55,55 @@ const CheckoutScreen = () => {
   const [selectedAddress, setSelectedAddress] = useState<string>("");
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [promotionList, setPromotionList] = useState<Promotion[]>();
+  const [financeRules, setFinanceRules] = useState<FinanceRules | null>(null);
 
-  const fetchRestaurantDetails = async () => {
+  const fetchData = async () => {
     setIsLoading(true);
     try {
-      const response = await axiosInstance.get(
-        `/restaurants/${orderItem.restaurant_id}`
-      );
-      const responseData = response.data;
-      const { EC, EM, data } = responseData;
+      const [restaurantResponse, financeRulesResponse] = await Promise.all([
+        axiosInstance.get(`/restaurants/${orderItem.restaurant_id}`),
+        axiosInstance.get("/finance-rules"),
+      ]);
+
+      // Xử lý restaurant response
+      const restaurantData = restaurantResponse.data;
+      if (restaurantData.EC === 0) {
+        setPromotionList(
+          restaurantData.data.promotions.filter(
+            (item: any) => !(item.food_categories.length > 0)
+          )
+        );
+      }
+
+      // Xử lý finance rules response
+      const { EC, EM, data } = financeRulesResponse.data;
       if (EC === 0) {
-        setPromotionList(data.promotions.filter((item: any) => !(item.food_categories.length > 0)));
+        setFinanceRules(data[0]);
+        setDeliveryFee(DELIVERY_FEE);
       }
     } catch (error) {
-      console.log("error", error);
+      console.log("Error fetching data:", error);
     } finally {
       setIsLoading(false);
     }
   };
+
   useEffect(() => {
     if (orderItem.restaurant_id) {
-      fetchRestaurantDetails();
+      fetchData();
     }
   }, [orderItem]);
+
+  // Cập nhật serviceFee và totalAmountActual khi subTotal hoặc financeRules thay đổi
+  useEffect(() => {
+    if (financeRules && subTotal > 0) {
+      const calculatedServiceFee = +(
+        financeRules.app_service_fee * subTotal
+      ).toFixed(2);
+      setServiceFee(calculatedServiceFee);
+      setTotalAmountActual(subTotal + calculatedServiceFee + deliveryFee);
+    }
+  }, [subTotal, financeRules, deliveryFee]);
 
   const handleSelectPaymentMethod = (option: string) => {
     setSelectedPaymentMethod(option);
@@ -86,20 +119,22 @@ const CheckoutScreen = () => {
 
   const handlePlaceOrder = async () => {
     setIsLoading(true);
-    console.log("check res id", orderItem.order_items?.[0]?.item?.restaurantDetails?.id);
     if (!selectedPaymentMethod || !selectedAddress) {
       setIsShowModalStatusCheckout(true);
       setModalContentType("ERROR");
+      setIsLoading(false);
       return;
     }
+
     const requestData = {
       ...orderItem,
-      restaurant_location: orderItem.order_items?.[0]?.item?.restaurantDetails?.address_id,
+      restaurant_location:
+        orderItem.order_items?.[0]?.item?.restaurantDetails?.address_id,
       payment_method: selectedPaymentMethod,
       customer_location: globalState?.address?.find(
         (item) => item.title === selectedAddress
       )?.id,
-      total_amount: totalAmount,
+      total_amount: totalAmountActual,
       service_fee: serviceFee,
       delivery_fee: deliveryFee,
       order_items: orderItem.order_items.map((item) => ({
@@ -117,21 +152,19 @@ const CheckoutScreen = () => {
     };
 
     const response = await axiosInstance.post(`/orders`, requestData, {
-      // This will ensure axios does NOT reject on non-2xx status codes
-      validateStatus: () => true, // Always return true so axios doesn't throw on errors
+      validateStatus: () => true,
     });
     const { EC, EM, data } = response.data;
     if (EC === 0) {
       dispatch(subtractItemFromCart(response.data.data.order_items));
       dispatch(removeCartItemFromAsyncStorage(response.data.data.order_items));
-      setIsLoading(false);
       setIsShowModalStatusCheckout(true);
       setModalContentType("SUCCESS");
       navigation.navigate("BottomTabs", { screenIndex: 1 });
     } else {
       setIsShowModalStatusCheckout(true);
       setModalContentType("ERROR");
-      console.log("cehck", response.data);
+      console.log("Error response:", response.data);
     }
     setIsLoading(false);
   };
@@ -141,10 +174,11 @@ const CheckoutScreen = () => {
       orderItem={orderItem}
       deliveryFee={deliveryFee}
       serviceFee={serviceFee}
-      setTotalAmountParent={setTotalAmount}
+      setTotalAmountParent={setSubTotal}
       selectedPromotion={selectedPromotion}
       promotionList={promotionList}
       handleSelectPromotion={handleSelectPromotion}
+      totalAmountActual={totalAmountActual} // Truyền totalAmountActual
     />,
     <PaymentInformation
       selected={selectedPaymentMethod}
@@ -156,30 +190,32 @@ const CheckoutScreen = () => {
       selected={selectedAddress}
     />,
   ];
+
   if (isLoading) {
     return <Spinner isVisible isOverlay />;
   }
+
   return (
     <FFSafeAreaView>
       <FFScreenTopSection title="Check Out" navigation={navigation} />
-      <View className="flex-1 p-4">
-        <FFTab
-          tabTitles={[
-            "Order Summary",
-            "Payment Information",
-            "Order Confirmation",
-          ]}
-          tabContent={tabContent}
-        />
-      </View>
-      <FFModal
-        visible={isShowModalStatusCheckout}
-        onClose={() => setIsShowModalStatusCheckout(false)}
-      >
-        <ModalStatusCheckout modalContentType={modalContentType} />
-      </FFModal>
-    </FFSafeAreaView>
-  );
+    <View className="flex-1 p-4">
+      <FFTab
+        tabTitles={[
+          "Order Summary",
+          "Payment Information",
+          "Order Confirmation",
+        ]}
+        tabContent={tabContent}
+      />
+    </View>
+    <FFModal
+      visible={isShowModalStatusCheckout}
+      onClose={() => setIsShowModalStatusCheckout(false)}
+    >
+      <ModalStatusCheckout modalContentType={modalContentType} />
+    </FFModal>
+  </FFSafeAreaView>
+);
 };
 
 export default CheckoutScreen;
