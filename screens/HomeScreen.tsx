@@ -32,6 +32,7 @@ import {
   Restaurant,
 } from "@/src/types/screens/Home";
 import FFSkeleton from "@/src/components/FFSkeleton";
+import colors from "@/src/theme/colors";
 
 // Type Definitions
 
@@ -66,6 +67,7 @@ const HomeScreen = () => {
   const listFavoriteRestaurants = useSelector(
     (state: RootState) => state.userPreference.favorite_restaurants
   );
+
   const globalState = useSelector((state: RootState) => state.auth);
   useEffect(() => {
     const fetchData = async () => {
@@ -110,7 +112,6 @@ const HomeScreen = () => {
         setIsLoading(false); // Stop loading when fetching completes
       }
     };
-    console.log("check lí res", listRestaurants?.[0]?.address);
 
     // Only fetch data if globalState.user_id is available and not already loading
     if (globalState.user_id && isLoading) {
@@ -175,7 +176,7 @@ const HomeScreen = () => {
   const handleToggleFavorite = async (restaurantId: string) => {
     try {
       console.log("globalState.id", globalState.id, restaurantId);
-      const response = await axiosInstance.patch(
+      const response = await axiosInstance.post(
         `/customers/favorite-restaurant/${globalState.id}`,
         {
           favorite_restaurant: restaurantId,
@@ -193,7 +194,7 @@ const HomeScreen = () => {
       console.error("Error toggling favorite:", error);
     }
   };
-
+  console.log('cehck ', listFavoriteRestaurants)
   useEffect(() => {
     // Only dispatch the action to save favorite_restaurants if the list has changed
     if (listFavoriteRestaurants.length > 0) {
@@ -375,9 +376,7 @@ const HomeScreen = () => {
                   >
                     <IconAntDesign
                       name={
-                        listFavoriteRestaurants?.includes(item.id)
-                          ? "heart"
-                          : "hearto"
+                        listFavoriteRestaurants?.includes(item.id) ? "heart" : "hearto"
                       }
                       size={16}
                       color="#7dbf72"
@@ -418,26 +417,27 @@ const HomeScreen = () => {
 
         <View style={{ paddingBottom: 100 }}>
           <ScrollView className="mt-2 px-2 py-2 -ml-2">
-            {availablePromotionWithRestaurants?.map((promotion) => (
+            {availablePromotionWithRestaurants?.map((promotion, i) => (
               <View key={promotion.id} className="mb-6">
-                <View className="flex-row items-center justify-between">
-                  <FFText style={{ fontWeight: "600", fontSize: 16 }}>
-                    {promotion.restaurants.length === 0 ? null :promotion.name}
+                <View className="flex-row items-center justify-between mb-3">
+                  <FFText style={{ fontWeight: "700", fontSize: 18, color: i % 2 === 0 ? colors.warning : colors.primary }}>
+                    {promotion.restaurants.length === 0 ? null : promotion.name}
                   </FFText>
-                {promotion.restaurants.length === 0 ||   <TouchableOpacity
-                  >
-                    <FFText
+                  {promotion.restaurants.length === 0 || (
+                    <TouchableOpacity
                       style={{
-                        color: "#3FB854",
-                        fontWeight: "400",
-                        fontSize: 12,
+                        paddingHorizontal: 12,
+                        paddingVertical: 4,
+                        borderRadius: 20,
                       }}
                     >
-                      Show All
-                    </FFText>
-                  </TouchableOpacity>}
+                      <FFText style={{ color: i % 2 === 0 ? colors.warning : colors.primary, fontWeight: "500", fontSize: 12 }}>
+                        Show All
+                      </FFText>
+                    </TouchableOpacity>
+                  )}
                 </View>
-                <ScrollView horizontal className=" py-2 px-2 -ml-2">
+                <ScrollView horizontal className="py-2 px-2 -ml-2">
                   {promotion.restaurants.slice(0, 5).map((item) => (
                     <FFView
                       onPress={() =>
@@ -448,90 +448,100 @@ const HomeScreen = () => {
                       key={item.id}
                       style={{
                         elevation: 6,
-                        borderRadius: 12,
-                        height: 140,
-                        paddingHorizontal: 8,
-                        width: 140,
-                        marginRight: 8,
-                        paddingTop: 8,
+                        borderRadius: 16,
+                        height: 200,
+                        width: 200,
+                        marginRight: 12,
+                        backgroundColor: '#fff',
+                        overflow: 'hidden'
                       }}
                     >
                       <ImageBackground
                         source={{
-                          uri:
-                            item?.avatar?.url ??
-                            IMAGE_LINKS.DEFAULT_AVATAR_FOOD,
+                          uri: item?.avatar?.url ?? IMAGE_LINKS.DEFAULT_AVATAR_FOOD,
                         }}
                         style={{
-                          flex: 1,
-                          borderRadius: 8,
+                          height: 120,
                           backgroundColor: "gray",
                         }}
-                        imageStyle={{ borderRadius: 8 }}
                       >
-                        {/* Rating and Favorite Icon */}
                         <View
-                          className="flex-row absolute items-center gap-1 top-1 left-1"
                           style={{
-                            backgroundColor: "rgba(0, 0, 0, 0.3)",
-                            padding: 4,
-                            borderRadius: 8,
+                            position: 'absolute',
+                            top: 0,
+                            left: 0,
+                            right: 0,
+                            height: 120,
+                            backgroundColor: 'rgba(255, 107, 107, 0.1)',
+                          }}
+                        />
+                        {/* Discount Badge */}
+                        <View
+                          style={{
+                            position: 'absolute',
+                            top: 8,
+                            left: 8,
+                            backgroundColor: i % 2 === 0 ? colors.warning : colors.primary,
+                            paddingHorizontal: 8,
+                            paddingVertical: 4,
+                            borderRadius: 12,
                           }}
                         >
-                          <IconAntDesign name="star" color="#7dbf72" />
-                          <FFText
-                            style={{
-                              fontSize: 10,
-                              fontWeight: "600",
-                              color: "#eee",
-                            }}
-                          >
-                            4.8
+                          <FFText style={{ color: 'white', fontWeight: '600', fontSize: 12 }}>
+                            {promotion.discount_type === 'PERCENTAGE' 
+                              ? `${(Number(promotion.discount_value)).toFixed(0.2)}% OFF`
+                              : `-$${(Number(promotion.discount_value))}`
+                            }
                           </FFText>
                         </View>
-
+                        {/* Favorite Icon */}
                         <Pressable
                           onPress={() => handleToggleFavorite(item.id)}
-                          className="flex-row absolute items-center gap-1 top-1 right-1"
                           style={{
-                            backgroundColor: "rgba(0, 0, 0, 0.3)",
-                            padding: 4,
-                            borderRadius: 8,
+                            position: 'absolute',
+                            top: 8,
+                            right: 8,
+                            backgroundColor: 'white',
+                            padding: 6,
+                            borderRadius: 20,
                           }}
                         >
                           <IconAntDesign
-                            name={
-                              listFavoriteRestaurants?.includes(item.id)
-                                ? "heart"
-                                : "hearto"
-                            }
+                            name={listFavoriteRestaurants?.includes(item.id) ? "heart" : "hearto"}
                             size={16}
-                            color="#7dbf72"
+                            color={i % 2 === 0 ? colors.warning : colors.primary}
                           />
                         </Pressable>
                       </ImageBackground>
 
-                      <View className="h-1/3">
+                      <View style={{ padding: 12 }}>
                         <FFText
                           style={{
-                            fontWeight: "600",
-                            fontSize: 14,
-                            marginTop: 4,
-                            lineHeight: 14,
-                            flex: 1,
+                            fontWeight: "700",
+                            fontSize: 16,
+                            marginBottom: 4,
                           }}
                         >
                           {item.restaurant_name}
                         </FFText>
+                        {/* Rating and Time */}
+                        <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 4 }}>
+                          <View style={{ flexDirection: 'row', alignItems: 'center', marginRight: 12 }}>
+                            <IconAntDesign name="star" size={14} color="#FFB800" />
+                            <FFText style={{ marginLeft: 4, color: '#666', fontSize: 12 }}>4.8</FFText>
+                          </View>
+                          <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                            <IconAntDesign name="clockcircle" size={14} color="#666" />
+                            <FFText style={{ marginLeft: 4, color: '#666', fontSize: 12 }}>20-30 min</FFText>
+                          </View>
+                        </View>
                       </View>
                     </FFView>
                   ))}
                   {promotion.restaurants.length === 0 && null}
                 </ScrollView>
                 {isLoading && (
-                  <View
-                    style={{ width: "100%", gap: 12, flexDirection: "row" }}
-                  >
+                  <View style={{ width: "100%", gap: 12, flexDirection: "row" }}>
                     <FFSkeleton width={100} height={30} />
                     <FFSkeleton width={100} height={30} />
                   </View>

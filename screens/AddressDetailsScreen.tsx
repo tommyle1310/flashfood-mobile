@@ -84,50 +84,56 @@ const AddressDetailsScreen = () => {
       title: addressTitle,
       postal_code: +postalCode,
       location: selectedLocation,
-    } as Type_Address & { created_at: string; updated_at: string };
+    } as Type_Address & { created_at: number; updated_at: number };
 
     let response: { data: { EC: number; EM: string; data: any } };
 
-    if (is_create_type) {
-      console.log("check ab", requestBody);
-      response = await axiosInstance.post(
-        `/customers/address/${id}`,
-        requestBody,
-        {
-          validateStatus: () => true,
-        }
-      );
-      if (response.data.EC === 0) {
-        dispatch(addAddress(response.data.data));
-        dispatch(addAddressInAsyncStorage(response.data.data));
-      }
-    } else {
-      response = await axiosInstance.patch(
-        `/address_books/${addressDetail?.id}`,
-        requestBody,
-        {
-          validateStatus: () => true,
-        }
-      );
-    }
-
-    const { EC, EM, data } = response.data;
-    if (EC === 0) {
-      setIsShowSlideUpModal(false);
-      setIsShowModalSuccess(true);
-
-      // Reset form if creating new address
+    try {
       if (is_create_type) {
-        setStreet("");
-        setCity("");
-        setNationality("");
-        setAddressTitle("");
-        setSelectedLocation(null);
+        response = await axiosInstance.post(
+          `/customers/address/${id}`,
+          requestBody,
+          {
+            validateStatus: () => true,
+          }
+        );
+        if (response.data.EC === 0) {
+          dispatch(addAddress(response.data.data));
+          dispatch(addAddressInAsyncStorage(response.data.data));
+        }
       } else {
-        dispatch(updateSingleAddress(data));
+        response = await axiosInstance.patch(
+          `/address_books/${addressDetail?.id}`,
+          requestBody,
+          {
+            validateStatus: () => true,
+          }
+        );
+        if (response.data.EC === 0) {
+          dispatch(updateSingleAddress(response.data.data));
+        }
       }
-    } else {
-      console.log("Error:", EM);
+
+      const { EC, EM } = response.data;
+      if (EC === 0) {
+        setIsShowSlideUpModal(false);
+        setIsShowModalSuccess(true);
+
+        // Reset form if creating new address
+        if (is_create_type) {
+          setStreet("");
+          setCity("");
+          setNationality("");
+          setAddressTitle("");
+          setSelectedLocation(null);
+          setPostalCode("70000");
+          setIsDefaultAddress(false);
+        }
+      } else {
+        console.log("Error:", EM);
+      }
+    } catch (error) {
+      console.error("Error submitting address:", error);
     }
   };
 

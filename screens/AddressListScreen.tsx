@@ -44,6 +44,7 @@ interface Props_Address {
 const AddressListScreen = () => {
   const navigation = useNavigation<AddressListSreenNavigationProp>();
   const { address, id } = useSelector((state: RootState) => state.auth);
+  console.log('check addres list', address)
   const dispatch = useDispatch();
   const handleSelectAddress = async (item: Props_Address) => {
     const response = await axiosInstance.patch(
@@ -71,52 +72,64 @@ const AddressListScreen = () => {
       <FFScreenTopSection navigation={navigation} title="Address List" />
       <View className="p-4 gap-2 mt-8">
         {address && address.length > 0 ? (
-          address.map((item) => (
-            <Pressable
-              onPress={() => handleSelectAddress(item)}
-              key={item.id}
-              style={{
-                borderColor: item.is_default ? "#63c550" : "#aaa",
-                backgroundColor: item.is_default ? "#deefdc" : "#fff",
-              }}
-              className="rounded-lg border flex-row items-center p-2 "
+          <>
+            <FFButton
+            variant="outline"
+              onPress={() =>
+                navigation.navigate("AddressDetails", { is_create_type: true })
+              }
+              style={{width: '100%'}}
+              className="w-full mb-2"
             >
-              <View className="flex-1 ">
-                <FFText>{item.title}</FFText>
-                <FFText
-                  fontWeight="400"
-                  style={{ color: item.is_default ? "#215a1d" : "#aaa" }}
-                >
-                  {truncateString(
-                    `${item.street}, ${item.city}, ${item.nationality}`,
-                    24
-                  )}
-                </FFText>
-              </View>
-              <View className="gap-2">
-                <IconFontisto
-                  name={
-                    item.is_default ? "radio-btn-active" : "radio-btn-passive"
-                  }
-                  size={18}
-                  color={item.is_default ? "#63c550" : "#222"}
-                  className="self-end mr-1"
-                />
-                <View className="gap-2 flex-row items-center justify-center">
-                  <TouchableOpacity
-                    onPress={() =>
-                      navigation.navigate("AddressDetails", {
-                        addressDetail: item,
-                      })
-                    }
+              Add New Address
+            </FFButton>
+            {address.map((item) => (
+              <Pressable
+                onPress={() => handleSelectAddress(item)}
+                key={item.id}
+                style={{
+                  borderColor: item.is_default ? "#63c550" : "#aaa",
+                  backgroundColor: item.is_default ? "#deefdc" : "#fff",
+                }}
+                className="rounded-lg border flex-row items-center p-2 "
+              >
+                <View className="flex-1 ">
+                  <FFText>{item.title}</FFText>
+                  <FFText
+                    fontWeight="400"
+                    style={{ color: item.is_default ? "#215a1d" : "#aaa" }}
                   >
-                    <IconFeather name="edit" size={18} className="" />
-                  </TouchableOpacity>
-                  <IconMaterialIcons name="delete-outline" size={26} />
+                    {truncateString(
+                      `${item.street}, ${item.city}, ${item.nationality}`,
+                      24
+                    )}
+                  </FFText>
                 </View>
-              </View>
-            </Pressable>
-          ))
+                <View className="gap-2">
+                  <IconFontisto
+                    name={
+                      item.is_default ? "radio-btn-active" : "radio-btn-passive"
+                    }
+                    size={18}
+                    color={item.is_default ? "#63c550" : "#222"}
+                    className="self-end mr-1"
+                  />
+                  <View className="gap-2 flex-row items-center justify-center">
+                    <TouchableOpacity
+                      onPress={() =>
+                        navigation.navigate("AddressDetails", {
+                          addressDetail: item,
+                        })
+                      }
+                    >
+                      <IconFeather name="edit" size={18} className="" />
+                    </TouchableOpacity>
+                    <IconMaterialIcons name="delete-outline" size={26} />
+                  </View>
+                </View>
+              </Pressable>
+            ))}
+          </>
         ) : (
           <View className="items-center justify-center gap-4">
             <FFText fontWeight="400" style={{ color: "#888" }}>

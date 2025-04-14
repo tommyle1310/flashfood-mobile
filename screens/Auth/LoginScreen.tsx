@@ -58,7 +58,7 @@ const Login = () => {
         const userData = decodeJWT(data.access_token); // Decode JWT to get user data
 
         // Dispatch the action to save the user data to AsyncStorage and Redux store
-
+        console.log('cehck user data addess', userData.address)
         dispatch(
           saveTokenToAsyncStorage({
             accessToken: data.access_token, // Saving the actual access token
