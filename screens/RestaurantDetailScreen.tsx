@@ -35,6 +35,7 @@ import FFModal from "@/src/components/FFModal";
 import Spinner from "@/src/components/FFSpinner";
 import colors from "@/src/theme/colors";
 import FFView from "@/src/components/FFView";
+import { spacing } from "@/src/theme";
 
 // Correct the typing for useRoute
 type RestaurantDetailRouteProp = RouteProp<
@@ -302,7 +303,7 @@ const RestaurantDetail = () => {
                 marginTop: -16,
                 height: "100%",
                 paddingBottom: 100,
-                padding: 12,
+                padding: spacing.md,
               }}
             >
               {/* some badges */}
@@ -563,7 +564,7 @@ const RestaurantDetail = () => {
               }}
               style={{
                 gap: 12,
-                padding: 12,
+                padding: spacing.md,
                 borderRadius: 12,
                 marginVertical: 8,
                 borderColor:

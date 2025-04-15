@@ -38,6 +38,7 @@ export const CategoriesSection = ({
       <ScrollView horizontal className="mt-2">
         {listFoodCategories?.map((item) => (
           <TouchableOpacity
+            style={{ marginRight: 8, paddingHorizontal: 4 }}
             key={item.id}
             onPress={() => handleCategoryPress(item.id)}
             className={`px-2 py-1 mr-2 rounded-md ${

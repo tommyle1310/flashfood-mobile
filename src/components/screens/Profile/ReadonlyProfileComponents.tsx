@@ -7,6 +7,7 @@ import { useSelector } from "@/src/store/types";
 import { RootState } from "@/src/store/store";
 import FFSkeleton from "../../FFSkeleton";
 import FFView from "../../FFView";
+import { spacing } from "@/src/theme";
 
 const ReadonlyProfileComponents = ({
   firstName,
@@ -29,7 +30,7 @@ const ReadonlyProfileComponents = ({
         elevation: 10,
         // backgroundColor: "#fff",
         borderRadius: 12,
-        padding: 12,
+        padding: spacing.md,
         borderColor: "#eee",
         borderWidth: 1,
       }}

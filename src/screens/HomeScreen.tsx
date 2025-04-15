@@ -10,6 +10,7 @@ import { PromotionsSection } from "@/src/components/screens/Home/PromotionsSecti
 import { useNavigation } from "@react-navigation/native";
 import { StackNavigationProp } from "@react-navigation/stack";
 import { MainStackParamList } from "@/src/navigation/AppNavigator";
+import { spacing } from "../theme";
 
 type HomeRestaurantSreenNavigationProp = StackNavigationProp<
   MainStackParamList,
@@ -35,38 +36,40 @@ const HomeScreen = () => {
 
   return (
     <FFSafeAreaView>
-      <ScrollView className="p-4 gap-6">
-        <HeaderSection />
+      <ScrollView className="p-4 gap-6" style={{ gap: spacing.md }}>
+        <View style={{ gap: spacing.md }}>
+          <HeaderSection />
 
-        <Pressable
-          onPress={() => navigation.navigate("Search")}
-          className="bg-gray-200 rounded-lg border border-gray-300 p-4 my-4"
-        >
-          <FFText style={{ fontSize: 14, color: "#aaa" }}>
-            Search anything...
-          </FFText>
-        </Pressable>
+          <Pressable
+            onPress={() => navigation.navigate("Search")}
+            className="bg-gray-200 rounded-lg border border-gray-300 p-4 my-4"
+          >
+            <FFText style={{ fontSize: 14, color: "#aaa" }}>
+              Search anything...
+            </FFText>
+          </Pressable>
 
-        <CategoriesSection
-          listFoodCategories={listFoodCategories}
-          selectedFoodCategories={selectedFoodCategories}
-          setSelectedFoodCategories={setSelectedFoodCategories}
-          isLoading={isLoading}
-        />
+          <CategoriesSection
+            listFoodCategories={listFoodCategories}
+            selectedFoodCategories={selectedFoodCategories}
+            setSelectedFoodCategories={setSelectedFoodCategories}
+            isLoading={isLoading}
+          />
 
-        <NearYouSection
-          restaurants={renderedRestaurants}
-          favoriteRestaurants={favoriteRestaurants}
-          handleToggleFavorite={handleToggleFavorite}
-          isLoading={isLoading}
-        />
+          <NearYouSection
+            restaurants={renderedRestaurants}
+            favoriteRestaurants={favoriteRestaurants}
+            handleToggleFavorite={handleToggleFavorite}
+            isLoading={isLoading}
+          />
 
-        <PromotionsSection
-          promotions={availablePromotionWithRestaurants}
-          favoriteRestaurants={favoriteRestaurants}
-          handleToggleFavorite={handleToggleFavorite}
-          isLoading={isLoading}
-        />
+          <PromotionsSection
+            promotions={availablePromotionWithRestaurants}
+            favoriteRestaurants={favoriteRestaurants}
+            handleToggleFavorite={handleToggleFavorite}
+            isLoading={isLoading}
+          />
+        </View>
       </ScrollView>
     </FFSafeAreaView>
   );

@@ -23,7 +23,9 @@ const FFTab: React.FC<TabProps> = ({ tabTitles, tabContent }) => {
         }}
         className="flex-row items-center w-full  overflow-hidden"
       >
-        {tabContent.length === 0 ? <FFText>No Promotion available.</FFText> : (
+        {tabContent.length === 0 ? (
+          <FFText>No Promotion available.</FFText>
+        ) : (
           tabTitles.map((title, index) => (
             <TouchableOpacity
               key={index}

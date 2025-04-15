@@ -15,6 +15,7 @@ import FFAvatar from "@/src/components/FFAvatar";
 import FFSkeleton from "@/src/components/FFSkeleton";
 import FFText from "@/src/components/FFText";
 import colors from "@/src/theme/colors";
+import { spacing } from "@/src/theme";
 
 // Định nghĩa type cho favorite_restaurants từ API
 interface Address {
@@ -186,7 +187,7 @@ const ProfileScreen = () => {
         marginVertical: 8,
         marginHorizontal: 8,
         elevation: 3,
-        padding: 12,
+        padding: spacing.md,
       }}
       onPress={() =>
         navigation.navigate("RestaurantDetail", { restaurantId: item.id })
@@ -232,18 +233,25 @@ const ProfileScreen = () => {
       {/* Thêm FlatList để render favorite_restaurants */}
       {screenStatus === "READONLY" && (
         <View className="p-4 gap-4">
-          <FFText className="text-xl font-bold mb-2">Favorite Restaurants</FFText>
+          <FFText className="text-xl font-bold mb-2">
+            Favorite Restaurants
+          </FFText>
           <FlatList
             data={favoriteRestaurants}
             renderItem={renderRestaurantItem}
             keyExtractor={(item) => item.id}
             ListEmptyComponent={
-             isLoading ?  <View style={{ gap: 12 }}>
-             <FFSkeleton height={80} />
-             <FFSkeleton height={80} />
-             <FFSkeleton height={80} />
-           </View> : 
-           <FFText style={{ color: colors.grey}}>No favorite restaurants</FFText>
+              isLoading ? (
+                <View style={{ gap: 12 }}>
+                  <FFSkeleton height={80} />
+                  <FFSkeleton height={80} />
+                  <FFSkeleton height={80} />
+                </View>
+              ) : (
+                <FFText style={{ color: colors.grey }}>
+                  No favorite restaurants
+                </FFText>
+              )
             }
           />
         </View>

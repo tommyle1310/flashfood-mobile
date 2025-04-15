@@ -18,6 +18,7 @@ import { IMAGE_LINKS } from "@/src/assets/imageLinks";
 import { getTrackingImage, getTrackingText } from "@/src/utils/orderUtils";
 import { OrderScreenNavigationProp } from "@/screens/OrdersScreen";
 import FFSkeleton from "../../FFSkeleton";
+import { spacing } from "@/src/theme";
 
 interface DetailedOrderProps {
   type: "ACTIVE" | "COMPLETED" | "CANCELLED";
@@ -62,7 +63,12 @@ export const DetailedOrder: React.FC<DetailedOrderProps> = ({
   setIsTippedSuccessful,
   handleTipToDriver,
 }) => {
-  console.log("check detailed order", detailedOrder, firstActiveOrder, activeOrderDetails);
+  console.log(
+    "check detailed order",
+    detailedOrder,
+    firstActiveOrder,
+    activeOrderDetails
+  );
 
   // Hàm helper để lấy order items
   const getOrderItems = () => {
@@ -84,7 +90,10 @@ export const DetailedOrder: React.FC<DetailedOrderProps> = ({
 
   // Hàm helper để lấy restaurant info
   const getRestaurantInfo = () => {
-    const order = type === "ACTIVE" ? activeOrderDetails : detailedOrder ?? firstActiveOrder;
+    const order =
+      type === "ACTIVE"
+        ? activeOrderDetails
+        : detailedOrder ?? firstActiveOrder;
     if (!order) return "N/A";
     const name = order.restaurant?.restaurant_name ?? "";
     const address = order.restaurantFullAddress ?? "N/A";
@@ -147,7 +156,7 @@ export const DetailedOrder: React.FC<DetailedOrderProps> = ({
               <FFView
                 style={{
                   width: "100%",
-                  padding: 12,
+                  padding: spacing.md,
                   borderRadius: 12,
                   gap: 20,
                   elevation: 3,
@@ -155,7 +164,10 @@ export const DetailedOrder: React.FC<DetailedOrderProps> = ({
               >
                 <View className="flex-row gap-2 items-center">
                   <View className="relative">
-                    <FFAvatar size={50} avatar={driverDetails?.avatar?.url ?? null} />
+                    <FFAvatar
+                      size={50}
+                      avatar={driverDetails?.avatar?.url ?? null}
+                    />
                     <View className="absolute -bottom-2 left-3 p-1 rounded-lg bg-[#56a943]">
                       <FFText
                         fontSize="sm"
@@ -261,7 +273,7 @@ export const DetailedOrder: React.FC<DetailedOrderProps> = ({
               <FFView
                 style={{
                   width: "100%",
-                  padding: 12,
+                  padding: spacing.md,
                   borderRadius: 12,
                   gap: 4,
                   elevation: 3,
@@ -295,7 +307,9 @@ export const DetailedOrder: React.FC<DetailedOrderProps> = ({
                   value={
                     type === "ACTIVE" && activeOrderDetails
                       ? activeOrderDetails.distance
-                        ? `${parseFloat(activeOrderDetails.distance).toFixed(2)}km`
+                        ? `${parseFloat(activeOrderDetails.distance).toFixed(
+                            2
+                          )}km`
                         : "0km"
                       : detailedOrder?.distance
                       ? `${parseFloat(detailedOrder.distance).toFixed(2)}km`
@@ -310,12 +324,16 @@ export const DetailedOrder: React.FC<DetailedOrderProps> = ({
                   value={
                     type === "ACTIVE" && activeOrderDetails
                       ? activeOrderDetails.order_time
-                        ? formatTimestampToDate(Number(activeOrderDetails.order_time))
+                        ? formatTimestampToDate(
+                            Number(activeOrderDetails.order_time)
+                          )
                         : "N/A"
                       : detailedOrder?.order_time
                       ? formatTimestampToDate(Number(detailedOrder.order_time))
                       : firstActiveOrder?.order_time
-                      ? formatTimestampToDate(Number(firstActiveOrder.order_time))
+                      ? formatTimestampToDate(
+                          Number(firstActiveOrder.order_time)
+                        )
                       : "N/A"
                   }
                   readonly
@@ -336,7 +354,7 @@ export const DetailedOrder: React.FC<DetailedOrderProps> = ({
               <FFView
                 style={{
                   width: "100%",
-                  padding: 12,
+                  padding: spacing.md,
                   borderRadius: 12,
                   gap: 4,
                   elevation: 3,
@@ -404,7 +422,9 @@ export const DetailedOrder: React.FC<DetailedOrderProps> = ({
                   <FFText fontWeight="400" style={{ color: "#aaa" }}>
                     Total
                   </FFText>
-                  <FFText style={{ color: "#4c9f3a" }}>${getTotalAmount()}</FFText>
+                  <FFText style={{ color: "#4c9f3a" }}>
+                    ${getTotalAmount()}
+                  </FFText>
                 </View>
               </FFView>
             </>
@@ -415,7 +435,7 @@ export const DetailedOrder: React.FC<DetailedOrderProps> = ({
               <FFView
                 style={{
                   width: "100%",
-                  padding: 12,
+                  padding: spacing.md,
                   borderRadius: 12,
                   gap: 4,
                   elevation: 3,
@@ -460,7 +480,7 @@ export const DetailedOrder: React.FC<DetailedOrderProps> = ({
               <FFView
                 style={{
                   width: "100%",
-                  padding: 12,
+                  padding: spacing.md,
                   borderRadius: 12,
                   gap: 4,
                   elevation: 3,
@@ -528,7 +548,9 @@ export const DetailedOrder: React.FC<DetailedOrderProps> = ({
                   <FFText fontWeight="400" style={{ color: "#aaa" }}>
                     Total
                   </FFText>
-                  <FFText style={{ color: "#4c9f3a" }}>${getTotalAmount()}</FFText>
+                  <FFText style={{ color: "#4c9f3a" }}>
+                    ${getTotalAmount()}
+                  </FFText>
                 </View>
               </FFView>
             </>

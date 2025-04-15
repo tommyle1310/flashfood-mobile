@@ -15,6 +15,7 @@ import { MainStackParamList } from "@/src/navigation/AppNavigator";
 import { StackNavigationProp } from "@react-navigation/stack";
 import { RouteProp, useNavigation, useRoute } from "@react-navigation/native";
 import { IMAGE_LINKS } from "@/src/assets/imageLinks";
+import { spacing } from "@/src/theme";
 
 type NearYouSreenNavigationProp = StackNavigationProp<
   MainStackParamList,
@@ -44,7 +45,7 @@ const NearYouScreen = () => {
         marginBottom: 16,
         backgroundColor: "#fff",
         borderRadius: 12,
-        padding: 12,
+        padding: spacing.md,
         gap: 12,
         elevation: 4,
       }}

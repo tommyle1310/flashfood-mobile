@@ -19,6 +19,7 @@ import {
   AvailablePromotionWithRestaurants,
   FavoriteRestaurant,
 } from "@/src/types/screens/Home";
+import { spacing } from "@/src/theme";
 
 type HomeRestaurantSreenNavigationProp = StackNavigationProp<
   MainStackParamList,
@@ -41,11 +42,11 @@ export const PromotionsSection = ({
   const navigation = useNavigation<HomeRestaurantSreenNavigationProp>();
 
   return (
-    <View style={{ paddingBottom: 100 }}>
-      <ScrollView className="mt-2 px-2 py-2 -ml-2">
+    <View style={{ marginTop: -spacing.md }}>
+      <ScrollView className="mt-2 px-2 py-2  -ml-2">
         {promotions?.map((promotion, i) => (
-          <View key={promotion.id} className="mb-6">
-            <View className="flex-row items-center justify-between mb-3">
+          <View key={promotion.id} style={{ marginBottom: spacing.md }}>
+            <View className="flex-row items-center justify-between">
               <FFText
                 style={{
                   fontWeight: "700",
@@ -75,7 +76,11 @@ export const PromotionsSection = ({
                 </TouchableOpacity>
               )}
             </View>
-            <ScrollView horizontal className="py-2 px-2 -ml-2">
+            <ScrollView
+              horizontal
+              className="py-2 px-2 -ml-2"
+              style={{ gap: spacing.md }}
+            >
               {promotion.restaurants.slice(0, 5).map((item) => (
                 <FFView
                   onPress={() =>
@@ -161,7 +166,7 @@ export const PromotionsSection = ({
                     </Pressable>
                   </ImageBackground>
 
-                  <View style={{ padding: 12 }}>
+                  <View style={{ padding: spacing.md }}>
                     <FFText
                       style={{
                         fontWeight: "700",

@@ -11,6 +11,7 @@ import {
 import { useTheme } from "@/src/hooks/useTheme";
 import FFText from "./FFText";
 import { IMAGE_LINKS } from "../assets/imageLinks";
+import { spacing } from "../theme";
 
 // Type cho option mới
 interface DropdownOption {
@@ -194,7 +195,7 @@ const styles = StyleSheet.create({
     width: "100%",
   },
   button: {
-    padding: 12,
+    padding: spacing.md,
     borderRadius: 8,
     justifyContent: "center",
     alignItems: "center",

@@ -20,6 +20,7 @@ import {
 import axiosInstance from "@/src/utils/axiosConfig";
 import FFButton from "@/src/components/FFButton";
 import FFView from "@/src/components/FFView";
+import { spacing } from "@/src/theme";
 
 type AddressListSreenNavigationProp = StackNavigationProp<
   MainStackParamList,
@@ -94,7 +95,7 @@ const AddressListScreen = () => {
                   borderWidth: 1,
                   flexDirection: "row",
                   alignItems: "center",
-                  padding: 12,
+                  padding: spacing.md,
                 }}
               >
                 <View className="flex-1 ">

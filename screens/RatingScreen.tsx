@@ -18,6 +18,7 @@ import axiosInstance from "@/src/utils/axiosConfig";
 import { StackNavigationProp } from "@react-navigation/stack";
 import FFAvatar from "@/src/components/FFAvatar";
 import Spinner from "@/src/components/FFSpinner";
+import { spacing } from "@/src/theme";
 
 type RatingScreenRouteProp = RouteProp<MainStackParamList, "Rating">;
 
@@ -199,7 +200,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: "#ddd",
     borderRadius: 8,
-    padding: 12,
+    padding: spacing.md,
     textAlignVertical: "top",
     marginBottom: 24,
     fontSize: 16,

@@ -17,6 +17,7 @@ import FFModal from "../../FFModal";
 import FFText from "../../FFText";
 import FFButton from "../../FFButton";
 import FFView from "../../FFView";
+import { spacing } from "@/src/theme";
 
 const EditProfileComponent = ({
   firstName,
@@ -138,7 +139,7 @@ const EditProfileComponent = ({
         style={{
           elevation: 10,
           borderRadius: 12,
-          padding: 12,
+          padding: spacing.md,
           borderColor: "#eee",
           borderWidth: 1,
         }}
