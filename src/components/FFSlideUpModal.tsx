@@ -29,17 +29,34 @@ interface SlideUpModalProps {
   isVisible: boolean;
   onClose: () => void;
   children: React.ReactNode;
+  backgroundColorDark?: string;
+  backgroundColorLight?: string;
+  textColorDark?: string;
+  textColorLight?: string;
+  overlayColorDark?: string;
+  overlayColorLight?: string;
 }
 
 const SlideUpModal: React.FC<SlideUpModalProps> = ({
   isVisible,
   onClose,
   children,
+  backgroundColorDark = "#1a1a1a",
+  backgroundColorLight = "#fff",
+  textColorDark = "#fff",
+  textColorLight = "#333",
+  overlayColorDark = "rgba(0,0,0,0.7)",
+  overlayColorLight = "rgba(0,0,0,0.2)",
 }) => {
   const { theme } = useTheme();
   const screenHeight = Dimensions.get("window").height;
   const translateY = useSharedValue(screenHeight);
   const modalHeight = useSharedValue(screenHeight * 0.8);
+
+  const backgroundColor =
+    theme === "light" ? backgroundColorLight : backgroundColorDark;
+  const textColor = theme === "light" ? textColorLight : textColorDark;
+  const overlayColor = theme === "light" ? overlayColorLight : overlayColorDark;
 
   useEffect(() => {
     const keyboardWillShow = Keyboard.addListener(
@@ -112,18 +129,24 @@ const SlideUpModal: React.FC<SlideUpModalProps> = ({
 
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
-      <Animated.View style={[styles.overlay]}>
-        <Animated.View style={[styles.modalContainer, animatedModalStyle]}>
+      <Animated.View
+        style={[styles.overlay, { backgroundColor: overlayColor }]}
+      >
+        <Animated.View
+          style={[
+            styles.modalContainer,
+            animatedModalStyle,
+            { backgroundColor },
+          ]}
+        >
           <View style={{ flex: 1 }}>
             <PanGestureHandler onGestureEvent={gestureHandler}>
               <Animated.View style={styles.dragHandle}>
-                <View style={styles.handleBar} />
+                <View
+                  style={[styles.handleBar, { backgroundColor: textColor }]}
+                />
                 <TouchableOpacity onPress={onClose} style={styles.closeButton}>
-                  <IconIonicon
-                    name="close"
-                    style={{ color: "white" }}
-                    size={16}
-                  />
+                  <IconIonicon name="close" color={textColor} size={16} />
                 </TouchableOpacity>
               </Animated.View>
             </PanGestureHandler>
@@ -162,7 +185,6 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     zIndex: 1000,
-    backgroundColor: "rgba(1,1,1, 0.2)",
   },
   modalContainer: {
     position: "absolute",
@@ -174,12 +196,11 @@ const styles = StyleSheet.create({
     paddingTop: 20,
     zIndex: 9999,
     paddingHorizontal: 20,
-    shadowColor: "rgba(0, 255, 0, 0.25)",
+    shadowColor: "rgba(0, 0, 0, 0.25)",
     shadowOffset: { width: 0, height: -5 },
     shadowOpacity: 1,
     shadowRadius: 10,
     elevation: 20,
-    backgroundColor: "#fff",
   },
   dragHandle: {
     height: 40,
@@ -190,13 +211,11 @@ const styles = StyleSheet.create({
   handleBar: {
     width: 40,
     height: 4,
-    backgroundColor: "rgba(255, 255, 255, 0.5)",
     borderRadius: 2,
   },
   closeButton: {
     position: "absolute",
     right: 0,
-    backgroundColor: "red",
     padding: 4,
     borderRadius: 9999,
   },

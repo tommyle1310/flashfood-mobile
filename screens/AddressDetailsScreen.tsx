@@ -227,11 +227,7 @@ const AddressDetailsScreen = () => {
                 className="flex flex-row items-center gap-2"
                 onPress={() => setIsShowCountryPicker(true)}
               >
-                <FFText
-                  fontWeight="400"
-                  fontSize="md"
-                  style={{ color: "#333" }}
-                >
+                <FFText fontWeight="400" fontSize="md">
                   Set this as default address
                 </FFText>
                 <FFToggle

@@ -95,7 +95,8 @@ const FFDropdown: React.FC<FFDropdownProps> = ({
           style={{
             ...styles.selectedText,
             ...textStyle,
-            ...(options.length === 0 && styles.disabledText)
+            ...(options.length === 0 && styles.disabledText),
+            color: theme === "light" ? "#000" : "#fff",
           }}
         >
           {getSelectedLabel()}
@@ -203,11 +204,11 @@ const styles = StyleSheet.create({
     color: "#000",
   },
   disabledButton: {
-    backgroundColor: '#E0E0E0',
-    borderColor: '#CCCCCC',
+    backgroundColor: "#E0E0E0",
+    borderColor: "#CCCCCC",
   },
   disabledText: {
-    color: '#888888',
+    color: "#888888",
   },
   modalOverlay: {
     flex: 1,

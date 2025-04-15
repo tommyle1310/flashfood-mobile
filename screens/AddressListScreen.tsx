@@ -19,6 +19,7 @@ import {
 } from "@/src/store/authSlice";
 import axiosInstance from "@/src/utils/axiosConfig";
 import FFButton from "@/src/components/FFButton";
+import FFView from "@/src/components/FFView";
 
 type AddressListSreenNavigationProp = StackNavigationProp<
   MainStackParamList,
@@ -44,7 +45,7 @@ interface Props_Address {
 const AddressListScreen = () => {
   const navigation = useNavigation<AddressListSreenNavigationProp>();
   const { address, id } = useSelector((state: RootState) => state.auth);
-  console.log('check addres list', address)
+  console.log("check addres list", address);
   const dispatch = useDispatch();
   const handleSelectAddress = async (item: Props_Address) => {
     const response = await axiosInstance.patch(
@@ -74,30 +75,34 @@ const AddressListScreen = () => {
         {address && address.length > 0 ? (
           <>
             <FFButton
-            variant="outline"
+              variant="outline"
               onPress={() =>
                 navigation.navigate("AddressDetails", { is_create_type: true })
               }
-              style={{width: '100%'}}
+              style={{ width: "100%" }}
               className="w-full mb-2"
             >
               Add New Address
             </FFButton>
             {address.map((item) => (
-              <Pressable
+              <FFView
                 onPress={() => handleSelectAddress(item)}
                 key={item.id}
                 style={{
                   borderColor: item.is_default ? "#63c550" : "#aaa",
-                  backgroundColor: item.is_default ? "#deefdc" : "#fff",
+                  borderRadius: 12,
+                  borderWidth: 1,
+                  flexDirection: "row",
+                  alignItems: "center",
+                  padding: 12,
                 }}
-                className="rounded-lg border flex-row items-center p-2 "
               >
                 <View className="flex-1 ">
                   <FFText>{item.title}</FFText>
                   <FFText
                     fontWeight="400"
-                    style={{ color: item.is_default ? "#215a1d" : "#aaa" }}
+                    style={{ color: item.is_default ? "#4a9e3e" : "#aaa" }}
+                    colorDark={item.is_default ? "#63c550" : "#aaa"}
                   >
                     {truncateString(
                       `${item.street}, ${item.city}, ${item.nationality}`,
@@ -127,7 +132,7 @@ const AddressListScreen = () => {
                     <IconMaterialIcons name="delete-outline" size={26} />
                   </View>
                 </View>
-              </Pressable>
+              </FFView>
             ))}
           </>
         ) : (

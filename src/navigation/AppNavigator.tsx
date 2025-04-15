@@ -8,7 +8,6 @@ import { useNavigation } from "@react-navigation/native"; // Giữ useNavigation
 import { StackScreenProps } from "@react-navigation/stack"; // Import StackScreenProps từ @react-navigation/stack
 
 import CartScreen from "@/screens/CartScreen";
-import HomeScreen from "@/screens/HomeScreen";
 import OrdersScreen from "@/screens/OrdersScreen";
 import LoginScreen from "@/screens/Auth/LoginScreen";
 import SignupScreen from "@/screens/Auth/SignupScreen";
@@ -32,6 +31,7 @@ import PaymentMethodScreen from "@/screens/PaymentMethodScreen";
 import ChangePasswordScreen from "@/screens/ChangePasswordScreen";
 import SearchScreen from "@/screens/SearchScreen";
 import NotificationScreen from "@/screens/NotificationScreen";
+import HomeScreen from "../screens/HomeScreen";
 
 export type RootStackParamList = {
   Login: undefined;

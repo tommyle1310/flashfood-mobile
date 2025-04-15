@@ -11,6 +11,8 @@ import {
 import React, { useState, useRef } from "react";
 import IconIonicons from "react-native-vector-icons/Ionicons";
 import FFText from "@/src/components/FFText";
+import { useTheme } from "@/src/hooks/useTheme";
+import colors from "../theme/colors";
 
 // Dùng generic T để type của value và setValue khớp nhau
 interface FFInputControlProps<T extends string | number> {
@@ -24,6 +26,12 @@ interface FFInputControlProps<T extends string | number> {
   readonly?: boolean;
   isNumeric?: boolean; // Thêm prop để ép kiểu number (optional)
   style?: StyleProp<ViewStyle>; // Thêm prop style cho container chính
+  colorDark?: string;
+  colorLight?: string;
+  borderColorDark?: string;
+  borderColorLight?: string;
+  textColorDark?: string;
+  textColorLight?: string;
 }
 
 const FFInputControl = <T extends string | number>({
@@ -37,9 +45,28 @@ const FFInputControl = <T extends string | number>({
   readonly = false,
   isNumeric = false,
   style, // Thêm style vào destructuring
+  colorDark = "#333",
+  colorLight = "#fff",
+  borderColorDark = "#666",
+  borderColorLight = "#d1d1d1",
+  textColorDark = "#fff",
+  textColorLight = "#333",
 }: FFInputControlProps<T>) => {
+  const { theme } = useTheme();
   const [isPasswordVisible, setIsPasswordVisible] = useState<boolean>(false);
   const inputRef = useRef<TextInput>(null);
+
+  const backgroundColor = theme === "light" ? colorLight : colors.black;
+  const borderColor = error
+    ? "red"
+    : disabled
+    ? borderColorLight
+    : theme === "light"
+    ? borderColorLight
+    : borderColorDark;
+  const textColor = theme === "light" ? textColorLight : textColorDark;
+  const disabledBackgroundColor =
+    theme === "light" ? "#f0f0f0" : colors.textSecondary;
 
   // Toggle password visibility
   const togglePasswordVisibility = () => {
@@ -74,11 +101,33 @@ const FFInputControl = <T extends string | number>({
   if (readonly) {
     return (
       <View style={style}>
-        <Text style={styles.inputLabel}>{label}</Text>
-        <FFText fontSize="sm" fontWeight="400" style={styles.readonlyText}>
+        <FFText
+          fontSize="sm"
+          colorDark={textColorDark}
+          colorLight={textColorLight}
+          style={styles.inputLabel}
+        >
+          {label}
+        </FFText>
+        <FFText
+          fontSize="sm"
+          fontWeight="400"
+          colorDark={textColorDark}
+          colorLight={textColorLight}
+          style={styles.readonlyText}
+        >
           {displayValue}
         </FFText>
-        {error && <Text style={styles.errorText}>{error}</Text>}
+        {error && (
+          <FFText
+            fontSize="sm"
+            colorDark="#ff4444"
+            colorLight="#ff4444"
+            style={styles.errorText}
+          >
+            {error}
+          </FFText>
+        )}
       </View>
     );
   }
@@ -90,13 +139,22 @@ const FFInputControl = <T extends string | number>({
       disabled={disabled}
       style={style} // Áp dụng style cho container chính
     >
-      <Text style={styles.inputLabel}>{label}</Text>
+      <FFText
+        fontSize="sm"
+        colorDark={textColorDark}
+        colorLight={textColorLight}
+        style={styles.inputLabel}
+      >
+        {label}
+      </FFText>
       <View
         style={[
           styles.inputFieldContainer,
           {
-            borderColor: error ? "red" : disabled ? "#d1d1d1" : "#d1d1d1",
-            backgroundColor: disabled ? "#f0f0f0" : "white",
+            borderColor,
+            backgroundColor: disabled
+              ? disabledBackgroundColor
+              : backgroundColor,
           },
         ]}
       >
@@ -106,11 +164,12 @@ const FFInputControl = <T extends string | number>({
           value={displayValue} // Hiển thị string từ value
           onChangeText={handleChangeText} // Xử lý input theo kiểu
           secureTextEntry={secureTextEntry && !isPasswordVisible}
-          style={styles.inputField}
+          style={[styles.inputField, { color: textColor }]}
           editable={!disabled}
           autoCapitalize="none"
           keyboardType={isNumeric ? "decimal-pad" : "default"} // Bàn phím số thập phân nếu là numeric
           returnKeyType={isNumeric ? "done" : "next"} // Nút Done cho số
+          placeholderTextColor={theme === "light" ? "#999" : "#666"}
         />
         {secureTextEntry && !disabled && (
           <TouchableOpacity
@@ -121,12 +180,21 @@ const FFInputControl = <T extends string | number>({
             <IconIonicons
               name={isPasswordVisible ? "eye-off" : "eye"}
               size={20}
-              color="#333"
+              color={textColor}
             />
           </TouchableOpacity>
         )}
       </View>
-      {error && <Text style={styles.errorText}>{error}</Text>}
+      {error && (
+        <FFText
+          fontSize="sm"
+          colorDark="#ff4444"
+          colorLight="#ff4444"
+          style={styles.errorText}
+        >
+          {error}
+        </FFText>
+      )}
     </Pressable>
   );
 };
@@ -134,7 +202,6 @@ const FFInputControl = <T extends string | number>({
 const styles = StyleSheet.create({
   inputLabel: {
     fontSize: 14,
-    color: "#333",
   },
   inputFieldContainer: {
     flexDirection: "row",
@@ -148,20 +215,17 @@ const styles = StyleSheet.create({
   inputField: {
     flex: 1,
     fontSize: 14,
-    color: "#333",
     paddingVertical: 0,
   },
   iconButton: {
     padding: 8,
   },
   errorText: {
-    color: "red",
     fontSize: 12,
     marginTop: 4,
   },
   readonlyText: {
     marginTop: 4,
-    color: "#aaa",
   },
 });
 

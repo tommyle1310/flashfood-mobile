@@ -26,6 +26,7 @@ import { MainStackParamList } from "@/src/navigation/AppNavigator";
 import FFAvatar from "@/src/components/FFAvatar";
 import FFView from "@/src/components/FFView";
 import { IMAGE_LINKS } from "@/src/assets/imageLinks";
+import colors from "@/src/theme/colors";
 
 interface GroupedCartList {
   [restaurantId: string]: CartItem[];
@@ -126,10 +127,14 @@ const CartScreen = () => {
       id: menuItem.id,
     };
 
-    const isVariantSelected = selectedVariants.some((item) => item.id === menuItem.id);
-    
+    const isVariantSelected = selectedVariants.some(
+      (item) => item.id === menuItem.id
+    );
+
     if (isVariantSelected) {
-      const filteredVariants = newVariants.filter((item) => item.id !== menuItem.id);
+      const filteredVariants = newVariants.filter(
+        (item) => item.id !== menuItem.id
+      );
       setSelectedVariants(filteredVariants);
       // If removing the last item, reset the selected restaurant
       if (filteredVariants.length === 0) {
@@ -225,29 +230,28 @@ const CartScreen = () => {
     const variant = item.variants[0]; // Assuming one variant per cart item for simplicity
     const restaurant = item.item.restaurantDetails;
     const isSelected = selectedVariants.some((v) => v.id === item.id);
-    const isDisabled = selectedRestaurant.id !== "" && selectedRestaurant.id !== restaurant?.id;
+    const isDisabled =
+      selectedRestaurant.id !== "" && selectedRestaurant.id !== restaurant?.id;
 
     return (
-      <Pressable
+      <FFView
         onPress={() => {
           if (!isDisabled) {
             handleSelectVariants(variant, restaurant, item);
           }
         }}
+        colorDark={isSelected ? "#105201" : ""}
+        colorLight={isSelected ? "#d3e6cf" : ""}
         style={{
           flexDirection: "row",
           padding: 16,
-          borderBottomWidth: 1,
-          borderBottomColor: "#E5E5E5",
           opacity: isDisabled ? 0.5 : 1,
-          backgroundColor: isSelected ? "#e8f5e9" : "transparent",
+          borderWidth: 1,
+          borderRadius: 12,
+          borderColor: isSelected ? colors.primary : "transparent",
         }}
       >
-      <FFAvatar 
-      rounded="md"
-      avatar={item.item.avatar.url}
-      size={40}
-      />
+        <FFAvatar rounded="md" avatar={item.item.avatar.url} size={40} />
         <View style={{ flex: 1, marginLeft: 12 }}>
           <FFText fontSize="md" fontWeight="bold">
             {item.item?.name}
@@ -255,11 +259,12 @@ const CartScreen = () => {
           <FFText fontSize="sm" style={{ color: "gray" }}>
             {variant.variant_name}
           </FFText>
-          <View
-            style={{ flexDirection: "row", alignItems: "center",  }}
-          >
+          <View style={{ flexDirection: "row", alignItems: "center" }}>
             <FFText fontSize="md" fontWeight="bold">
-              ${(variant.variant_price_at_time_of_addition * variant.quantity).toFixed(2)}
+              $
+              {(
+                variant.variant_price_at_time_of_addition * variant.quantity
+              ).toFixed(2)}
             </FFText>
             <View
               style={{
@@ -304,7 +309,7 @@ const CartScreen = () => {
             </View>
           </View>
         </View>
-      </Pressable>
+      </FFView>
     );
   };
 
@@ -340,7 +345,11 @@ const CartScreen = () => {
                 renderItem={({ item }) => {
                   const restaurantItems = groupedCartList[item];
                   const restaurant = restaurantItems[0].item.restaurantDetails;
-                  console.log('check rs name', restaurantItems?.[0]?.item?.restaurantDetails?.restaurant_name)
+                  console.log(
+                    "check rs name",
+                    restaurantItems?.[0]?.item?.restaurantDetails
+                      ?.restaurant_name
+                  );
                   return (
                     <FFView
                       colorDark="#333"
@@ -355,8 +364,8 @@ const CartScreen = () => {
                       <View className="flex-row items-center gap-2 px-4 mb-2">
                         <FFAvatar
                           avatar={
-                            restaurantItems?.[0]?.item?.restaurantDetails?.avatar?.url ??
-                            IMAGE_LINKS.DEFAULT_AVATAR_FOOD
+                            restaurantItems?.[0]?.item?.restaurantDetails
+                              ?.avatar?.url ?? IMAGE_LINKS.DEFAULT_AVATAR_FOOD
                           }
                           size={32}
                           onPress={() =>
@@ -367,7 +376,10 @@ const CartScreen = () => {
                           rounded="sm"
                         />
                         <FFText colorDark="#aaa" fontWeight="500">
-                          {restaurantItems?.[0]?.item?.restaurantDetails?.restaurant_name}
+                          {
+                            restaurantItems?.[0]?.item?.restaurantDetails
+                              ?.restaurant_name
+                          }
                         </FFText>
                       </View>
                       <FlatList
@@ -384,13 +396,11 @@ const CartScreen = () => {
               />
             </View>
             {isShowSubmitBtn && (
-             <View className="p-4">
-               <FFButton
-                onPress={handleSubmitCheckout}
-              >
-                Proceed to Checkout
-              </FFButton>
-             </View>
+              <View className="p-4">
+                <FFButton onPress={handleSubmitCheckout}>
+                  Proceed to Checkout
+                </FFButton>
+              </View>
             )}
           </>
         )}

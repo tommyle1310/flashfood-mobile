@@ -34,6 +34,7 @@ import { IMAGE_LINKS } from "@/src/assets/imageLinks";
 import FFModal from "@/src/components/FFModal";
 import Spinner from "@/src/components/FFSpinner";
 import colors from "@/src/theme/colors";
+import FFView from "@/src/components/FFView";
 
 // Correct the typing for useRoute
 type RestaurantDetailRouteProp = RouteProp<
@@ -110,11 +111,19 @@ const RestaurantDetail = () => {
   // Update totalPrice when itemPrice or quantity or selectedVariant changes
   useEffect(() => {
     // If there's a selected variant, use its price, else fallback to itemPrice
-    const priceToUse = (selectedVariant?.price_after_applied_promotion ?? selectedVariant?.price) ?? itemPrice;
+    const priceToUse =
+      selectedVariant?.price_after_applied_promotion ??
+      selectedVariant?.price ??
+      itemPrice;
     if (quantity && priceToUse) {
       setTotalPrice(quantity * priceToUse);
     }
-  }, [quantity, itemPrice, selectedVariant?.price_after_applied_promotion, selectedVariant?.price]);
+  }, [
+    quantity,
+    itemPrice,
+    selectedVariant?.price_after_applied_promotion,
+    selectedVariant?.price,
+  ]);
   const dispatch = useDispatch();
 
   useEffect(() => {
@@ -141,9 +150,9 @@ const RestaurantDetail = () => {
       setIsLoading(false);
       return;
     }
-  
+
     setIsLoading(true);
-  
+
     try {
       const response = await Promise.race([
         axiosInstance.post(`/customers/cart-items/${id}`, {
@@ -155,16 +164,22 @@ const RestaurantDetail = () => {
           setTimeout(() => reject(new Error("Request timeout")), 10000)
         ),
       ]);
-  
-      const { EC, EM, data } = (response as { EC: number; EM: string; data: any }).data;
+
+      const { EC, EM, data } = (
+        response as { EC: number; EM: string; data: any }
+      ).data;
       console.log("Response from backend:", data, EM);
-  
+
       if (EC === 0) {
         // Kiểm tra dữ liệu trước khi dispatch
         if (!restaurantDetails || !modalData?.menuItem) {
           throw new Error("Restaurant or menu item data is missing");
         }
-        console.log('chkce', restaurantDetails.restaurant_name, restaurantDetails.avatar)
+        console.log(
+          "chkce",
+          restaurantDetails.restaurant_name,
+          restaurantDetails.avatar
+        );
         await dispatch(
           addItemToCart({
             id: data.id,
@@ -180,16 +195,20 @@ const RestaurantDetail = () => {
             ],
             item: {
               avatar: {
-                url: modalData?.menuItem?.avatar?.url ?? IMAGE_LINKS.DEFAULT_AVATAR_FOOD,
+                url:
+                  modalData?.menuItem?.avatar?.url ??
+                  IMAGE_LINKS.DEFAULT_AVATAR_FOOD,
                 key: modalData?.menuItem?.avatar?.key ?? "",
               },
               id: data.item_id,
               restaurant_id: data.restaurant_id,
               restaurantDetails: {
                 id: restaurantId,
-                restaurant_name: restaurantDetails?.restaurant_name ?? '' ,
+                restaurant_name: restaurantDetails?.restaurant_name ?? "",
                 avatar: {
-                  url: restaurantDetails?.avatar?.url ?? IMAGE_LINKS.DEFAULT_AVATAR_FOOD,
+                  url:
+                    restaurantDetails?.avatar?.url ??
+                    IMAGE_LINKS.DEFAULT_AVATAR_FOOD,
                   key: restaurantDetails?.avatar?.key ?? "",
                 },
                 address_id: restaurantDetails?.address_id ?? "",
@@ -210,14 +229,15 @@ const RestaurantDetail = () => {
         console.error("Backend error:", EM);
       }
     } catch (error) {
-      const errorMessage = (error as Error).message || "An error occurred while adding to cart";
+      const errorMessage =
+        (error as Error).message || "An error occurred while adding to cart";
       setErr(errorMessage);
       console.error("Add to cart error:", error);
     } finally {
       setIsLoading(false);
     }
   };
-  
+
   useEffect(() => {
     dispatch(loadCartItemsFromAsyncStorage());
   }, [dispatch]);
@@ -231,7 +251,7 @@ const RestaurantDetail = () => {
   }
   return (
     <FFSafeAreaView>
-      <View style={{ flex: 1, position: "relative" }}>
+      <FFView style={{ flex: 1, position: "relative" }}>
         {/* Fixed Back Button */}
         <TouchableOpacity
           onPress={() => navigation.goBack()}
@@ -252,7 +272,12 @@ const RestaurantDetail = () => {
 
         {/* Scrollable Content */}
         <ScrollView contentContainerStyle={{ paddingBottom: 100 }}>
-          <View style={{ position: "relative", backgroundColor: "#F5F5F5" }}>
+          <FFView
+            style={{
+              position: "relative",
+              flex: 1,
+            }}
+          >
             {/* avatar / image gallery */}
             <View className="flex-col gap-4 h-72 relative">
               <ImageBackground
@@ -269,7 +294,17 @@ const RestaurantDetail = () => {
                 imageStyle={{ borderRadius: 8 }}
               ></ImageBackground>
             </View>
-            <View className="p-4 bg-gray-100 -mt-4 rounded-t-2xl flex-1 gap-4">
+            <FFView
+              style={{
+                borderTopLeftRadius: 12,
+                borderTopRightRadius: 12,
+                elevation: 5,
+                marginTop: -16,
+                height: "100%",
+                paddingBottom: 100,
+                padding: 12,
+              }}
+            >
               {/* some badges */}
               <View className="flex-row justify-between items-center">
                 <FFBadge
@@ -341,9 +376,15 @@ const RestaurantDetail = () => {
 
               {/* Menu items */}
               {restaurantMenuItem?.map((item) => (
-                <Pressable
+                <FFView
+                  style={{
+                    flexDirection: "row",
+                    alignItems: "center",
+                    gap: 12,
+                    padding: 6,
+                    borderRadius: 12,
+                  }}
                   key={item.id}
-                  className="flex-row items-center gap-2 p-2 rounded-lg bg-white"
                 >
                   <View className="w-1/4">
                     <ImageBackground
@@ -365,22 +406,39 @@ const RestaurantDetail = () => {
                     <FFText fontSize="sm" colorLight="#bbb" fontWeight="400">
                       {item.purchased_count ?? "0"} sold
                     </FFText>
-                  <View className="flex-row gap-2 items-center">
-                  {item?.variants?.[0]?.price_after_applied_promotion ? (
-                       <>
-                         <FFText fontSize="sm" colorLight="#aaa" style={{textDecorationLine: "line-through", marginTop: 4}} fontWeight="600">
-                           ${item?.variants?.[0]?.price}
-                         </FFText>
-                         <FFText fontSize="lg" colorLight="#59bf47" fontWeight="600">
-                           ${item?.variants?.[0]?.price_after_applied_promotion}
-                         </FFText>
-                       </>
-                     ) : (
-                       <FFText fontSize="lg" fontWeight="600" style={{color: colors.primary}}>
-                         ${item?.variants?.[0]?.price}
-                       </FFText>
-                     )}
-                  </View>
+                    <View className="flex-row gap-2 items-center">
+                      {item?.variants?.[0]?.price_after_applied_promotion ? (
+                        <>
+                          <FFText
+                            fontSize="sm"
+                            colorLight="#aaa"
+                            style={{
+                              textDecorationLine: "line-through",
+                              marginTop: 4,
+                            }}
+                            fontWeight="600"
+                          >
+                            ${item?.variants?.[0]?.price}
+                          </FFText>
+                          <FFText
+                            fontSize="lg"
+                            colorLight="#59bf47"
+                            fontWeight="600"
+                          >
+                            $
+                            {item?.variants?.[0]?.price_after_applied_promotion}
+                          </FFText>
+                        </>
+                      ) : (
+                        <FFText
+                          fontSize="lg"
+                          fontWeight="600"
+                          style={{ color: colors.primary }}
+                        >
+                          ${item?.variants?.[0]?.price}
+                        </FFText>
+                      )}
+                    </View>
                     <Pressable
                       onPress={() => {
                         setIsShowSlideUpModal(true);
@@ -391,10 +449,10 @@ const RestaurantDetail = () => {
                       <IconFeather name="plus" color="#fff" size={20} />
                     </Pressable>
                   </View>
-                </Pressable>
+                </FFView>
               ))}
-            </View>
-          </View>
+            </FFView>
+          </FFView>
         </ScrollView>
         <FFModal
           visible={isShowStatusModal}
@@ -402,7 +460,7 @@ const RestaurantDetail = () => {
         >
           <FFText>Your order has been added to your cart🤑.</FFText>
         </FFModal>
-      </View>
+      </FFView>
 
       {/* slide up modal */}
       <SlideUpModal
@@ -416,7 +474,7 @@ const RestaurantDetail = () => {
         <FFText style={{ textAlign: "center" }} fontSize="lg">
           Add To cart{" "}
         </FFText>
-        <View className="flex-row items-center gap-2 rounded-lg">
+        <View className="flex-row flex-1 items-center gap-2 rounded-lg">
           <View className="w-1/4">
             <ImageBackground
               source={{
@@ -433,13 +491,20 @@ const RestaurantDetail = () => {
             ></ImageBackground>
           </View>
 
-          <View className="flex-1 relative ">
-            <FFText>{modalData?.menuItem?.name}</FFText>
-            <FFText fontSize="sm" colorLight="#bbb" fontWeight="400">
-              {modalData?.menuItem?.purchase_count} sold
-            </FFText>
+          <View className="flex-1 relative gap-4">
+            <View>
+              <FFText>{modalData?.menuItem?.name}</FFText>
+              <FFText fontSize="sm" colorLight="#bbb" fontWeight="400">
+                {modalData?.menuItem?.purchase_count} sold
+              </FFText>
+            </View>
             <View className="  gap-1">
-              <FFText fontSize="lg" colorLight="#59bf47" fontWeight="600">
+              <FFText
+                fontSize="xl"
+                colorLight="#59bf47"
+                colorDark={colors.warning}
+                fontWeight="600"
+              >
                 ${totalPrice.toFixed(2)}
               </FFText>
             </View>
@@ -456,7 +521,7 @@ const RestaurantDetail = () => {
                 <IconFeather name="minus" color="#4d9c39" size={20} />
               </Pressable>
               <TextInput
-                className="items-center top-2 mx-2 justify-center"
+                className="items-center top-2 mx-2 text-[#aaa] justify-center"
                 value={`${quantity}`}
                 onChangeText={() => {}}
               />
@@ -486,41 +551,56 @@ const RestaurantDetail = () => {
         </FFText>
 
         {modalData?.variants &&
-  modalData?.variants.length > 0 &&
-  modalData?.variants.map((item) => (
-    <Pressable
-      onPress={() => {
-        setErr("");
-        setSeletedVariant(item);
-        setItemPrice(item?.price_after_applied_promotion ?? item?.price ?? 0);
-      }}
-      className={`gap-4 p-4 ${
-        selectedVariant?.id === item.id
-          ? "bg-white border-green-600 border-2"
-          : "bg-gray-100"
-      } rounded-lg my-2`}
-      key={item.id}
-    >
-      <FFText style={{ textAlign: "left" }}>
-        {item?.variant}{" "}
-        {item?.price_after_applied_promotion ? (
-          <>
-            -{" "}
-            <FFText
-              fontWeight="400"
-              fontSize="sm"
-              style={{ textDecorationLine: "line-through", color: colors.error }}
+          modalData?.variants.length > 0 &&
+          modalData?.variants.map((item) => (
+            <FFView
+              onPress={() => {
+                setErr("");
+                setSeletedVariant(item);
+                setItemPrice(
+                  item?.price_after_applied_promotion ?? item?.price ?? 0
+                );
+              }}
+              style={{
+                gap: 12,
+                padding: 12,
+                borderRadius: 12,
+                marginVertical: 8,
+                borderColor:
+                  selectedVariant?.id === item.id ? colors.background : "",
+                borderWidth: selectedVariant?.id === item.id ? 1 : 0,
+              }}
+              key={item.id}
             >
-              ${item?.price}
-            </FFText>{" "}
-            ${item?.price_after_applied_promotion}
-          </>
-        ) : (
-          <> - <FFText style={{ color: colors.primary }}>${item?.price ?? 0}</FFText></>
-        )}
-      </FFText>
-    </Pressable>
-  ))}
+              <FFText style={{ textAlign: "left" }}>
+                {item?.variant}{" "}
+                {item?.price_after_applied_promotion ? (
+                  <>
+                    -{" "}
+                    <FFText
+                      fontWeight="400"
+                      fontSize="sm"
+                      style={{
+                        textDecorationLine: "line-through",
+                        color: colors.error,
+                      }}
+                    >
+                      ${item?.price}
+                    </FFText>{" "}
+                    ${item?.price_after_applied_promotion}
+                  </>
+                ) : (
+                  <>
+                    {" "}
+                    -{" "}
+                    <FFText style={{ color: colors.primary }}>
+                      ${item?.price ?? 0}
+                    </FFText>
+                  </>
+                )}
+              </FFText>
+            </FFView>
+          ))}
         <FFButton onPress={handleAddToCart} isLinear className="w-full mt-4">
           <FFText style={{ color: "#fff" }}>Add to Cart</FFText>
         </FFButton>

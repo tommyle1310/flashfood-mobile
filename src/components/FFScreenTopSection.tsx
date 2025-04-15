@@ -1,34 +1,49 @@
-import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
+import { View, TouchableOpacity, StyleSheet } from "react-native";
 import React from "react";
 import IconIonicons from "react-native-vector-icons/Ionicons";
 import FFText from "./FFText";
+import { useTheme } from "@/src/hooks/useTheme";
 
 type FFScreenTopSectionProps = {
-  navigation: any; // Define the type for navigation
-  title: string; // Define the type for title
-  titlePosition?: "center" | "left"; // Add optional titlePosition prop
+  navigation: any;
+  title: string;
+  titlePosition?: "center" | "left";
+  colorDark?: string;
+  colorLight?: string;
 };
 
 const FFScreenTopSection: React.FC<FFScreenTopSectionProps> = ({
   navigation,
   title,
-  titlePosition = "center", // Default value is 'center'
+  titlePosition = "center",
+  colorDark = "#333",
+  colorLight = "#fff",
 }) => {
+  const { theme } = useTheme();
+  const backgroundColor = "transparent";
+
   return (
     <View
       style={[
         styles.container,
         titlePosition === "left" && styles.containerLeft,
+        { backgroundColor },
       ]}
     >
       <TouchableOpacity
         style={styles.backButton}
         onPress={() => navigation.goBack()}
       >
-        <IconIonicons name="chevron-back" size={24} />
+        <IconIonicons
+          name="chevron-back"
+          size={24}
+          color={theme === "light" ? "#000" : "#fff"}
+        />
       </TouchableOpacity>
       <FFText
         fontSize="lg"
+        colorDark="#fff"
+        colorLight="#000"
         style={{
           ...(titlePosition === "center"
             ? styles.centerTitle
@@ -62,7 +77,7 @@ const styles = StyleSheet.create({
     textAlign: "center",
   },
   leftTitle: {
-    marginLeft: 40, // Give space for the back button
+    marginLeft: 40,
   },
 });
 

@@ -1,54 +1,33 @@
-export type FoodCategory = { id: string; name: string; description: string };
-export type Promotion = {
+export interface Restaurant {
   id: string;
-  name: string;
-  start_date: number;
-  end_date: number;
-  status: string;
-};
-export type Restaurant = {
-  id: string;
-  address_id?: string;
   restaurant_name: string;
+  avatar: { url: string; key: string } | null;
   address: {
-    id: string;
     street: string;
-    city: string;
-    nationality: string;
-    title: string;
+    location: {
+      lat: number;
+      lng: number;
+    };
   };
-  specialize_in: FoodCategory[];
-  avatar: { url: string; key: string; promotions: string[] };
-  promotions: Promotion[];
-};
-export type AvailablePromotionWithRestaurants = {
+  specialize_in?: FoodCategory[];
+}
+
+export interface FoodCategory {
   id: string;
   name: string;
-  description: string;
-  start_date: string; // Giả sử đây là timestamp dạng chuỗi, nếu muốn dùng number thì đổi thành number
-  end_date: string; // Tương tự như trên
-  discount_type: "PERCENTAGE" | "FIXED"; // Giả sử có thể có các loại khác, thêm nếu cần
-  discount_value: string; // Chuỗi vì có số thập phân "20.00"
-  promotion_cost_price: string; // Chuỗi vì có số thập phân "100.00"
-  minimum_order_value: string; // Chuỗi vì có số thập phân "500.00"
-  avatar: {
-    key: string;
-    url: string;
-  } | null; // Có thể null nếu không có avatar
-  status: "ACTIVE" | "INACTIVE"; // Giả sử có các trạng thái khác, thêm nếu cần
-  bogo_details: null | {
-    // Có thể mở rộng nếu có chi tiết BOGO trong tương lai
-    [key: string]: any;
-  };
-  created_at: string; // Định dạng ISO 8601
-  updated_at: string; // Định dạng ISO 8601
-  restaurants: Array<{
-    id: string;
-    restaurant_name: string;
-    avatar: {
-      key: string;
-      url: string;
-    } | null; // Có thể null như trong dữ liệu
-    ratings: null | number; // Giả sử ratings có thể là số, thay đổi nếu cần
-  }>;
-};
+}
+
+export interface AvailablePromotionWithRestaurants {
+  id: string;
+  name: string;
+  discount_type: "PERCENTAGE" | "FIXED";
+  discount_value: number;
+  restaurants: Restaurant[];
+}
+
+export interface FavoriteRestaurant {
+  id: string;
+  restaurant_name: string;
+  avatar: { url: string; key: string } | null;
+  address_id: string;
+}
