@@ -36,8 +36,8 @@ import Spinner from "@/src/components/FFSpinner";
 import colors from "@/src/theme/colors";
 import FFView from "@/src/components/FFView";
 import { spacing } from "@/src/theme";
+import { useTheme } from "@/src/hooks/useTheme";
 
-// Correct the typing for useRoute
 type RestaurantDetailRouteProp = RouteProp<
   MainStackParamList,
   "RestaurantDetail"
@@ -65,28 +65,17 @@ const RestaurantDetail = () => {
   const [isShowStatusModal, setIsShowStatusModal] = useState<boolean>(false);
   const [selectedMenuItem, setSelectedMenuItem] = useState<string | null>(null);
   const [modalData, setModalData] = useState<MenuItemProps>();
-  const [selectedVariant, setSeletedVariant] = useState<any>(null);
+  const [selectedVariant, setSelectedVariant] = useState<any>(null);
   const [totalPrice, setTotalPrice] = useState<number>(0);
   const [quantity, setQuantity] = useState<number>(1);
   const [itemPrice, setItemPrice] = useState<number | null>(0);
   const [isLoading, setIsLoading] = useState<boolean>(false);
+
   useEffect(() => {
     const fetchRestaurantDetails = async () => {
       const response = await axiosInstance.get(`/restaurants/${restaurantId}`);
       const { EC, EM, data } = response.data;
       if (EC === 0) {
-        //  const replaceLonWithLng = data.map(
-        //    (restaurant: any) => ({
-        //      ...restaurant,
-        //      address: {
-        //        ...restaurant.address,
-        //        location: {
-        //          lat: restaurant.address.location.lat,
-        //          lng: restaurant.address.location.lon, // Đổi lon thành lng
-        //        },
-        //      },
-        //    })
-        //  );
         setRestaurantDetails(data);
       }
     };
@@ -103,21 +92,21 @@ const RestaurantDetail = () => {
     fetchRestaurantDetails();
     fetchMenu();
   }, [restaurantId]);
+
   useEffect(() => {
     if (modalData?.menuItem?.price) {
-      setItemPrice(modalData?.menuItem?.price);
+      setItemPrice(Number(modalData?.menuItem?.price));
     }
   }, [modalData]);
 
-  // Update totalPrice when itemPrice or quantity or selectedVariant changes
+  // Update totalPrice when itemPrice, quantity, or selectedVariant changes
   useEffect(() => {
-    // If there's a selected variant, use its price, else fallback to itemPrice
     const priceToUse =
       selectedVariant?.price_after_applied_promotion ??
       selectedVariant?.price ??
       itemPrice;
     if (quantity && priceToUse) {
-      setTotalPrice(quantity * priceToUse);
+      setTotalPrice(quantity * Number(priceToUse));
     }
   }, [
     quantity,
@@ -125,22 +114,27 @@ const RestaurantDetail = () => {
     selectedVariant?.price_after_applied_promotion,
     selectedVariant?.price,
   ]);
+
   const dispatch = useDispatch();
+  const { theme } = useTheme();
 
   useEffect(() => {
     const fetchMenuItemDetails = async () => {
-      const response = await axiosInstance.get(
-        `/menu-items/${selectedMenuItem}`
-      );
-      const { EC, EM, data } = response.data;
-      if (EC === 0) {
-        setModalData(data);
+      if (selectedMenuItem) {
+        const response = await axiosInstance.get(
+          `/menu-items/${selectedMenuItem}`
+        );
+        const { EC, EM, data } = response.data;
+        if (EC === 0) {
+          setModalData(data);
+        }
       }
     };
     if (isShowSlideUpModal) {
       fetchMenuItemDetails();
     }
-  }, [isShowSlideUpModal]);
+  }, [isShowSlideUpModal, selectedMenuItem]);
+
   const listCartItem = useSelector(
     (state: RootState) => state.userPreference.cart_items
   );
@@ -167,20 +161,15 @@ const RestaurantDetail = () => {
       ]);
 
       const { EC, EM, data } = (
-        response as { EC: number; EM: string; data: any }
+        response as { data: { EC: number; EM: string; data: any } }
       ).data;
       console.log("Response from backend:", data, EM);
 
       if (EC === 0) {
-        // Kiểm tra dữ liệu trước khi dispatch
         if (!restaurantDetails || !modalData?.menuItem) {
           throw new Error("Restaurant or menu item data is missing");
         }
-        console.log(
-          "chkce",
-          restaurantDetails.restaurant_name,
-          restaurantDetails.avatar
-        );
+
         await dispatch(
           addItemToCart({
             id: data.id,
@@ -190,7 +179,8 @@ const RestaurantDetail = () => {
                 variant_id: selectedVariant.id,
                 variant_name: selectedVariant.variant,
                 variant_price_at_time_of_addition:
-                  data.variants[0].variant_price_at_time_of_addition,
+                  selectedVariant.price_after_applied_promotion ||
+                  selectedVariant.price,
                 quantity,
               },
             ],
@@ -215,7 +205,6 @@ const RestaurantDetail = () => {
                 address_id: restaurantDetails?.address_id ?? "",
               },
               name: modalData?.menuItem.name ?? "",
-              // description: modalData?.menuItem.description ?? "",
               category: modalData?.menuItem.category || [],
               availability: true,
               suggest_notes: modalData?.menuItem.suggest_notes || [],
@@ -250,6 +239,7 @@ const RestaurantDetail = () => {
   if (isLoading) {
     return <Spinner isVisible={isLoading} />;
   }
+
   return (
     <FFSafeAreaView>
       <FFView style={{ flex: 1, position: "relative" }}>
@@ -260,7 +250,7 @@ const RestaurantDetail = () => {
             position: "absolute",
             top: 20,
             left: 20,
-            zIndex: 10, // Keeps the button on top
+            zIndex: 10,
             padding: 10,
             borderRadius: 30,
             backgroundColor: "#F5F5F5",
@@ -394,10 +384,10 @@ const RestaurantDetail = () => {
                       }}
                       style={{
                         borderRadius: 10,
-                        width: "100%", // Set width to 18% of the parent container
-                        height: undefined, // Let the height be determined by aspectRatio
-                        aspectRatio: 1, // Maintain a 1:1 ratio (square)
-                        backgroundColor: "gray", // Set background color
+                        width: "100%",
+                        height: undefined,
+                        aspectRatio: 1,
+                        backgroundColor: "gray",
                       }}
                       imageStyle={{ borderRadius: 8 }}
                     ></ImageBackground>
@@ -444,6 +434,7 @@ const RestaurantDetail = () => {
                       onPress={() => {
                         setIsShowSlideUpModal(true);
                         setSelectedMenuItem(item.id);
+                        setSelectedVariant(null); // Reset selectedVariant when opening modal
                       }}
                       className="p-1 -bottom-2 right-0 absolute rounded-md bg-green-500 self-end items-center justify-center"
                     >
@@ -469,11 +460,12 @@ const RestaurantDetail = () => {
         onClose={() => {
           setErr("");
           setIsShowSlideUpModal(false);
-          setSeletedVariant(null);
+          setSelectedVariant(null);
+          setQuantity(1); // Reset quantity when closing modal
         }}
       >
         <FFText style={{ textAlign: "center" }} fontSize="lg">
-          Add To cart{" "}
+          Add To cart
         </FFText>
         <View className="flex-row flex-1 items-center gap-2 rounded-lg">
           <View className="w-1/4">
@@ -483,10 +475,10 @@ const RestaurantDetail = () => {
               }}
               style={{
                 borderRadius: 10,
-                width: "100%", // Set width to 18% of the parent container
-                height: undefined, // Let the height be determined by aspectRatio
-                aspectRatio: 1, // Maintain a 1:1 ratio (square)
-                backgroundColor: "gray", // Set background color
+                width: "100%",
+                height: undefined,
+                aspectRatio: 1,
+                backgroundColor: "gray",
               }}
               imageStyle={{ borderRadius: 8 }}
             ></ImageBackground>
@@ -499,7 +491,7 @@ const RestaurantDetail = () => {
                 {modalData?.menuItem?.purchase_count} sold
               </FFText>
             </View>
-            <View className="  gap-1">
+            <View className="gap-1">
               <FFText
                 fontSize="xl"
                 colorLight="#59bf47"
@@ -531,13 +523,12 @@ const RestaurantDetail = () => {
               <Pressable
                 onPress={() => {
                   if (!selectedVariant) {
-                    setErr("Please Select a variant below");
+                    setErr("Please select a variant below");
                   } else {
-                    setIsShowSlideUpModal(true);
                     setQuantity((prev) => prev + 1);
                   }
                 }}
-                className="p-1  rounded-md bg-green-500 self-end items-center justify-center"
+                className="p-1 rounded-md bg-green-500 self-end items-center justify-center"
               >
                 <IconFeather name="plus" color="#fff" size={20} />
               </Pressable>
@@ -557,9 +548,11 @@ const RestaurantDetail = () => {
             <FFView
               onPress={() => {
                 setErr("");
-                setSeletedVariant(item);
+                setSelectedVariant(item);
                 setItemPrice(
-                  item?.price_after_applied_promotion ?? item?.price ?? 0
+                  Number(
+                    item?.price_after_applied_promotion ?? item?.price ?? 0
+                  )
                 );
               }}
               style={{
@@ -567,9 +560,14 @@ const RestaurantDetail = () => {
                 padding: spacing.md,
                 borderRadius: 12,
                 marginVertical: 8,
-                borderColor:
-                  selectedVariant?.id === item.id ? colors.background : "",
-                borderWidth: selectedVariant?.id === item.id ? 1 : 0,
+                borderColor: colors.success,
+                borderWidth: 1,
+                ...(selectedVariant?.id === item.id
+                  ? {
+                      backgroundColor:
+                        theme === "light" ? "#f0ffed" : "#53734d",
+                    }
+                  : {}),
               }}
               key={item.id}
             >

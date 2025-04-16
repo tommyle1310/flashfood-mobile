@@ -40,19 +40,19 @@ export enum Enum_OrderStatus {
 
 // Define the item structure in the order
 export type OrderItem = {
-  item_id: string | null;
-  name: string | null;
-  quantity: number | null;
-  menu_item: any;
-  price_at_time_of_order: number | null;
-  variant_id: string | null;
+  item_id?: string | null;
+  name?: string | null;
+  quantity?: number | null;
+  menu_item?: any;
+  price_at_time_of_order?: number | null;
+  variant_id?: string | null;
   restaurant?: {
     id: string;
-  }
-  item: {
+  };
+  item?: {
     id: string;
     name: string;
-    restaurantDetails?: { address_id: string , id: string};
+    restaurantDetails?: { address_id: string; id: string };
     avatar: { url: string; key: string };
   };
 };

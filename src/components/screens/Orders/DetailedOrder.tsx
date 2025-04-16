@@ -13,7 +13,10 @@ import IconIonicons from "react-native-vector-icons/Ionicons";
 import IconFontAwesome5 from "react-native-vector-icons/FontAwesome5";
 import { OrderTracking } from "@/src/types/screens/Order";
 import { Enum_OrderStatus, Enum_OrderTrackingInfo } from "@/src/types/Orders";
-import { formatTimestampToDate } from "@/src/utils/dateConverter";
+import {
+  formatTimestampToDate,
+  formatTimestampToDate2,
+} from "@/src/utils/dateConverter";
 import { IMAGE_LINKS } from "@/src/assets/imageLinks";
 import { getTrackingImage, getTrackingText } from "@/src/utils/orderUtils";
 import { OrderScreenNavigationProp } from "@/screens/OrdersScreen";
@@ -65,9 +68,8 @@ export const DetailedOrder: React.FC<DetailedOrderProps> = ({
 }) => {
   console.log(
     "check detailed order",
-    detailedOrder,
-    firstActiveOrder,
-    activeOrderDetails
+    activeOrderDetails?.order_time,
+    firstActiveOrder?.order_time
   );
 
   // Hàm helper để lấy order items
@@ -324,14 +326,14 @@ export const DetailedOrder: React.FC<DetailedOrderProps> = ({
                   value={
                     type === "ACTIVE" && activeOrderDetails
                       ? activeOrderDetails.order_time
-                        ? formatTimestampToDate(
+                        ? formatTimestampToDate2(
                             Number(activeOrderDetails.order_time)
                           )
                         : "N/A"
                       : detailedOrder?.order_time
-                      ? formatTimestampToDate(Number(detailedOrder.order_time))
+                      ? formatTimestampToDate2(Number(detailedOrder.order_time))
                       : firstActiveOrder?.order_time
-                      ? formatTimestampToDate(
+                      ? formatTimestampToDate2(
                           Number(firstActiveOrder.order_time)
                         )
                       : "N/A"
@@ -386,13 +388,22 @@ export const DetailedOrder: React.FC<DetailedOrderProps> = ({
                         <FFText style={{ color: "#aaa" }}>
                           {item.name ?? "N/A"}
                         </FFText>
-                        <FFText
-                          fontWeight="400"
-                          fontSize="sm"
-                          style={{ color: "#aaa" }}
-                        >
-                          x{item.quantity ?? 0}
-                        </FFText>
+                        <View className="flex-row gap-2 ">
+                          <FFText
+                            fontWeight="400"
+                            fontSize="sm"
+                            style={{ color: "#aaa" }}
+                          >
+                            x{item.quantity ?? 0}
+                          </FFText>
+                          <FFText
+                            fontWeight="400"
+                            fontSize="sm"
+                            style={{ color: "#aaa" }}
+                          >
+                            {item.variant_id ?? 0}
+                          </FFText>
+                        </View>
                       </View>
                       <TouchableOpacity
                         onPress={() =>

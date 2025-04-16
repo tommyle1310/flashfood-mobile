@@ -3,22 +3,19 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { RootState } from "./store";
 import { IMAGE_LINKS } from "../assets/imageLinks";
 
-// Định nghĩa type cho favorite_restaurants
 export interface FavoriteRestaurant {
   id: string;
   restaurant_name: string;
   avatar: { url: string; key: string };
   address_id: string;
-  // Thêm các trường khác nếu cần dựa trên dữ liệu API
 }
 
-// Định nghĩa các type khác (giữ nguyên)
 export interface Variant {
   variant_id: string;
   variant_name: string;
   quantity: number;
-  item: { id: string; avatar: { url: string; key: string }; name: string };
-  id: string;
+  item?: { id: string; avatar: { url: string; key: string }; name: string };
+  id?: string;
   variant_price_at_time_of_addition: number;
 }
 
@@ -26,10 +23,10 @@ export interface CartItem {
   id: string;
   customer_id: string;
   variants: Variant[];
-  created_at: number;
-  updated_at: number;
-  __v: number;
-  restaurant: {
+  created_at?: number;
+  updated_at?: number;
+  __v?: number;
+  restaurant?: {
     id: string;
     restaurant_name: string;
     avatar: { url: string; key: string };
@@ -38,7 +35,7 @@ export interface CartItem {
   item: {
     avatar: { url: string; key: string };
     id: string;
-    item_id: string;
+    item_id?: string;
     restaurant_id: string;
     restaurantDetails: {
       id: string;
@@ -47,14 +44,14 @@ export interface CartItem {
       address_id: string;
     };
     name: string;
-    description: string;
+    description?: string;
     category: string[];
     availability: boolean;
     suggest_notes: string[];
-    created_at: number;
-    updated_at: number;
+    created_at?: number;
+    updated_at?: number;
     purchase_count: number;
-    discount: {
+    discount?: {
       discount_type: "FIXED" | "PERCENTAGE";
       discount_value: number;
       start_date: number;
@@ -73,7 +70,6 @@ const initialState: UserPreferenceState = {
   cart_items: [],
 };
 
-// Async thunks
 export const saveFavoriteRestaurantsToAsyncStorage = createAsyncThunk(
   "userPreference/saveFavoriteRestaurants",
   async (_: void, { getState }) => {
@@ -100,6 +96,10 @@ export const loadFavoriteRestaurantsFromAsyncStorage = createAsyncThunk(
 export const saveCartItemsToAsyncStorage = createAsyncThunk(
   "userPreference/saveCartItems",
   async (cart_items: CartItem[]) => {
+    console.log(
+      "Saving cart_items to AsyncStorage:",
+      JSON.stringify(cart_items, null, 2)
+    );
     await AsyncStorage.setItem("cart_items", JSON.stringify(cart_items));
     return cart_items;
   }
@@ -121,17 +121,17 @@ export const loadCartItemsFromAsyncStorage = createAsyncThunk(
   "userPreference/loadCartItems",
   async () => {
     const cart_items = await AsyncStorage.getItem("cart_items");
+    console.log("Loaded cart_items from AsyncStorage:", cart_items);
     return cart_items ? JSON.parse(cart_items) : [];
   }
 );
 
-// Create the slice
 const userPreferenceSlice = createSlice({
   name: "userPreference",
   initialState,
   reducers: {
     toggleFavoriteRestaurant: (state, action) => {
-      const restaurant = action.payload; // payload giờ là object FavoriteRestaurant
+      const restaurant = action.payload;
       const index = state.favorite_restaurants.findIndex(
         (fav) => fav.id === restaurant.id
       );
@@ -147,22 +147,35 @@ const userPreferenceSlice = createSlice({
 
     addItemToCart: (state, action) => {
       const newItem = action.payload;
+      console.log("Adding item to cart:", JSON.stringify(newItem, null, 2));
+
       const existingItem = state.cart_items.find(
         (item) => item.id === newItem.id
       );
 
       if (existingItem) {
-        console.log("Updating existing cart item:", newItem, existingItem);
+        console.log("Existing cart item found:", existingItem.id);
         newItem.variants.forEach((newVariant: Variant) => {
+          console.log("Processing new variant:", newVariant.variant_id);
           const existingVariant = existingItem.variants.find(
             (variant) => variant.variant_id === newVariant.variant_id
           );
 
           if (existingVariant) {
+            console.log(
+              `Updating existing variant ${
+                newVariant.variant_id
+              }: increasing quantity from ${existingVariant.quantity} to ${
+                existingVariant.quantity + newVariant.quantity
+              }`
+            );
             existingVariant.quantity += newVariant.quantity;
             existingVariant.variant_price_at_time_of_addition =
               newVariant.variant_price_at_time_of_addition;
           } else {
+            console.log(
+              `Adding new variant ${newVariant.variant_id} to item ${existingItem.id}`
+            );
             existingItem.variants.push({
               ...newVariant,
               variant_price_at_time_of_addition:
@@ -171,6 +184,7 @@ const userPreferenceSlice = createSlice({
           }
         });
       } else {
+        console.log("Adding new cart item:", newItem.id);
         state.cart_items.push({
           ...newItem,
           item: {
@@ -196,6 +210,10 @@ const userPreferenceSlice = createSlice({
           })),
         });
       }
+      console.log(
+        "Updated cart items:",
+        JSON.stringify(state.cart_items, null, 2)
+      );
     },
 
     removeItemFromCart: (state, action) => {
@@ -207,12 +225,36 @@ const userPreferenceSlice = createSlice({
       const { itemId, variantId, quantity } = action.payload;
       const item = state.cart_items.find((item) => item.id === itemId);
       if (item) {
-        const variant = item.variants.find(
+        const variantIndex = item.variants.findIndex(
           (variant) => variant.variant_id === variantId
         );
-        if (variant) {
-          variant.quantity = quantity;
+        if (variantIndex !== -1) {
+          if (quantity <= 0) {
+            item.variants.splice(variantIndex, 1);
+            console.log(`Removed variant ${variantId} from item ${itemId}`);
+            if (item.variants.length === 0) {
+              state.cart_items = state.cart_items.filter(
+                (i) => i.id !== itemId
+              );
+              console.log(`Removed item ${itemId} as no variants remain`);
+            }
+          } else {
+            item.variants[variantIndex].quantity = quantity;
+            console.log(
+              `Updated quantity of variant ${variantId} in item ${itemId} to ${quantity}`
+            );
+          }
         }
+        // Save updated cart_items to AsyncStorage
+        AsyncStorage.setItem(
+          "cart_items",
+          JSON.stringify(state.cart_items)
+        ).then(() => {
+          console.log(
+            "Saved updated cart_items to AsyncStorage:",
+            JSON.stringify(state.cart_items, null, 2)
+          );
+        });
       }
     },
 
@@ -267,6 +309,15 @@ const userPreferenceSlice = createSlice({
               `Cart item with item_id ${orderItem.item_id} not found in state.cart_items`
             );
           }
+        }
+      );
+      // Save updated cart_items to AsyncStorage
+      AsyncStorage.setItem("cart_items", JSON.stringify(state.cart_items)).then(
+        () => {
+          console.log(
+            "Saved updated cart_items to AsyncStorage:",
+            JSON.stringify(state.cart_items, null, 2)
+          );
         }
       );
     },

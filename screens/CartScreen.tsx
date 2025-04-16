@@ -10,7 +10,6 @@ import {
   loadCartItemsFromAsyncStorage,
   Variant,
   updateItemQuantity,
-  removeItemFromCart,
 } from "@/src/store/userPreferenceSlice";
 import { useNavigation } from "@react-navigation/native";
 import { StackNavigationProp } from "@react-navigation/stack";
@@ -58,28 +57,25 @@ const CartScreen = () => {
     useState<Type_SelectedRestaurant>(defaultSelectedRestaurant);
   const [isShowModal, setIsShowModal] = useState<boolean>(false);
   const [isShowSubmitBtn, setIsShowSubmitBtn] = useState<boolean>(false);
-  const [expandedRestaurantId, setExpandedRestaurantId] = useState<
-    string | null
-  >(null);
 
   const { user_id, address, id } = useSelector(
     (state: RootState) => state.auth
   );
   const dispatch = useDispatch();
 
-  useEffect(() => {
-    dispatch(loadCartItemsFromAsyncStorage());
-  }, [dispatch]);
-
   const cartList = useSelector(
     (state: RootState) => state.userPreference.cart_items
   );
 
   useEffect(() => {
+    dispatch(loadCartItemsFromAsyncStorage());
+  }, [dispatch]);
+
+  useEffect(() => {
     const groupByRestaurant = (cartList: CartItem[]): GroupedCartList => {
       return cartList.reduce((grouped, cartItem) => {
         const restaurantId = cartItem.item.restaurantDetails?.id;
-        if (!restaurantId) return grouped; // Skip if restaurantId is undefined
+        if (!restaurantId) return grouped;
         if (!grouped[restaurantId]) {
           grouped[restaurantId] = [];
         }
@@ -109,7 +105,12 @@ const CartScreen = () => {
     },
     menuItem: CartItem
   ) => {
-    // Check if trying to select from a different restaurant
+    console.log(
+      "Selecting variant:",
+      variant.variant_id,
+      "for item:",
+      menuItem.id
+    );
     if (selectedRestaurant.id && selectedRestaurant.id !== restaurant.id) {
       setIsShowModal(true);
       return;
@@ -128,22 +129,35 @@ const CartScreen = () => {
     };
 
     const isVariantSelected = selectedVariants.some(
-      (item) => item.id === menuItem.id
+      (item) =>
+        item.id === menuItem.id && item.variant_id === variant.variant_id
     );
 
     if (isVariantSelected) {
       const filteredVariants = newVariants.filter(
-        (item) => item.id !== menuItem.id
+        (item) =>
+          !(item.id === menuItem.id && item.variant_id === variant.variant_id)
       );
       setSelectedVariants(filteredVariants);
-      // If removing the last item, reset the selected restaurant
+      console.log(
+        "Unselected variant:",
+        variant.variant_id,
+        "New selectedVariants:",
+        filteredVariants
+      );
       if (filteredVariants.length === 0) {
         setSelectedRestaurant(defaultSelectedRestaurant);
+        console.log("Reset selectedRestaurant as no variants selected");
       }
     } else {
       newVariants.push(variantWithItemId);
       setSelectedVariants(newVariants);
-      // Set the selected restaurant if none is selected
+      console.log(
+        "Selected variant:",
+        variant.variant_id,
+        "New selectedVariants:",
+        newVariants
+      );
       if (!selectedRestaurant.id) {
         setSelectedRestaurant({
           id: restaurant.id,
@@ -151,6 +165,7 @@ const CartScreen = () => {
           restaurant_name: restaurant.restaurant_name,
           address_id: restaurant.address_id,
         });
+        console.log("Set selectedRestaurant:", restaurant.id);
       }
     }
   };
@@ -213,103 +228,135 @@ const CartScreen = () => {
   };
 
   const handleSubtractQuantity = (cartItem: CartItem, variant: Variant) => {
-    if (variant.quantity <= 1) {
-      dispatch(removeItemFromCart(cartItem?.id));
-    } else {
-      dispatch(
-        updateItemQuantity({
-          itemId: cartItem?.id,
-          variantId: variant.variant_id,
-          quantity: variant.quantity - 1,
-        })
+    const newQuantity = variant.quantity - 1;
+    dispatch(
+      updateItemQuantity({
+        itemId: cartItem?.id,
+        variantId: variant.variant_id,
+        quantity: newQuantity,
+      })
+    );
+
+    // Check if restaurant should be reset
+    const restaurantId = cartItem.item.restaurantDetails?.id;
+    const remainingItems = cartList.filter(
+      (item) =>
+        item.item.restaurantDetails?.id === restaurantId &&
+        item.id !== cartItem.id
+    );
+    const remainingVariants = cartList.find(
+      (item) => item.id === cartItem.id
+    )?.variants;
+
+    if (
+      newQuantity <= 0 &&
+      remainingItems.length === 0 &&
+      (!remainingVariants || remainingVariants.length <= 1)
+    ) {
+      setSelectedRestaurant(defaultSelectedRestaurant);
+      setSelectedVariants([]);
+      console.log(
+        "Reset selectedRestaurant and selectedVariants as restaurant is empty"
       );
     }
   };
 
   const renderCartItem = ({ item }: { item: CartItem }) => {
-    const variant = item.variants[0]; // Assuming one variant per cart item for simplicity
     const restaurant = item.item.restaurantDetails;
-    const isSelected = selectedVariants.some((v) => v.id === item.id);
-    const isDisabled =
-      selectedRestaurant.id !== "" && selectedRestaurant.id !== restaurant?.id;
-
+    console.log("Rendering item:", item.id, "Variants:", item.variants);
     return (
-      <FFView
-        onPress={() => {
-          if (!isDisabled) {
-            handleSelectVariants(variant, restaurant, item);
-          }
-        }}
-        colorDark={isSelected ? "#105201" : ""}
-        colorLight={isSelected ? "#d3e6cf" : ""}
-        style={{
-          flexDirection: "row",
-          padding: 16,
-          opacity: isDisabled ? 0.5 : 1,
-          borderWidth: 1,
-          borderRadius: 12,
-          borderColor: isSelected ? colors.primary : "transparent",
-        }}
-      >
-        <FFAvatar rounded="md" avatar={item.item.avatar.url} size={40} />
-        <View style={{ flex: 1, marginLeft: 12 }}>
-          <FFText fontSize="md" fontWeight="bold">
-            {item.item?.name}
-          </FFText>
-          <FFText fontSize="sm" style={{ color: "gray" }}>
-            {variant.variant_name}
-          </FFText>
-          <View style={{ flexDirection: "row", alignItems: "center" }}>
-            <FFText fontSize="md" fontWeight="bold">
-              $
-              {(
-                variant.variant_price_at_time_of_addition * variant.quantity
-              ).toFixed(2)}
-            </FFText>
-            <View
+      <View>
+        {item.variants.map((variant) => {
+          const isSelected = selectedVariants.some(
+            (v) => v.id === item.id && v.variant_id === variant.variant_id
+          );
+          const isDisabled =
+            selectedRestaurant.id !== "" &&
+            selectedRestaurant.id !== restaurant?.id;
+
+          return (
+            <FFView
+              key={variant.variant_id}
+              onPress={() => {
+                if (!isDisabled) {
+                  handleSelectVariants(variant, restaurant, item);
+                }
+              }}
+              colorDark={isSelected ? "#105201" : ""}
+              colorLight={isSelected ? "#d3e6cf" : "#fff"}
               style={{
                 flexDirection: "row",
-                alignItems: "center",
-                marginLeft: "auto",
+                padding: 16,
+                opacity: isDisabled ? 0.5 : 1,
                 borderWidth: 1,
-                borderColor: "#E5E5E5",
-                borderRadius: 8,
-                padding: 4,
+                borderRadius: 12,
+                borderColor: isSelected ? colors.primary : "transparent",
+                marginBottom: 8,
               }}
             >
-              <Pressable
-                onPress={(e) => {
-                  e.stopPropagation(); // Prevent parent Pressable from triggering
-                  handleSubtractQuantity(item, variant);
-                }}
-                style={{
-                  padding: 8,
-                  backgroundColor: "#F5F5F5",
-                  borderRadius: 4,
-                }}
-              >
-                <IconFeather name="minus" size={16} color="#333" />
-              </Pressable>
-              <FFText fontSize="md" style={{ marginHorizontal: 16 }}>
-                {variant.quantity}
-              </FFText>
-              <Pressable
-                onPress={(e) => {
-                  e.stopPropagation(); // Prevent parent Pressable from triggering
-                  handleAddQuantity(item, variant);
-                }}
-                style={{
-                  padding: 8,
-                  backgroundColor: "#F5F5F5",
-                  borderRadius: 4,
-                }}
-              >
-                <IconFeather name="plus" size={16} color="#333" />
-              </Pressable>
-            </View>
-          </View>
-        </View>
-      </FFView>
+              <FFAvatar rounded="md" avatar={item.item.avatar.url} size={40} />
+              <View style={{ flex: 1, marginLeft: 12 }}>
+                <FFText fontSize="md" fontWeight="bold">
+                  {item.item?.name}
+                </FFText>
+                <FFText fontSize="sm" style={{ color: "gray" }}>
+                  {variant.variant_name}
+                </FFText>
+                <View style={{ flexDirection: "row", alignItems: "center" }}>
+                  <FFText fontSize="md" fontWeight="bold">
+                    $
+                    {(
+                      variant.variant_price_at_time_of_addition *
+                      variant.quantity
+                    ).toFixed(2)}
+                  </FFText>
+                  <View
+                    style={{
+                      flexDirection: "row",
+                      alignItems: "center",
+                      marginLeft: "auto",
+                      borderWidth: 1,
+                      borderColor: "#E5E5E5",
+                      borderRadius: 8,
+                      padding: 4,
+                    }}
+                  >
+                    <Pressable
+                      onPress={(e) => {
+                        e.stopPropagation();
+                        handleSubtractQuantity(item, variant);
+                      }}
+                      style={{
+                        padding: 8,
+                        backgroundColor: "#F5F5F5",
+                        borderRadius: 4,
+                      }}
+                    >
+                      <IconFeather name="minus" size={16} color="#333" />
+                    </Pressable>
+                    <FFText fontSize="md" style={{ marginHorizontal: 16 }}>
+                      {variant.quantity}
+                    </FFText>
+                    <Pressable
+                      onPress={(e) => {
+                        e.stopPropagation();
+                        handleAddQuantity(item, variant);
+                      }}
+                      style={{
+                        padding: 8,
+                        backgroundColor: "#F5F5F5",
+                        borderRadius: 4,
+                      }}
+                    >
+                      <IconFeather name="plus" size={16} color="#333" />
+                    </Pressable>
+                  </View>
+                </View>
+              </View>
+            </FFView>
+          );
+        })}
+      </View>
     );
   };
 
