@@ -16,6 +16,7 @@ import FFText from "../FFText";
 import FFInputControl from "../FFInputControl";
 import { CountryPicker } from "react-native-country-codes-picker";
 import Spinner from "../FFSpinner";
+import { spacing } from "@/src/theme";
 
 const LocationPicker = ({
   propsLocation,
@@ -237,15 +238,15 @@ const styles = StyleSheet.create({
     height: 40,
     fontSize: 16,
     color: "black",
-    paddingLeft: 10,
+    paddingLeft: spacing.md,
   },
   textInputContainer: {
-    marginBottom: 20,
+    marginBottom: spacing.lg,
     backgroundColor: "white",
     borderRadius: 8,
     borderWidth: 1,
     borderColor: "#ccc",
-    paddingHorizontal: 10,
+    paddingHorizontal: spacing.md,
   },
 });
 

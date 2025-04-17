@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
 import { useTheme } from "@/src/hooks/useTheme"; // Giả sử hook này đã được định nghĩa
+import { spacing } from "../theme";
 
 interface FFTabProps {
   tabTitles: string[]; // Mảng các tiêu đề tab (ví dụ: ["Tab Active", "Tab Rest"])
@@ -62,7 +63,7 @@ const FFTab: React.FC<FFTabProps> = ({
                 width: "100%", // Đường gạch chiếm toàn bộ chiều rộng của tab
                 backgroundColor:
                   index === activeIndex ? lineColorActive : lineColorRest,
-                marginTop: 4, // Khoảng cách giữa chữ và đường gạch
+                marginTop: spacing.sm, // Khoảng cách giữa chữ và đường gạch
               }}
             />
           </TouchableOpacity>
@@ -83,7 +84,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     gap: 8,
     paddingVertical: 8,
-    paddingHorizontal: 16, // Thêm padding ngang để giống hình mẫu
+    paddingHorizontal: spacing.lg, // Thêm padding ngang để giống hình mẫu
   },
   tabItem: {
     flex: 1, // Mỗi tab item chiếm đều không gian
@@ -96,7 +97,7 @@ const styles = StyleSheet.create({
   },
   tabContent: {
     flex: 1,
-    // padding: 16,
+    // padding: spacing.md,
   },
 });
 

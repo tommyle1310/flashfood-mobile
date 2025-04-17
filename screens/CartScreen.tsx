@@ -26,6 +26,7 @@ import FFAvatar from "@/src/components/FFAvatar";
 import FFView from "@/src/components/FFView";
 import { IMAGE_LINKS } from "@/src/assets/imageLinks";
 import colors from "@/src/theme/colors";
+import { spacing } from "@/src/theme";
 
 interface GroupedCartList {
   [restaurantId: string]: CartItem[];
@@ -286,12 +287,12 @@ const CartScreen = () => {
               colorLight={isSelected ? "#d3e6cf" : "#fff"}
               style={{
                 flexDirection: "row",
-                padding: 16,
+                padding: spacing.sm,
                 opacity: isDisabled ? 0.5 : 1,
                 borderWidth: 1,
                 borderRadius: 12,
                 borderColor: isSelected ? colors.primary : "transparent",
-                marginBottom: 8,
+                marginBottom: spacing.xs,
               }}
             >
               <FFAvatar rounded="md" avatar={item.item.avatar.url} size={40} />
@@ -318,7 +319,7 @@ const CartScreen = () => {
                       borderWidth: 1,
                       borderColor: "#E5E5E5",
                       borderRadius: 8,
-                      padding: 4,
+                      padding: spacing.sm,
                     }}
                   >
                     <Pressable
@@ -327,14 +328,17 @@ const CartScreen = () => {
                         handleSubtractQuantity(item, variant);
                       }}
                       style={{
-                        padding: 8,
+                        padding: spacing.sm,
                         backgroundColor: "#F5F5F5",
                         borderRadius: 4,
                       }}
                     >
                       <IconFeather name="minus" size={16} color="#333" />
                     </Pressable>
-                    <FFText fontSize="md" style={{ marginHorizontal: 16 }}>
+                    <FFText
+                      fontSize="md"
+                      style={{ marginHorizontal: spacing.md }}
+                    >
                       {variant.quantity}
                     </FFText>
                     <Pressable
@@ -343,7 +347,7 @@ const CartScreen = () => {
                         handleAddQuantity(item, variant);
                       }}
                       style={{
-                        padding: 8,
+                        padding: spacing.sm,
                         backgroundColor: "#F5F5F5",
                         borderRadius: 4,
                       }}
@@ -402,7 +406,7 @@ const CartScreen = () => {
                       colorDark="#333"
                       colorLight="#fff"
                       style={{
-                        padding: 8,
+                        padding: spacing.sm,
                         margin: 12,
                         borderRadius: 10,
                         elevation: 4,

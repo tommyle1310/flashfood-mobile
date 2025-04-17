@@ -10,6 +10,7 @@ import {
 import { useTheme } from "@/src/hooks/useTheme"; // Import the custom useTheme hook
 import FFText from "./FFText";
 import IconIonicon from "react-native-vector-icons/Ionicons";
+import { spacing } from "../theme";
 
 interface FFModalProps {
   visible: boolean;
@@ -80,7 +81,7 @@ const styles = StyleSheet.create({
   modalContainer: {
     width: "90%", // Fixed width for the modal content
     maxHeight: "80%", // Prevent modal from being too tall
-    padding: 20,
+    padding: spacing.md,
     borderRadius: 10,
     position: "relative",
     flexDirection: "column", // Ensure content is stacked vertically
@@ -90,12 +91,13 @@ const styles = StyleSheet.create({
   },
   scrollContainer: {
     flexGrow: 1, // Ensures that the content container grows if necessary
+    marginTop: spacing.sm,
     paddingBottom: 10, // Add some padding to avoid content being hidden under the close button
   },
   closeButton: {
-    top: 4,
-    right: 4,
-    padding: 4,
+    top: spacing.sm,
+    right: spacing.sm,
+    padding: spacing.xs,
     position: "absolute",
     backgroundColor: "#E74C3C",
     borderRadius: 9999,

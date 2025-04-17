@@ -1,5 +1,5 @@
 import { View, Text, Pressable, TouchableOpacity } from "react-native";
-import React from "react";
+import React, { useState } from "react";
 import FFSafeAreaView from "@/src/components/FFSafeAreaView";
 import FFScreenTopSection from "@/src/components/FFScreenTopSection";
 import { StackNavigationProp } from "@react-navigation/stack";
@@ -21,6 +21,7 @@ import axiosInstance from "@/src/utils/axiosConfig";
 import FFButton from "@/src/components/FFButton";
 import FFView from "@/src/components/FFView";
 import { spacing } from "@/src/theme";
+import Spinner from "@/src/components/FFSpinner";
 
 type AddressListSreenNavigationProp = StackNavigationProp<
   MainStackParamList,
@@ -46,28 +47,38 @@ interface Props_Address {
 const AddressListScreen = () => {
   const navigation = useNavigation<AddressListSreenNavigationProp>();
   const { address, id } = useSelector((state: RootState) => state.auth);
-  console.log("check addres list", address);
+  const [isLoading, setIsLoading] = useState<boolean>(false);
   const dispatch = useDispatch();
+
   const handleSelectAddress = async (item: Props_Address) => {
-    const response = await axiosInstance.patch(
-      `/customers/address/${id}/${item.id}`,
-      {
-        // This will ensure axios does NOT reject on non-2xx status codes
-        validateStatus: () => true, // Always return true so axios doesn't throw on errors
+    setIsLoading(true);
+    try {
+      const response = await axiosInstance.patch(
+        `/customers/address/${id}/${item.id}`,
+        {
+          validateStatus: () => true,
+        }
+      );
+
+      const { EC, EM, data } = response.data;
+      console.log("check res", response.data);
+
+      if (EC === 0) {
+        dispatch(setDefaultAddress(item));
+        dispatch(setDefaultAddressInStorage(item as any));
+      } else {
+        console.log("st h wrnt wrong");
       }
-    );
-
-    // Now you can safely access the EC field
-    const { EC, EM, data } = response.data;
-    console.log("check res", response.data);
-
-    if (EC === 0) {
-      dispatch(setDefaultAddress(item));
-      dispatch(setDefaultAddressInStorage(item as any));
-    } else {
-      console.log("st h wrnt wrong");
+    } catch (error) {
+      console.error("Error updating address:", error);
+    } finally {
+      setIsLoading(false);
     }
   };
+
+  if (isLoading) {
+    return <Spinner isVisible isOverlay />;
+  }
 
   return (
     <FFSafeAreaView>

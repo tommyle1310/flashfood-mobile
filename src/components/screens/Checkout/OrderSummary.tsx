@@ -6,6 +6,7 @@ import { Order } from "@/src/types/Orders";
 import IconIonicons from "react-native-vector-icons/Ionicons";
 import { Promotion } from "@/src/types/Promotion";
 import FFDropdown from "../../FFDropdown";
+import { spacing } from "@/src/theme";
 
 const OrderSummary = ({
   orderItem,
@@ -27,7 +28,8 @@ const OrderSummary = ({
   totalAmountActual: number; // Prop mới
 }) => {
   const [subTotal, setSubTotal] = useState<number>(0);
-  const [promotionSubtractValue, setPromotionSubtractValue] = useState<number>(0);
+  const [promotionSubtractValue, setPromotionSubtractValue] =
+    useState<number>(0);
   const [voucherSubtractValue, setVoucherSubtractValue] = useState<number>(0);
 
   useEffect(() => {
@@ -45,7 +47,7 @@ const OrderSummary = ({
       <View
         style={{
           height: "60%",
-          padding: 8,
+          padding: spacing.md,
           borderRadius: 8,
         }}
       >
@@ -82,7 +84,7 @@ const OrderSummary = ({
                 </View>
                 <View className="flex-1">
                   <FFText style={{ color: "#4d9c39", marginTop: 1 }}>
-                    {item.item.name}
+                    {item?.item?.name}
                   </FFText>
                   <View className="flex-row items-center justify-between">
                     <View className="flex-row items-center gap-1">
@@ -132,7 +134,9 @@ const OrderSummary = ({
           <FFText style={{ color: "#aaa" }} fontWeight="400">
             Promotion
           </FFText>
-          <FFText fontWeight="500">-${promotionSubtractValue.toFixed(2)}</FFText>
+          <FFText fontWeight="500">
+            -${promotionSubtractValue.toFixed(2)}
+          </FFText>
         </View>
         <View className="flex-row justify-between items-center">
           <FFText style={{ color: "#aaa" }} fontWeight="400">

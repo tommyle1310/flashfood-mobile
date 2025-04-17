@@ -16,6 +16,7 @@ import { Ionicons } from "@expo/vector-icons";
 import FFText from "@/src/components/FFText";
 import axiosInstance from "@/src/utils/axiosConfig";
 import FFSkeleton from "@/src/components/FFSkeleton";
+import { spacing } from "@/src/theme";
 
 type SupportCenterNavigationProp = StackNavigationProp<
   MainStackParamList,
@@ -142,7 +143,11 @@ const SupportCenterScreen = () => {
                 {item.answer[0].type === "image" && (
                   <Image
                     source={{ uri: item.answer[0].value.url }}
-                    style={{ width: "100%", height: 200, marginTop: 8 }}
+                    style={{
+                      width: "100%",
+                      height: 200,
+                      marginTop: spacing.sm,
+                    }}
                     resizeMode="contain"
                   />
                 )}

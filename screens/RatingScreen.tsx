@@ -175,13 +175,13 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     alignItems: "center",
-    paddingHorizontal: 24,
+    paddingHorizontal: spacing.xl,
     paddingTop: 64,
     gap: 12,
     backgroundColor: "#fff",
   },
   title: {
-    marginBottom: 16,
+    marginBottom: spacing.md,
     textAlign: "center",
   },
   image: {
@@ -213,7 +213,7 @@ const styles = StyleSheet.create({
   },
   skipButton: {
     flex: 1,
-    marginRight: 8,
+    marginRight: spacing.sm,
     backgroundColor: "transparent",
   },
   submitButton: {

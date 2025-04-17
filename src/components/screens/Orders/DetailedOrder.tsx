@@ -115,11 +115,11 @@ export const DetailedOrder: React.FC<DetailedOrderProps> = ({
       )}
       <View
         className="flex-col gap-4 w-full items-center"
-        style={{ marginBottom: 200 }}
+        style={{ marginBottom: spacing.veryLarge }}
       >
         {type === "ACTIVE" && firstActiveOrder?.tracking_info && (
           <>
-            <View className="w-full p-4">
+            <View style={{ paddingHorizontal: spacing.lg }} className="w-full">
               <FFProgressStage
                 stageText="Arriving at 10:15"
                 completedSegments={currentOrderStage}
@@ -137,7 +137,11 @@ export const DetailedOrder: React.FC<DetailedOrderProps> = ({
             >
               <FFText
                 fontSize="sm"
-                style={{ padding: 8, textAlign: "center", color: "#4a9e3e" }}
+                style={{
+                  padding: spacing.md,
+                  textAlign: "center",
+                  color: "#4a9e3e",
+                }}
               >
                 {getTrackingText(
                   firstActiveOrder.status as Enum_OrderStatus,
@@ -158,7 +162,7 @@ export const DetailedOrder: React.FC<DetailedOrderProps> = ({
               <FFView
                 style={{
                   width: "100%",
-                  padding: spacing.md,
+                  padding: spacing.sm,
                   borderRadius: 12,
                   gap: 20,
                   elevation: 3,
@@ -370,7 +374,11 @@ export const DetailedOrder: React.FC<DetailedOrderProps> = ({
                     </FFText>
                   </TouchableOpacity>
                 </View>
-                <FFText fontWeight="400" style={{ color: "#aaa" }}>
+                <FFText
+                  fontWeight="400"
+                  fontSize="sm"
+                  style={{ color: "#aaa" }}
+                >
                   {getRestaurantInfo()}
                 </FFText>
                 {getOrderItems().length > 0 ? (
@@ -411,9 +419,6 @@ export const DetailedOrder: React.FC<DetailedOrderProps> = ({
                         }
                         className="flex-row items-center justify-between"
                       >
-                        <FFText fontWeight="400" fontSize="sm">
-                          Show More
-                        </FFText>
                         <IconFeather
                           size={20}
                           name={
@@ -446,7 +451,7 @@ export const DetailedOrder: React.FC<DetailedOrderProps> = ({
               <FFView
                 style={{
                   width: "100%",
-                  padding: spacing.md,
+                  padding: spacing.xl,
                   borderRadius: 12,
                   gap: 4,
                   elevation: 3,
@@ -491,7 +496,7 @@ export const DetailedOrder: React.FC<DetailedOrderProps> = ({
               <FFView
                 style={{
                   width: "100%",
-                  padding: spacing.md,
+                  padding: spacing.xl,
                   borderRadius: 12,
                   gap: 4,
                   elevation: 3,
@@ -505,7 +510,11 @@ export const DetailedOrder: React.FC<DetailedOrderProps> = ({
                     </FFText>
                   </TouchableOpacity>
                 </View>
-                <FFText fontWeight="400" style={{ color: "#aaa" }}>
+                <FFText
+                  fontWeight="400"
+                  fontSize="sm"
+                  style={{ color: "#aaa" }}
+                >
                   {getRestaurantInfo()}
                 </FFText>
                 {getOrderItems().length > 0 ? (
@@ -613,7 +622,7 @@ export const DetailedOrder: React.FC<DetailedOrderProps> = ({
               label=""
             />
             <FFButton
-              style={{ marginTop: 24 }}
+              style={{ marginTop: spacing.lg }}
               className="w-full"
               onPress={handleTipToDriver}
             >

@@ -42,7 +42,7 @@ const NearYouScreen = () => {
       style={{
         // flexDirection: "row",
         alignItems: "center",
-        marginBottom: 16,
+        marginBottom: spacing.md,
         backgroundColor: "#fff",
         borderRadius: 12,
         padding: spacing.md,
@@ -95,7 +95,7 @@ const NearYouScreen = () => {
         data={restaurantList}
         keyExtractor={(item) => item.id.toString()}
         renderItem={renderRestaurantItem}
-        contentContainerStyle={{ padding: 16 }}
+        contentContainerStyle={{ padding: spacing.md }}
         showsVerticalScrollIndicator={false}
       />
     </FFSafeAreaView>

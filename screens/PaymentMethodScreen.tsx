@@ -26,6 +26,7 @@ import { StackNavigationProp } from "@react-navigation/stack";
 import { MainStackParamList } from "@/src/navigation/AppNavigator";
 import { useNavigation } from "@react-navigation/native";
 import * as IntentLauncher from "expo-intent-launcher";
+import { spacing } from "@/src/theme";
 
 type HomeRestaurantSreenNavigationProp = StackNavigationProp<
   MainStackParamList,
@@ -235,14 +236,14 @@ const PaymentMethodScreen = () => {
 
 const styles = StyleSheet.create({
   container: {
-    padding: 16,
+    padding: spacing.md,
   },
   balanceContainer: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
     marginBottom: 24,
-    padding: 16,
+    padding: spacing.md,
     borderRadius: 8,
     backgroundColor: "#f5f5f5",
   },
@@ -250,7 +251,7 @@ const styles = StyleSheet.create({
     color: "#888",
   },
   topUpButton: {
-    paddingHorizontal: 16,
+    paddingHorizontal: spacing.lg,
     paddingVertical: 8,
     borderRadius: 8,
   },
@@ -258,29 +259,29 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    marginBottom: 16,
+    marginBottom: spacing.md,
   },
   sectionTitle: {
     color: "#333",
   },
   addPaymentButton: {
-    padding: 8,
+    padding: spacing.md,
     borderRadius: 8,
     backgroundColor: "#e8f5e9",
   },
   paymentMethodCard: {
     flexDirection: "row",
     alignItems: "center",
-    padding: 16,
+    padding: spacing.md,
     borderRadius: 8,
     backgroundColor: "#fff",
-    marginBottom: 16,
+    marginBottom: spacing.md,
     elevation: 2,
   },
   cardImage: {
     width: 40,
     height: 40,
-    marginRight: 16,
+    marginRight: spacing.md,
   },
   cardNumber: {
     color: "#888",
@@ -289,14 +290,14 @@ const styles = StyleSheet.create({
   transactionItem: {
     flexDirection: "row",
     alignItems: "center",
-    padding: 16,
+    padding: spacing.md,
     borderRadius: 8,
     backgroundColor: "#fff",
-    marginBottom: 8,
+    marginBottom: spacing.sm,
     elevation: 1,
   },
   transactionIcon: {
-    marginRight: 16,
+    marginRight: spacing.md,
   },
   transactionDetails: {
     flex: 1,

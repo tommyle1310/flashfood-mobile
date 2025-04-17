@@ -24,6 +24,7 @@ import Animated, {
 import { useTheme } from "@/src/hooks/useTheme";
 import FFText from "./FFText";
 import IconIonicon from "react-native-vector-icons/Ionicons";
+import { spacing } from "../theme";
 
 interface SlideUpModalProps {
   isVisible: boolean;
@@ -216,7 +217,7 @@ const styles = StyleSheet.create({
   closeButton: {
     position: "absolute",
     right: 0,
-    padding: 4,
+    padding: spacing.sm,
     borderRadius: 9999,
   },
 });

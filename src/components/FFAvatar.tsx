@@ -8,6 +8,7 @@ import {
 } from "react-native";
 import React from "react";
 import FFText from "./FFText"; // Assuming FFText is a custom component
+import { IMAGE_LINKS } from "../assets/imageLinks";
 
 type FFAvatarProps = {
   size?: number; // Optional size, default is 60
@@ -55,12 +56,16 @@ const FFAvatar = ({
           style={{ width: "100%", height: "100%" }} // Ensure the image fills the entire container
         />
       ) : (
-        <View
-          style={{ flex: 1, justifyContent: "center", alignItems: "center" }}
-        >
-          {/* Placeholder or fallback content, such as a letter or icon */}
-          <FFText style={{ color: "#fff" }}>F</FFText>
-        </View>
+        <Image
+          source={{ uri: IMAGE_LINKS.DEFAULT_AVATAR_FOOD }} // Set the avatar URL as the image source
+          style={{ width: "100%", height: "100%" }} // Ensure the image fills the entire container
+        />
+        // <View
+        //   style={{ flex: 1, justifyContent: "center", alignItems: "center" }}
+        // >
+        //   {/* Placeholder or fallback content, such as a letter or icon */}
+        //   <FFText style={{ color: "#fff" }}>F</FFText>
+        // </View>
       )}
     </Pressable>
   );

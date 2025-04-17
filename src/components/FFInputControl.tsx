@@ -13,6 +13,7 @@ import IconIonicons from "react-native-vector-icons/Ionicons";
 import FFText from "@/src/components/FFText";
 import { useTheme } from "@/src/hooks/useTheme";
 import colors from "../theme/colors";
+import { spacing } from "../theme";
 
 // Dùng generic T để type của value và setValue khớp nhau
 interface FFInputControlProps<T extends string | number> {
@@ -209,7 +210,7 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     paddingHorizontal: 8,
     alignItems: "center",
-    marginTop: 4,
+    marginTop: spacing.xs,
     minHeight: 40,
   },
   inputField: {
@@ -218,14 +219,14 @@ const styles = StyleSheet.create({
     paddingVertical: 0,
   },
   iconButton: {
-    padding: 8,
+    padding: spacing.sm,
   },
   errorText: {
     fontSize: 12,
-    marginTop: 4,
+    marginTop: -spacing.sm,
   },
   readonlyText: {
-    marginTop: 4,
+    marginTop: -2,
   },
 });
 

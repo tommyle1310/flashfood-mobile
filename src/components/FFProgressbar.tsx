@@ -1,16 +1,21 @@
-import React, { useState } from 'react';
-import { View, Text, Button, StyleSheet } from 'react-native';
-import FFText from './FFText';
+import React, { useState } from "react";
+import { View, Text, Button, StyleSheet } from "react-native";
+import FFText from "./FFText";
+import { spacing } from "../theme";
 
 interface FFProgressBarProps {
   label: string;
   initialProgress?: number;
   onProgressChange?: (value: number) => void;
-  progressFill?: string
+  progressFill?: string;
 }
 
-const FFProgressBar: React.FC<FFProgressBarProps> = ({ label, initialProgress = 0, onProgressChange,    progressFill
- }) => {
+const FFProgressBar: React.FC<FFProgressBarProps> = ({
+  label,
+  initialProgress = 0,
+  onProgressChange,
+  progressFill,
+}) => {
   const [progress, setProgress] = useState<number>(initialProgress);
 
   const handleProgressChange = () => {
@@ -32,7 +37,13 @@ const FFProgressBar: React.FC<FFProgressBarProps> = ({ label, initialProgress = 
         {/* Inner container representing the progress (filled area) */}
         <View
           style={[
-            progressFill ? {backgroundColor: progressFill, height: '100%', borderRadius: 4}: styles.progressFill,
+            progressFill
+              ? {
+                  backgroundColor: progressFill,
+                  height: "100%",
+                  borderRadius: 4,
+                }
+              : styles.progressFill,
             {
               width: `${progress}%`, // Dynamic width based on progress
             },
@@ -41,7 +52,7 @@ const FFProgressBar: React.FC<FFProgressBarProps> = ({ label, initialProgress = 
       </View>
 
       {/* Progress Percentage */}
-      <FFText className='text-center m-4 text-xs'>{progress}%</FFText>
+      <FFText className="text-center m-4 text-xs">{progress}%</FFText>
 
       {/* Button to increase progress */}
     </View>
@@ -50,31 +61,31 @@ const FFProgressBar: React.FC<FFProgressBarProps> = ({ label, initialProgress = 
 
 const styles = StyleSheet.create({
   container: {
-    width: '100%',
-    padding: 16,
+    width: "100%",
+    padding: spacing.md,
   },
   label: {
     fontSize: 18,
-    color: '#333',
-    marginBottom: 8,
+    color: "#333",
+    marginBottom: spacing.sm,
   },
   progressBar: {
-    width: '100%',
+    width: "100%",
     height: 8,
-    backgroundColor: '#e0e0e0', // Gray background color for the progress bar track
+    backgroundColor: "#e0e0e0", // Gray background color for the progress bar track
     borderRadius: 4, // Rounded corners for the bar
-    overflow: 'hidden', // Ensures that the filled area doesn’t overflow the rounded corners
+    overflow: "hidden", // Ensures that the filled area doesn’t overflow the rounded corners
   },
   progressFill: {
-    height: '100%',
-    backgroundColor: '#3498db', // Blue color for the progress fill
+    height: "100%",
+    backgroundColor: "#3498db", // Blue color for the progress fill
     borderRadius: 4, // Rounded corners for the fill
   },
   progressText: {
-    textAlign: 'center',
-    marginTop: 8,
+    textAlign: "center",
+    marginTop: spacing.sm,
     fontSize: 16,
-    color: '#333',
+    color: "#333",
   },
 });
 

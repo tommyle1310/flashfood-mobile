@@ -37,6 +37,9 @@ import colors from "@/src/theme/colors";
 import FFView from "@/src/components/FFView";
 import { spacing } from "@/src/theme";
 import { useTheme } from "@/src/hooks/useTheme";
+import { loadTokenFromAsyncStorage } from "@/src/store/authSlice";
+import { loadOrderTrackingFromAsyncStorage } from "@/src/store/orderTrackingRealtimeSlice";
+import { useHomeScreen } from "@/src/hooks/useHomeScreen";
 
 type RestaurantDetailRouteProp = RouteProp<
   MainStackParamList,
@@ -49,9 +52,6 @@ const RestaurantDetail = () => {
       StackNavigationProp<MainStackParamList, "RestaurantDetail">
     >();
 
-  const listFavoriteRestaurants = useSelector(
-    (state: RootState) => state.userPreference.favorite_restaurants
-  );
   const { user_id, id } = useSelector((state: RootState) => state.auth);
   const [err, setErr] = useState<string>("");
 
@@ -228,6 +228,17 @@ const RestaurantDetail = () => {
     }
   };
 
+  const { favoriteRestaurants } = useHomeScreen();
+
+  useEffect(() => {
+    const loadInitialData = async () => {
+      await dispatch(loadTokenFromAsyncStorage());
+      await dispatch(loadOrderTrackingFromAsyncStorage()); // Tải dữ liệu từ AsyncStorage
+    };
+
+    loadInitialData();
+  }, [dispatch]);
+
   useEffect(() => {
     dispatch(loadCartItemsFromAsyncStorage());
   }, [dispatch]);
@@ -239,6 +250,8 @@ const RestaurantDetail = () => {
   if (isLoading) {
     return <Spinner isVisible={isLoading} />;
   }
+
+  console.log("cehck here", favoriteRestaurants?.[0]?.id);
 
   return (
     <FFSafeAreaView>
@@ -290,7 +303,7 @@ const RestaurantDetail = () => {
                 borderTopLeftRadius: 12,
                 borderTopRightRadius: 12,
                 elevation: 5,
-                marginTop: -16,
+                marginTop: -spacing.md,
                 height: "100%",
                 paddingBottom: 100,
                 padding: spacing.md,
@@ -327,7 +340,9 @@ const RestaurantDetail = () => {
                   >
                     <IconAntDesign
                       name={
-                        listFavoriteRestaurants?.includes(restaurantId)
+                        favoriteRestaurants?.some((item) =>
+                          item.id.includes(restaurantId)
+                        )
                           ? "heart"
                           : "hearto"
                       }
@@ -399,13 +414,18 @@ const RestaurantDetail = () => {
                     </FFText>
                     <View className="flex-row gap-2 items-center">
                       {item?.variants?.[0]?.price_after_applied_promotion ? (
-                        <>
+                        <View
+                          style={{
+                            alignItems: "center",
+                            flexDirection: "row",
+                            gap: spacing.sm,
+                          }}
+                        >
                           <FFText
                             fontSize="sm"
                             colorLight="#aaa"
                             style={{
                               textDecorationLine: "line-through",
-                              marginTop: 4,
                             }}
                             fontWeight="600"
                           >
@@ -414,12 +434,13 @@ const RestaurantDetail = () => {
                           <FFText
                             fontSize="lg"
                             colorLight="#59bf47"
+                            colorDark={colors.primary_dark}
                             fontWeight="600"
                           >
                             $
                             {item?.variants?.[0]?.price_after_applied_promotion}
                           </FFText>
-                        </>
+                        </View>
                       ) : (
                         <FFText
                           fontSize="lg"
@@ -537,7 +558,7 @@ const RestaurantDetail = () => {
         </View>
         <FFText
           fontSize="sm"
-          style={{ color: "red", textAlign: "center", marginTop: 4 }}
+          style={{ color: "red", textAlign: "center", marginTop: -spacing.sm }}
         >
           {err}
         </FFText>

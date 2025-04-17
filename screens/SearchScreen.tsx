@@ -16,6 +16,7 @@ import { MainStackParamList } from "@/src/navigation/AppNavigator";
 import axiosInstance from "@/src/utils/axiosConfig";
 import FFIconWithBg from "@/src/components/FFIconWithBg";
 import { IMAGE_LINKS } from "@/src/assets/imageLinks";
+import { spacing } from "@/src/theme";
 
 type SearchSreenNavigationProp = StackNavigationProp<
   MainStackParamList,
@@ -192,11 +193,11 @@ const SearchScreen = () => {
 
 const styles = StyleSheet.create({
   section: {
-    paddingHorizontal: 16,
-    marginTop: 16,
+    paddingHorizontal: spacing.lg,
+    marginTop: spacing.md,
   },
   sectionTitle: {
-    marginBottom: 8,
+    marginBottom: spacing.sm,
   },
   listItem: {
     paddingVertical: 12,
@@ -205,21 +206,21 @@ const styles = StyleSheet.create({
   },
   listDescription: {
     color: "#888",
-    marginTop: 4,
+    marginTop: -spacing.sm,
   },
   exploreGrid: {
     flexDirection: "row",
     flexWrap: "wrap",
     justifyContent: "space-between",
-    marginTop: 16,
+    marginTop: spacing.md,
   },
   exploreItem: {
     width: "48%",
     alignItems: "center",
-    marginBottom: 16,
+    marginBottom: spacing.md,
   },
   exploreText: {
-    marginTop: 8,
+    marginTop: spacing.sm,
     textAlign: "center",
   },
   resultItem: {
@@ -233,14 +234,14 @@ const styles = StyleSheet.create({
     width: 50,
     height: 50,
     borderRadius: 8,
-    marginRight: 12,
+    marginRight: spacing.md,
   },
   resultDetails: {
     flex: 1,
   },
   resultDescription: {
     color: "#888",
-    marginTop: 4,
+    marginTop: -spacing.sm,
   },
 });
 

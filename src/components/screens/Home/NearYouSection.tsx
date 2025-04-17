@@ -15,6 +15,7 @@ import FFView from "@/src/components/FFView";
 import FFSkeleton from "@/src/components/FFSkeleton";
 import { IMAGE_LINKS } from "@/src/assets/imageLinks";
 import { Restaurant, FavoriteRestaurant } from "@/src/types/screens/Home";
+import { spacing } from "@/src/theme";
 
 type HomeRestaurantSreenNavigationProp = StackNavigationProp<
   MainStackParamList,
@@ -62,7 +63,7 @@ export const NearYouSection = ({
               borderRadius: 12,
               paddingHorizontal: 8,
               width: 140,
-              marginRight: 8,
+              marginRight: spacing.sm,
               height: 140,
               paddingTop: 8,
             }}
@@ -82,13 +83,18 @@ export const NearYouSection = ({
                 className="flex-row absolute items-center gap-1 top-1 left-1"
                 style={{
                   backgroundColor: "rgba(0, 0, 0, 0.3)",
-                  padding: 4,
+                  padding: spacing.sm,
                   borderRadius: 8,
                 }}
               >
                 <IconAntDesign name="star" color="#7dbf72" />
                 <FFText
-                  style={{ fontSize: 10, fontWeight: "600", color: "#eee" }}
+                  style={{
+                    fontSize: 10,
+                    fontWeight: "600",
+                    color: "#eee",
+                    marginLeft: spacing.xs,
+                  }}
                 >
                   4.8
                 </FFText>
@@ -99,7 +105,7 @@ export const NearYouSection = ({
                 className="flex-row absolute items-center gap-1 top-1 right-1"
                 style={{
                   backgroundColor: "rgba(0, 0, 0, 0.3)",
-                  padding: 4,
+                  padding: spacing.sm,
                   borderRadius: 8,
                 }}
               >
@@ -120,7 +126,7 @@ export const NearYouSection = ({
                 style={{
                   fontWeight: "600",
                   fontSize: 14,
-                  marginTop: 4,
+                  marginTop: spacing.xs,
                   lineHeight: 14,
                 }}
               >

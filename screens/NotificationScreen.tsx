@@ -1,17 +1,24 @@
-import React, { useEffect, useState } from 'react';
-import { ScrollView, StyleSheet, TouchableOpacity, Image, View } from 'react-native';
-import FFView from '../src/components/FFView';
-import FFText from '../src/components/FFText';
-import colors from '../src/theme/colors';
-import FFScreenTopSection from '@/src/components/FFScreenTopSection';
-import { useNavigation } from '@react-navigation/native';
-import { StackNavigationProp } from '@react-navigation/stack';
-import { MainStackParamList } from '@/src/navigation/AppNavigator';
-import axios from 'axios';
-import axiosInstance from '@/src/utils/axiosConfig';
-import { useSelector } from '@/src/store/types';
-import { RootState } from '@/src/store/store';
-import FFSkeleton from '@/src/components/FFSkeleton';
+import React, { useEffect, useState } from "react";
+import {
+  ScrollView,
+  StyleSheet,
+  TouchableOpacity,
+  Image,
+  View,
+} from "react-native";
+import FFView from "../src/components/FFView";
+import FFText from "../src/components/FFText";
+import colors from "../src/theme/colors";
+import FFScreenTopSection from "@/src/components/FFScreenTopSection";
+import { useNavigation } from "@react-navigation/native";
+import { StackNavigationProp } from "@react-navigation/stack";
+import { MainStackParamList } from "@/src/navigation/AppNavigator";
+import axios from "axios";
+import axiosInstance from "@/src/utils/axiosConfig";
+import { useSelector } from "@/src/store/types";
+import { RootState } from "@/src/store/store";
+import FFSkeleton from "@/src/components/FFSkeleton";
+import { spacing } from "@/src/theme";
 
 interface NotificationAvatar {
   key: string;
@@ -63,7 +70,7 @@ const NotificationScreen: React.FC = () => {
   const [notifications, setNotifications] = useState<NotificationItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const {id} = useSelector((state: RootState) => state.auth)
+  const { id } = useSelector((state: RootState) => state.auth);
 
   const fetchNotifications = async () => {
     try {
@@ -71,7 +78,7 @@ const NotificationScreen: React.FC = () => {
       const response = await axiosInstance.get(
         `/customers/notifications/${id}`
       );
-      
+
       if (response.data.EC === 0) {
         setNotifications(response.data.data);
         setError(null);
@@ -79,7 +86,7 @@ const NotificationScreen: React.FC = () => {
         setError(response.data.EM);
       }
     } catch (err) {
-      setError('Failed to fetch notifications');
+      setError("Failed to fetch notifications");
     } finally {
       setLoading(false);
     }
@@ -91,37 +98,40 @@ const NotificationScreen: React.FC = () => {
 
   return (
     <FFView style={styles.container}>
-      <FFScreenTopSection navigation={navigation} title='Notifications'/>
-      
+      <FFScreenTopSection navigation={navigation} title="Notifications" />
+
       <ScrollView style={styles.notificationList}>
-  {loading ? <View>
-    <FFSkeleton height={100}/>
-    <FFSkeleton height={100}/>
-    <FFSkeleton height={100}/>
-    <FFSkeleton height={100}/>
-    </View>
-     : (notifications.map((notification) => (
-          <TouchableOpacity
-            key={notification.id}
-            style={styles.notificationItem}
-          >
-            <FFView style={styles.notificationContent}>
-              <Image 
-                source={{ uri: notification.avatar.url }}
-                style={styles.notificationIcon}
-              />
-              <FFView style={styles.textContainer}>
-                <FFText style={styles.notificationTitle}>
-                  {notification.title}
-                </FFText>
-                <FFText style={styles.notificationMessage}>
-                  {notification.desc}
-                  <FFText style={styles.viewMore}> View more...</FFText>
-                </FFText>
+        {loading ? (
+          <View>
+            <FFSkeleton height={100} />
+            <FFSkeleton height={100} />
+            <FFSkeleton height={100} />
+            <FFSkeleton height={100} />
+          </View>
+        ) : (
+          notifications.map((notification) => (
+            <TouchableOpacity
+              key={notification.id}
+              style={styles.notificationItem}
+            >
+              <FFView style={styles.notificationContent}>
+                <Image
+                  source={{ uri: notification.avatar.url }}
+                  style={styles.notificationIcon}
+                />
+                <FFView style={styles.textContainer}>
+                  <FFText style={styles.notificationTitle}>
+                    {notification.title}
+                  </FFText>
+                  <FFText style={styles.notificationMessage}>
+                    {notification.desc}
+                    <FFText style={styles.viewMore}> View more...</FFText>
+                  </FFText>
+                </FFView>
               </FFView>
-            </FFView>
-          </TouchableOpacity>
-        )))}
+            </TouchableOpacity>
+          ))
+        )}
       </ScrollView>
     </FFView>
   );
@@ -136,26 +146,26 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   notificationItem: {
-    padding: 16,
+    padding: spacing.md,
     borderBottomWidth: 1,
     borderBottomColor: colors.border,
   },
   notificationContent: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
+    flexDirection: "row",
+    alignItems: "flex-start",
   },
   notificationIcon: {
     width: 24,
     height: 24,
     borderRadius: 12,
-    marginRight: 12,
+    marginRight: spacing.md,
   },
   textContainer: {
     flex: 1,
   },
   notificationTitle: {
     fontSize: 16,
-    fontWeight: '600',
+    fontWeight: "600",
     color: colors.text,
     marginBottom: 4,
   },

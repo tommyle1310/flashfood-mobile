@@ -220,12 +220,12 @@ const styles = StyleSheet.create({
   dropdown: {
     width: "80%",
     borderRadius: 8,
-    padding: 8,
+    padding: spacing.md,
     maxHeight: 300,
   },
   option: {
     paddingVertical: 12,
-    paddingHorizontal: 16,
+    paddingHorizontal: spacing.lg,
   },
   optionContainer: {
     flexDirection: "row",
@@ -235,7 +235,7 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 4,
-    marginRight: 12,
+    marginRight: spacing.md,
   },
   optionTextContainer: {
     flex: 1,

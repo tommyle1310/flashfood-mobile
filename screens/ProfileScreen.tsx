@@ -185,7 +185,7 @@ const ProfileScreen = () => {
         gap: 12,
         borderRadius: 12,
         marginVertical: 8,
-        marginHorizontal: 8,
+        marginHorizontal: spacing.sm,
         elevation: 3,
         padding: spacing.md,
       }}

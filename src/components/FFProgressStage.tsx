@@ -2,6 +2,7 @@ import React from "react";
 import { View, Text, StyleSheet } from "react-native";
 import { useTheme } from "@/src/hooks/useTheme"; // Giả sử hook này đã được định nghĩa
 import FFText from "./FFText";
+import { spacing } from "../theme";
 
 interface FFProgressStageProps {
   stageText: string; // Văn bản hiển thị, ví dụ: "Arriving at 10:15"
@@ -71,11 +72,11 @@ const styles = StyleSheet.create({
     width: "100%",
     justifyContent: "center",
     alignItems: "center",
-    marginTop: 4, // Khoảng cách giữa text và thanh tiến trình
+    marginTop: spacing.sm, // Khoảng cách giữa text và thanh tiến trình
   },
   segment: {
     height: 6, // Độ cao mỗi đoạn
-    marginHorizontal: 2, // Khoảng cách giữa các đoạn
+    marginHorizontal: spacing.xs, // Khoảng cách giữa các đoạn
     borderRadius: 2, // Bo góc nhẹ
   },
 });

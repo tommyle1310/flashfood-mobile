@@ -19,6 +19,7 @@ import {
   clearOrderTracking,
   clearOrderTrackingFromAsyncStorage,
 } from "@/src/store/orderTrackingRealtimeSlice";
+import { spacing } from "@/src/theme";
 
 type LogoutSreenNavigationProp = StackNavigationProp<
   RootStackParamList,
@@ -156,7 +157,7 @@ const styles = StyleSheet.create({
     paddingBottom: 60,
     borderRadius: 16,
     paddingTop: 24,
-    paddingHorizontal: 16,
+    paddingHorizontal: spacing.lg,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
@@ -172,12 +173,12 @@ const styles = StyleSheet.create({
     borderBottomColor: "#ddd",
   },
   settingsSection: {
-    marginTop: 16,
+    marginTop: spacing.md,
   },
   sectionTitle: {
     fontWeight: "400",
     color: "#aaa",
-    marginBottom: 8,
+    marginBottom: spacing.sm,
   },
   optionItem: {
     flexDirection: "row",
@@ -187,7 +188,7 @@ const styles = StyleSheet.create({
     borderBottomColor: "#f0f0f0",
   },
   logoutButton: {
-    marginTop: 24,
+    marginTop: spacing.lg,
     width: "100%",
   },
 });

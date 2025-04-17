@@ -42,7 +42,7 @@ export const PromotionsSection = ({
   const navigation = useNavigation<HomeRestaurantSreenNavigationProp>();
 
   return (
-    <View style={{ marginTop: -spacing.md }}>
+    <View style={{ marginTop: -spacing.md, marginBottom: spacing.xxxl }}>
       <ScrollView className="mt-2 px-2 py-2  -ml-2">
         {promotions?.map((promotion, i) => (
           <View key={promotion.id} style={{ marginBottom: spacing.md }}>
@@ -94,7 +94,7 @@ export const PromotionsSection = ({
                     borderRadius: 16,
                     height: 200,
                     width: 200,
-                    marginRight: 12,
+                    marginRight: spacing.md,
                     overflow: "hidden",
                   }}
                 >
@@ -171,7 +171,7 @@ export const PromotionsSection = ({
                       style={{
                         fontWeight: "700",
                         fontSize: 16,
-                        marginBottom: 4,
+                        marginBottom: spacing.sm,
                       }}
                     >
                       {item.restaurant_name}
@@ -180,14 +180,14 @@ export const PromotionsSection = ({
                       style={{
                         flexDirection: "row",
                         alignItems: "center",
-                        marginTop: 4,
+                        marginTop: -spacing.sm,
                       }}
                     >
                       <View
                         style={{
                           flexDirection: "row",
                           alignItems: "center",
-                          marginRight: 12,
+                          marginRight: spacing.md,
                         }}
                       >
                         <IconAntDesign name="star" size={14} color="#FFB800" />

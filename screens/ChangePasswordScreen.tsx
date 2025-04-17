@@ -7,6 +7,7 @@ import FFInputControl from "@/src/components/FFInputControl";
 import Spinner from "@/src/components/FFSpinner";
 import axiosInstance from "@/src/utils/axiosConfig";
 import FFModal from "@/src/components/FFModal";
+import { spacing } from "@/src/theme";
 
 const ChangePasswordScreen = () => {
   const [step, setStep] = useState<
@@ -92,7 +93,7 @@ const ChangePasswordScreen = () => {
             Enter the email associated with your account and we'll send an email
             with instructions to reset your password.
           </FFText>
-          <View style={{ width: "100%", marginBottom: 20 }}>
+          <View style={{ width: "100%", marginBottom: spacing.lg }}>
             <FFInputControl
               placeholder="Email address"
               value={email}
@@ -136,7 +137,7 @@ const ChangePasswordScreen = () => {
           <FFText fontSize="md" style={styles.description}>
             Your new password must be different from previously used passwords.
           </FFText>
-          <View style={{ width: "100%", marginBottom: 20 }}>
+          <View style={{ width: "100%", marginBottom: spacing.lg }}>
             <FFInputControl
               placeholder="Password"
               secureTextEntry
@@ -186,14 +187,14 @@ const ChangePasswordScreen = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    padding: 16,
-    marginTop: -40,
+    padding: spacing.md,
+    marginTop: -spacing.xl,
     width: "100%",
     justifyContent: "center",
     alignItems: "center",
   },
   title: {
-    marginBottom: 16,
+    marginBottom: spacing.md,
     textAlign: "center",
   },
   description: {
@@ -203,11 +204,11 @@ const styles = StyleSheet.create({
   },
   input: {
     width: "100%",
-    marginBottom: 16,
+    marginBottom: spacing.md,
   },
   button: {
     width: "100%",
-    marginBottom: 16,
+    marginBottom: spacing.md,
   },
   skipButton: {
     backgroundColor: "transparent",

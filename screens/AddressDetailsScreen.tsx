@@ -29,6 +29,7 @@ import {
 import { useDispatch, useSelector } from "@/src/store/types";
 import { RootState } from "@/src/store/store";
 import FFToggle from "@/src/components/FFToggle";
+import { spacing } from "@/src/theme";
 
 type AddressDetailRouteProp = RouteProp<MainStackParamList, "AddressDetails">;
 
@@ -238,7 +239,7 @@ const AddressDetailsScreen = () => {
 
             <FFButton
               className="w-full"
-              style={{ marginTop: 24 }}
+              style={{ marginTop: spacing.lg }}
               onPress={handleSubmit}
               isLinear
             >
@@ -271,15 +272,15 @@ const styles = StyleSheet.create({
     height: 40,
     fontSize: 16,
     color: "black",
-    paddingLeft: 10,
+    paddingLeft: spacing.md,
   },
   textInputContainer: {
-    marginBottom: 20,
+    marginBottom: spacing.lg,
     backgroundColor: "white",
     borderRadius: 8,
     borderWidth: 1,
     borderColor: "#ccc",
-    paddingHorizontal: 10,
+    paddingHorizontal: spacing.md,
   },
 });
 

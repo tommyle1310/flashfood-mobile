@@ -41,7 +41,7 @@ const ReadonlyProfileComponents = ({
           {!firstName && !lastName ? (
             <>
               <FFSkeleton />
-              <FFSkeleton width={100} style={{ marginTop: 8 }} />
+              <FFSkeleton width={100} style={{ marginTop: spacing.sm }} />
             </>
           ) : (
             <>
@@ -58,7 +58,7 @@ const ReadonlyProfileComponents = ({
           onPress={toggleStatus}
           style={{
             backgroundColor: "#63c550",
-            padding: 8, // You can adjust the padding as needed
+            padding: spacing.sm, // You can adjust the padding as needed
             borderRadius: 50, // To make it round
             alignSelf: "flex-start", // Align to the start of the container
             flexShrink: 0, // Prevent it from shrinking

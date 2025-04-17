@@ -10,6 +10,7 @@ import { OrderCard } from "@/src/components/screens/Orders/OrderCard";
 import { DetailedOrder } from "@/src/components/screens/Orders/DetailedOrder";
 import FFSkeleton from "../../FFSkeleton";
 import Spinner from "../../FFSpinner";
+import { spacing } from "@/src/theme";
 
 interface OrderTabContentProps {
   type: "ACTIVE" | "COMPLETED" | "CANCELLED";
@@ -203,24 +204,26 @@ export const OrderTabContent: React.FC<OrderTabContentProps> = ({
       setDriverDetails(null);
     }
   }, [type]);
-  
+
   return (
-    <ScrollView className="gap-4 p-4">
+    <ScrollView className="gap-4 p-4 ">
       <View className="gap-4">
         {type !== "ACTIVE" &&
           detailedOrder === null &&
-          orders.map((item, i) => (
-            <View
-              key={item.id || i}
-              style={{ marginBottom: i === orders.length - 1 ? 200 : 0 }}
-            >
-              <OrderCard
-                order={item}
-                onPress={() => setDetailedOrder(item)}
-                onReOrder={onReOrder}
-              />
-            </View>
-          ))}
+          orders
+            .sort((a, b) => Number(b.order_time) - Number(a.order_time))
+            .map((item, i) => (
+              <View
+                key={item.id || i}
+                style={{ marginBottom: i === orders.length - 1 ? 200 : 0 }}
+              >
+                <OrderCard
+                  order={item}
+                  onPress={() => setDetailedOrder(item)}
+                  onReOrder={onReOrder}
+                />
+              </View>
+            ))}
         {isLoading && type === "COMPLETED" && (
           <>
             <FFSkeleton height={180} />

@@ -12,6 +12,7 @@ import { LinearGradient } from "expo-linear-gradient";
 import IconIonicons from "react-native-vector-icons/Ionicons";
 import FFAvatar from "@/src/components/FFAvatar";
 import FFInputControl from "@/src/components/FFInputControl";
+import { spacing } from "@/src/theme";
 
 type FFAuthFormProps = {
   isSignUp: boolean;
@@ -134,7 +135,7 @@ const FFAuthForm = ({
 const styles = StyleSheet.create({
   container: {
     backgroundColor: "#fff",
-    padding: 16,
+    padding: spacing.md,
     borderRadius: 16,
     position: "relative",
     paddingTop: 40,
@@ -154,7 +155,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     gap: 4,
     alignItems: "center",
-    marginTop: 8,
+    marginTop: spacing.sm,
   },
   passwordContainer: {
     flexDirection: "row",
@@ -168,7 +169,7 @@ const styles = StyleSheet.create({
     fontWeight: "600",
   },
   inputContainer: {
-    marginTop: 8,
+    marginTop: spacing.sm,
   },
   inputLabel: {
     fontSize: 14,
@@ -178,10 +179,10 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderRadius: 8,
     paddingVertical: 12,
-    paddingHorizontal: 16,
+    paddingHorizontal: spacing.lg,
     fontSize: 14,
     color: "#333",
-    marginTop: 4,
+    marginTop: -spacing.sm,
   },
   iconButton: {
     position: "absolute",
@@ -190,7 +191,7 @@ const styles = StyleSheet.create({
   },
   button: {
     paddingVertical: 12,
-    paddingHorizontal: 24,
+    paddingHorizontal: spacing.xl,
     borderRadius: 8,
     justifyContent: "center",
     alignItems: "center",
@@ -199,7 +200,7 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 3,
     elevation: 5,
-    marginTop: 16,
+    marginTop: spacing.md,
   },
   buttonText: {
     color: "white",

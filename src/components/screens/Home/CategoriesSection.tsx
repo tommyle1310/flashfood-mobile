@@ -3,6 +3,7 @@ import { View, TouchableOpacity, ScrollView } from "react-native";
 import FFText from "@/src/components/FFText";
 import FFSkeleton from "@/src/components/FFSkeleton";
 import { FoodCategory } from "@/src/types/screens/Home";
+import { spacing } from "@/src/theme";
 
 interface CategoriesSectionProps {
   listFoodCategories: FoodCategory[] | null;
@@ -38,7 +39,7 @@ export const CategoriesSection = ({
       <ScrollView horizontal className="mt-2">
         {listFoodCategories?.map((item) => (
           <TouchableOpacity
-            style={{ marginRight: 8, paddingHorizontal: 4 }}
+            style={{ marginRight: spacing.sm, paddingHorizontal: 4 }}
             key={item.id}
             onPress={() => handleCategoryPress(item.id)}
             className={`px-2 py-1 mr-2 rounded-md ${

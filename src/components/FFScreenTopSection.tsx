@@ -3,6 +3,7 @@ import React from "react";
 import IconIonicons from "react-native-vector-icons/Ionicons";
 import FFText from "./FFText";
 import { useTheme } from "@/src/hooks/useTheme";
+import { spacing } from "../theme";
 
 type FFScreenTopSectionProps = {
   navigation: any;
@@ -58,7 +59,7 @@ const FFScreenTopSection: React.FC<FFScreenTopSectionProps> = ({
 
 const styles = StyleSheet.create({
   container: {
-    paddingHorizontal: 16,
+    paddingHorizontal: spacing.lg,
     paddingVertical: 16,
     alignItems: "center",
     position: "relative",
@@ -71,7 +72,7 @@ const styles = StyleSheet.create({
     position: "absolute",
     left: 16,
     top: 16,
-    marginRight: 12,
+    marginRight: spacing.md,
   },
   centerTitle: {
     textAlign: "center",

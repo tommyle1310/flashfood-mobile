@@ -9,6 +9,7 @@ import {
   Keyboard,
 } from "react-native";
 import MapSearchResultListItem from "./MapSearchResultListItem";
+import { spacing } from "@/src/theme";
 
 interface SuggestionsProps {
   placeholder: string;
@@ -86,7 +87,7 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     borderWidth: 1,
     borderColor: "#ccc",
-    paddingLeft: 10,
+    paddingLeft: spacing.md,
     paddingRight: 10,
     backgroundColor: "white", // Background color to ensure visibility over the map
     zIndex: 2, // Ensure it stays above the map

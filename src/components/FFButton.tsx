@@ -2,6 +2,7 @@ import { useTheme } from "@/src/hooks/useTheme";
 import { LinearGradient } from "expo-linear-gradient";
 import { useState } from "react";
 import { Pressable, Text, View, ViewStyle, TextStyle } from "react-native";
+import { spacing } from "../theme";
 
 const FFButton: React.FC<{
   children: React.ReactNode;
@@ -138,7 +139,7 @@ const FFButton: React.FC<{
         end={[1, 0]}
         style={{
           paddingVertical: 12,
-          paddingHorizontal: 24,
+          paddingHorizontal: spacing.xl,
           borderRadius: 8,
           justifyContent: "center",
           alignItems: "center",
