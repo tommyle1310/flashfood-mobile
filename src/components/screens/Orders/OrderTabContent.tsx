@@ -218,6 +218,7 @@ export const OrderTabContent: React.FC<OrderTabContentProps> = ({
                 style={{ marginBottom: i === orders.length - 1 ? 200 : 0 }}
               >
                 <OrderCard
+                  type={type}
                   order={item}
                   onPress={() => setDetailedOrder(item)}
                   onReOrder={onReOrder}

@@ -61,7 +61,11 @@ const AddressListScreen = () => {
       );
 
       const { EC, EM, data } = response.data;
-      console.log("check res", response.data);
+      console.log(
+        "check res",
+        response.data,
+        `/customers/address/${id}/${item.id}`
+      );
 
       if (EC === 0) {
         dispatch(setDefaultAddress(item));

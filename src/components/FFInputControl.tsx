@@ -223,7 +223,7 @@ const styles = StyleSheet.create({
   },
   errorText: {
     fontSize: 12,
-    marginTop: -spacing.sm,
+    marginTop: spacing.sm,
   },
   readonlyText: {
     marginTop: -2,
