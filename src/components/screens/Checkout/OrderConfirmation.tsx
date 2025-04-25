@@ -17,6 +17,7 @@ const OrderConfirmation = ({
   handleSelect: (option: string) => void;
 }) => {
   const globalState = useSelector((state: RootState) => state.auth);
+  console.log("cehck addres", globalState.address);
 
   return (
     <View className="flex-1 gap-4">

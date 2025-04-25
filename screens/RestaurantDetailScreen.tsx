@@ -212,6 +212,7 @@ const RestaurantDetail = () => {
             },
           })
         );
+        console.log("cehck address finally here", modalData.variants);
         setIsShowStatusModal(true);
         console.log("Cart item added:", data);
       } else {

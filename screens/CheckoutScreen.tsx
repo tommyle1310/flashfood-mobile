@@ -68,8 +68,13 @@ const CheckoutScreen = () => {
       // Xử lý restaurant response
       const restaurantData = restaurantResponse.data;
       if (restaurantData.EC === 0) {
+        console.log(
+          "check what heree ",
+          restaurantData.data.promotions,
+          restaurantData.data
+        );
         setPromotionList(
-          restaurantData.data.promotions.filter(
+          restaurantData?.data?.promotions?.filter(
             (item: any) => !(item.food_categories.length > 0)
           )
         );
@@ -150,6 +155,7 @@ const CheckoutScreen = () => {
       delivery_time: new Date().getTime(),
       promotion_applied: selectedPromotion,
     };
+    console.log("cehck req data", orderItem.order_items?.[0]);
 
     const response = await axiosInstance.post(`/orders`, requestData, {
       validateStatus: () => true,

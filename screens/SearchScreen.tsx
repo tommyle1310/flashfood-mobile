@@ -206,7 +206,7 @@ const styles = StyleSheet.create({
   },
   listDescription: {
     color: "#888",
-    marginTop: -spacing.sm,
+    marginTop: spacing.sm,
   },
   exploreGrid: {
     flexDirection: "row",

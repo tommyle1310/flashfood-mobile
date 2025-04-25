@@ -161,7 +161,7 @@ const OrderSummary = ({
             Total Amount
           </FFText>
           <FFText fontSize="lg" colorLight="#4d9c39" colorDark="#4c9f3a">
-            ${totalAmountActual.toFixed(2)} {/* Dùng totalAmountActual */}
+            ${totalAmountActual.toFixed(2)}
           </FFText>
         </View>
       </View>

@@ -160,6 +160,7 @@ const CartScreen = () => {
         newVariants
       );
       if (!selectedRestaurant.id) {
+        console.log("cehck res", restaurant);
         setSelectedRestaurant({
           id: restaurant.id,
           avatar: restaurant.avatar,
@@ -191,6 +192,7 @@ const CartScreen = () => {
       const itemTotal = item.variant_price_at_time_of_addition * item.quantity;
       return total + itemTotal;
     }, 0);
+    console.log("check what here", selectedRestaurant);
 
     const orderData: Order = {
       customer_id: id,
@@ -215,6 +217,7 @@ const CartScreen = () => {
       restaurant_note: "",
       order_time: new Date().getTime(),
     };
+
     navigation.navigate("Checkout", { orderItem: orderData });
   };
 
@@ -397,9 +400,8 @@ const CartScreen = () => {
                   const restaurantItems = groupedCartList[item];
                   const restaurant = restaurantItems[0].item.restaurantDetails;
                   console.log(
-                    "check rs name",
+                    "check rs address here",
                     restaurantItems?.[0]?.item?.restaurantDetails
-                      ?.restaurant_name
                   );
                   return (
                     <FFView

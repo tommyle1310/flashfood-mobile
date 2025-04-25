@@ -142,6 +142,7 @@ const EditProfileComponent = ({
           padding: spacing.md,
           borderColor: "#eee",
           borderWidth: 1,
+          gap: spacing.sm,
         }}
       >
         <View className="items-center">
@@ -186,6 +187,7 @@ const EditProfileComponent = ({
         <FFButton
           variant="primary"
           className="my-4 w-full"
+          style={{ marginVertical: spacing.xl }}
           onPress={handleUpdateProfile}
         >
           Update
