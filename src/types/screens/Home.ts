@@ -1,3 +1,5 @@
+import { Avatar } from "../common";
+
 export interface Restaurant {
   id: string;
   restaurant_name: string;
@@ -20,6 +22,8 @@ export interface FoodCategory {
 export interface AvailablePromotionWithRestaurants {
   id: string;
   name: string;
+  description: string;
+  avatar: Avatar;
   discount_type: "PERCENTAGE" | "FIXED";
   discount_value: number;
   restaurants: Restaurant[];

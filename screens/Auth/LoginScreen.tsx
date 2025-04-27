@@ -80,9 +80,7 @@ const Login = () => {
             // cart_items: userData.cart_items || [],
           })
         );
-        dispatch(
-          saveFavoriteRestaurantsToAsyncStorage(userData.favorite_restaurants)
-        );
+        dispatch(saveFavoriteRestaurantsToAsyncStorage());
         dispatch(saveCartItemsToAsyncStorage(userData.cart_items));
 
         navigation.reset({

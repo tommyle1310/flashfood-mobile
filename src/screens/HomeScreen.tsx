@@ -7,10 +7,12 @@ import { HeaderSection } from "@/src/components/screens/Home/HeaderSection";
 import { CategoriesSection } from "@/src/components/screens/Home/CategoriesSection";
 import { NearYouSection } from "@/src/components/screens/Home/NearYouSection";
 import { PromotionsSection } from "@/src/components/screens/Home/PromotionsSection";
+import { PromotionsSliderSection } from "@/src/components/screens/Home/PromotionsSliderSection";
 import { useNavigation } from "@react-navigation/native";
 import { StackNavigationProp } from "@react-navigation/stack";
 import { MainStackParamList } from "@/src/navigation/AppNavigator";
 import { spacing } from "../theme";
+import CoralTourCarousel from "../components/CoralTourCarousel";
 
 type HomeRestaurantSreenNavigationProp = StackNavigationProp<
   MainStackParamList,
@@ -33,7 +35,6 @@ const HomeScreen = () => {
 
   const renderedRestaurants =
     filteredRestaurants?.length > 0 ? filteredRestaurants : listRestaurants;
-
   return (
     <FFSafeAreaView>
       <ScrollView className="p-4 gap-6" style={{ gap: spacing.md }}>
@@ -48,6 +49,20 @@ const HomeScreen = () => {
               Search anything...
             </FFText>
           </Pressable>
+
+          <View
+            style={{
+              width: "100%",
+              paddingRight: spacing.lg,
+            }}
+          >
+            <FFText>Hot Deals</FFText>
+            <CoralTourCarousel
+              imageUrls={availablePromotionWithRestaurants?.map(
+                (item) => item.avatar.url
+              )}
+            />
+          </View>
 
           <CategoriesSection
             listFoodCategories={listFoodCategories}
