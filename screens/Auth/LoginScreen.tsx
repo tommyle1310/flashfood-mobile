@@ -20,6 +20,7 @@ import {
   saveFavoriteRestaurantsToAsyncStorage,
 } from "@/src/store/userPreferenceSlice";
 import Spinner from "@/src/components/FFSpinner";
+import { useTheme } from "@/src/hooks/useTheme";
 
 type LoginScreenNavigationProp = StackNavigationProp<
   RootStackParamList,
@@ -58,7 +59,7 @@ const Login = () => {
         const userData = decodeJWT(data.access_token); // Decode JWT to get user data
 
         // Dispatch the action to save the user data to AsyncStorage and Redux store
-        console.log('cehck user data addess', userData.address)
+        console.log("cehck user data addess", userData.address);
         dispatch(
           saveTokenToAsyncStorage({
             accessToken: data.access_token, // Saving the actual access token
@@ -101,6 +102,7 @@ const Login = () => {
       setError("An unexpected error occurred during login."); // Provide a generic error message if the request fails
     }
   };
+  const { theme } = useTheme();
 
   const accessToken = useSelector((state: RootState) => state.auth.accessToken);
   const isAuthenticated = useSelector(
@@ -120,7 +122,11 @@ const Login = () => {
   return (
     <FFSafeAreaView>
       <LinearGradient
-        colors={["#8fa3d9", "#b5b3a1", "#b5e1a1"]}
+        colors={
+          theme === "light"
+            ? ["#8fa3d9", "#b5b3a1", "#b5e1a1"]
+            : ["#51d522", "#144a06", "#5c5d85"]
+        }
         start={[1, 0]}
         end={[0, 1]}
         className="flex-1 items-center justify-center"

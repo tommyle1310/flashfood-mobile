@@ -13,6 +13,8 @@ import IconIonicons from "react-native-vector-icons/Ionicons";
 import FFAvatar from "@/src/components/FFAvatar";
 import FFInputControl from "@/src/components/FFInputControl";
 import { spacing } from "@/src/theme";
+import FFView from "@/src/components/FFView";
+import FFText from "@/src/components/FFText";
 
 type FFAuthFormProps = {
   isSignUp: boolean;
@@ -54,7 +56,7 @@ const FFAuthForm = ({
   };
 
   return (
-    <View style={styles.container}>
+    <FFView style={styles.container}>
       <View
         style={{
           position: "absolute",
@@ -67,11 +69,13 @@ const FFAuthForm = ({
       >
         <FFAvatar avatar="https://res.cloudinary.com/dpubnzap3/image/upload/v1738820317/g2nvwg7zrqkevpdarn3r.png" />
       </View>
-      <Text style={styles.headerText}>{isSignUp ? "Sign Up" : "Login"}</Text>
+      <FFText style={styles.headerText}>
+        {isSignUp ? "Sign Up" : "Login"}
+      </FFText>
       <View style={styles.switchAuthContainer}>
-        <Text style={styles.switchAuthText}>
+        <FFText style={styles.switchAuthText}>
           {isSignUp ? "Already have an account?" : "Don't have an account?"}
-        </Text>
+        </FFText>
         <TouchableOpacity
           onPress={() => navigation?.navigate(isSignUp ? "Login" : "Signup")}
         >
@@ -128,13 +132,13 @@ const FFAuthForm = ({
           </Text>
         </LinearGradient>
       </Pressable>
-    </View>
+    </FFView>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: "#fff",
+    // backgroundColor: "#fff",
     padding: spacing.md,
     borderRadius: 16,
     position: "relative",

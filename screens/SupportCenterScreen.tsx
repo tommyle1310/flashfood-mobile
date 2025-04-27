@@ -17,6 +17,8 @@ import FFText from "@/src/components/FFText";
 import axiosInstance from "@/src/utils/axiosConfig";
 import FFSkeleton from "@/src/components/FFSkeleton";
 import { spacing } from "@/src/theme";
+import FFView from "@/src/components/FFView";
+import { useTheme } from "@/src/hooks/useTheme";
 
 type SupportCenterNavigationProp = StackNavigationProp<
   MainStackParamList,
@@ -50,6 +52,7 @@ const SupportCenterScreen = () => {
   const [activeTab, setActiveTab] = useState<"FAQ" | "Contact Us">("FAQ");
   const [faqs, setFaqs] = useState<FAQ[]>([]);
   const [isLoadingFAQ, setIsLoadingFAQ] = useState(false);
+  const { theme } = useTheme();
 
   const fetchFAQs = async () => {
     setIsLoadingFAQ(true);
@@ -109,9 +112,9 @@ const SupportCenterScreen = () => {
       {faqs.map((item, index) => (
         <TouchableOpacity key={index} className="border-b py-4">
           <View className="flex-row justify-between items-center">
-            <Text className="text-base font-medium flex-1">
+            <FFText className="text-base font-medium flex-1">
               {item.question}
-            </Text>
+            </FFText>
             <Ionicons name="chevron-down" size={20} color="black" />
           </View>
           {item.answer[0] &&
@@ -124,7 +127,12 @@ const SupportCenterScreen = () => {
             ) : (
               <>
                 {item.answer[0].type === "text" && (
-                  <Text className="text-gray-600 mt-2">
+                  <FFText
+                    colorLight="#aaa"
+                    colorDark="#ddd"
+                    fontSize="sm"
+                    style={{ marginTop: spacing.sm }}
+                  >
                     {item.answer[0].value.replace(/\[(.*?)\]\((.*?)\)/g, "$1")}
                     {item.answer[0].value.includes("http") && (
                       <Text
@@ -135,33 +143,10 @@ const SupportCenterScreen = () => {
                           if (url) Linking.openURL(url);
                         }}
                       >
-                        {" (Nhấn để xem)"}
+                        {" (View more)"}
                       </Text>
                     )}
-                  </Text>
-                )}
-                {item.answer[0].type === "image" && (
-                  <Image
-                    source={{ uri: item.answer[0].value.url }}
-                    style={{
-                      width: "100%",
-                      height: 200,
-                      marginTop: spacing.sm,
-                    }}
-                    resizeMode="contain"
-                  />
-                )}
-                {item.answer[0].type === "image_row" && (
-                  <View className="flex-row justify-between mt-2">
-                    {item.answer[0].value.map((img, imgIndex) => (
-                      <Image
-                        key={imgIndex}
-                        source={{ uri: img.url }}
-                        style={{ width: "48%", height: 100 }}
-                        resizeMode="contain"
-                      />
-                    ))}
-                  </View>
+                  </FFText>
                 )}
               </>
             ))}
@@ -178,8 +163,15 @@ const SupportCenterScreen = () => {
           onPress={option.onPress}
           className="flex-row items-center py-4 border-b border-gray-200"
         >
-          <Ionicons name={option.icon as any} size={24} color="black" />
-          <Text className="ml-4 text-base">{option.title}</Text>
+          <Ionicons
+            name={option.icon as any}
+            size={24}
+            color="black"
+            style={{ color: theme === "light" ? "#222" : "#ddd" }}
+          />
+          <FFText fontSize="sm" style={{ marginLeft: spacing.sm }}>
+            {option.title}
+          </FFText>
         </TouchableOpacity>
       ))}
     </ScrollView>
@@ -198,13 +190,7 @@ const SupportCenterScreen = () => {
             }`}
             onPress={() => setActiveTab("FAQ")}
           >
-            <Text
-              className={`text-center ${
-                activeTab === "FAQ" ? "font-bold" : ""
-              }`}
-            >
-              FAQ
-            </Text>
+            <FFText style={{ textAlign: "center" }}>FAQ</FFText>
           </TouchableOpacity>
           <TouchableOpacity
             className={`flex-1 py-3 ${
@@ -212,24 +198,22 @@ const SupportCenterScreen = () => {
             }`}
             onPress={() => setActiveTab("Contact Us")}
           >
-            <Text
-              className={`text-center ${
-                activeTab === "Contact Us" ? "font-bold" : ""
-              }`}
-            >
-              Contact Us
-            </Text>
+            <FFText style={{ textAlign: "center" }}>Contact Us</FFText>
           </TouchableOpacity>
         </View>
 
         <View className="flex-[1]">
           {/* Category Pills */}
           {activeTab === "FAQ" && (
-            <ScrollView
-              horizontal
-              showsHorizontalScrollIndicator={false}
+            <View
+              // horizontal
+              // showsHorizontalScrollIndicator={false}
               className="py-3"
-              style={{ height: 0 }}
+              style={{
+                flexDirection: "row",
+                justifyContent: "space-between",
+                padding: spacing.md,
+              }}
             >
               {[
                 { value: FAQType.GENERAL, label: "General" },
@@ -237,20 +221,30 @@ const SupportCenterScreen = () => {
                 { value: FAQType.PAYMENT, label: "Payment" },
                 { value: FAQType.SERVICE, label: "Service" },
               ].map((category, index) => (
-                <TouchableOpacity
+                <FFView
                   onPress={() => handleFilterFAQ(category.value)}
                   key={index}
-                  style={{ elevation: 3 }}
-                  className="px-4 py-1 mx-2 bg-[#ffffff] items-center justify-center rounded-full"
+                  style={{
+                    elevation: 3,
+                    paddingHorizontal: spacing.md,
+                    paddingVertical: spacing.sm,
+                    // margin: spacing.sm,
+                    alignItems: "center",
+                    justifyContent: "center",
+                    // width: '100%',
+                    height: spacing.xl,
+                    borderRadius: 9999,
+                  }}
+                  // className="px-4 py-1 mx-2  items-center justify-center rounded-full"
                 >
                   <FFText fontSize="sm">{category.label}</FFText>
-                </TouchableOpacity>
+                </FFView>
               ))}
-            </ScrollView>
+            </View>
           )}
 
           {/* Content Section */}
-          <View className="flex-[20]">
+          <View className="">
             {activeTab === "FAQ" ? <FAQSection /> : <ContactSection />}
           </View>
         </View>

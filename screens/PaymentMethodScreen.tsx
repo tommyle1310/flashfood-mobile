@@ -26,7 +26,8 @@ import { StackNavigationProp } from "@react-navigation/stack";
 import { MainStackParamList } from "@/src/navigation/AppNavigator";
 import { useNavigation } from "@react-navigation/native";
 import * as IntentLauncher from "expo-intent-launcher";
-import { spacing } from "@/src/theme";
+import theme, { colors, spacing } from "@/src/theme";
+import FFView from "@/src/components/FFView";
 
 type HomeRestaurantSreenNavigationProp = StackNavigationProp<
   MainStackParamList,
@@ -101,7 +102,7 @@ const PaymentMethodScreen = () => {
 
       <ScrollView contentContainerStyle={styles.container}>
         {/* Balance Section */}
-        <View style={styles.balanceContainer}>
+        <FFView style={styles.balanceContainer}>
           <View>
             <FFText fontSize="lg" fontWeight="600" style={styles.balanceText}>
               My Balance
@@ -119,7 +120,7 @@ const PaymentMethodScreen = () => {
             <IconAntDesign name="plus" size={16} color="#fff" />
             <FFText style={{ color: "#fff" }}>Top Up</FFText>
           </FFButton>
-        </View>
+        </FFView>
 
         {/* Payment Methods Section */}
         <View style={styles.section}>
@@ -133,7 +134,7 @@ const PaymentMethodScreen = () => {
             <IconAntDesign name="plus" size={16} color="#4c9f3a" />
           </TouchableOpacity>
         </View>
-        <View style={styles.paymentMethodCard}>
+        <FFView style={styles.paymentMethodCard}>
           <Image
             source={{
               uri: IMAGE_LINKS.DEFAULT_AVATAR_FOOD,
@@ -146,7 +147,7 @@ const PaymentMethodScreen = () => {
           <FFText fontSize="sm" style={styles.cardNumber}>
             {truncateString(fWallet_id || "", 20)}
           </FFText>
-        </View>
+        </FFView>
 
         {/* Transaction History Section */}
         <View style={styles.section}>
@@ -166,7 +167,7 @@ const PaymentMethodScreen = () => {
             },
             index
           ) => (
-            <View key={transaction.id} style={styles.transactionItem}>
+            <FFView key={transaction.id} style={styles.transactionItem}>
               <IconMaterialIcons
                 name={
                   transaction.transaction_type === "PURCHASE"
@@ -215,7 +216,7 @@ const PaymentMethodScreen = () => {
                   {getTransactionTag(transaction)}
                 </FFText>
               </View>
-            </View>
+            </FFView>
           )
         )}
       </ScrollView>
@@ -245,7 +246,7 @@ const styles = StyleSheet.create({
     marginBottom: 24,
     padding: spacing.md,
     borderRadius: 8,
-    backgroundColor: "#f5f5f5",
+    // backgroundColor: "#f5f5f5",
   },
   balanceText: {
     color: "#888",
@@ -262,7 +263,7 @@ const styles = StyleSheet.create({
     marginBottom: spacing.md,
   },
   sectionTitle: {
-    color: "#333",
+    color: colors.white,
   },
   addPaymentButton: {
     padding: spacing.md,
@@ -274,7 +275,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     padding: spacing.md,
     borderRadius: 8,
-    backgroundColor: "#fff",
+    // backgroundColor: "#fff",
     marginBottom: spacing.md,
     elevation: 2,
   },
@@ -292,7 +293,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     padding: spacing.md,
     borderRadius: 8,
-    backgroundColor: "#fff",
+    // backgroundColor: "#fff",
     marginBottom: spacing.sm,
     elevation: 1,
   },

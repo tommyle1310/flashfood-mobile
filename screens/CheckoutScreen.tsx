@@ -53,6 +53,7 @@ const CheckoutScreen = () => {
     useState<string>("");
   const [selectedPromotion, setSelectedPromotion] = useState<string>("");
   const [selectedAddress, setSelectedAddress] = useState<string>("");
+  const [customerNote, setCustomerNote] = useState<string>("");
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [promotionList, setPromotionList] = useState<Promotion[]>();
   const [financeRules, setFinanceRules] = useState<FinanceRules | null>(null);
@@ -136,6 +137,7 @@ const CheckoutScreen = () => {
       restaurant_location:
         orderItem.order_items?.[0]?.item?.restaurantDetails?.address_id,
       payment_method: selectedPaymentMethod,
+      customer_note: customerNote,
       customer_location: globalState?.address?.find(
         (item) => item.title === selectedAddress
       )?.id,
@@ -193,6 +195,8 @@ const CheckoutScreen = () => {
     <OrderConfirmation
       handlePlaceOrder={handlePlaceOrder}
       handleSelect={handleSelectAddress}
+      customerNote={customerNote}
+      setCustomerNote={setCustomerNote}
       selected={selectedAddress}
     />,
   ];

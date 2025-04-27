@@ -53,6 +53,9 @@ const RestaurantDetail = () => {
     >();
 
   const { user_id, id } = useSelector((state: RootState) => state.auth);
+  const { orders } = useSelector(
+    (state: RootState) => state.orderTrackingRealtime
+  );
   const [err, setErr] = useState<string>("");
 
   const route = useRoute<RestaurantDetailRouteProp>();
@@ -62,7 +65,11 @@ const RestaurantDetail = () => {
   const [restaurantMenuItem, setRestaurantMenuItem] =
     useState<Props_MenuItem[]>();
   const [isShowSlideUpModal, setIsShowSlideUpModal] = useState<boolean>(false);
-  const [isShowStatusModal, setIsShowStatusModal] = useState<boolean>(false);
+  const [modalDetails, setModalDetails] = useState<{
+    status: "SUCCESS" | "ERROR" | "HIDDEN" | "INFO" | "YESNO";
+    title: string;
+    desc: string;
+  }>({ status: "HIDDEN", title: "", desc: "" });
   const [selectedMenuItem, setSelectedMenuItem] = useState<string | null>(null);
   const [modalData, setModalData] = useState<MenuItemProps>();
   const [selectedVariant, setSelectedVariant] = useState<any>(null);
@@ -140,6 +147,14 @@ const RestaurantDetail = () => {
   );
 
   const handleAddToCart = async () => {
+    if (orders.length > 0) {
+      setModalDetails({
+        title: "Cannot do this action",
+        desc: "You are currently have 1 active order, please try again when that order is completed!",
+        status: "ERROR",
+      });
+      return;
+    }
     if (!selectedVariant || !selectedMenuItem) {
       setErr("Please select a variant and menu item");
       setIsLoading(false);
@@ -213,7 +228,11 @@ const RestaurantDetail = () => {
           })
         );
         console.log("cehck address finally here", modalData.variants);
-        setIsShowStatusModal(true);
+        setModalDetails({
+          status: "ERROR",
+          desc: "Your order has been added to your cart 👌",
+          title: "Success",
+        });
         console.log("Cart item added:", data);
       } else {
         setErr(EM || "Failed to add item to cart");
@@ -469,10 +488,15 @@ const RestaurantDetail = () => {
           </FFView>
         </ScrollView>
         <FFModal
-          visible={isShowStatusModal}
-          onClose={() => setIsShowStatusModal(false)}
+          visible={modalDetails.status !== "HIDDEN"}
+          onClose={() =>
+            setModalDetails({ status: "HIDDEN", desc: "", title: "" })
+          }
         >
-          <FFText>Your order has been added to your cart🤑.</FFText>
+          <FFText style={{ textAlign: "center" }}>{modalDetails.title}</FFText>
+          <FFText fontSize="sm" style={{ color: "#aaa", textAlign: "center" }}>
+            {modalDetails.desc}
+          </FFText>
         </FFModal>
       </FFView>
 

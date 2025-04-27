@@ -195,12 +195,17 @@ const ProfileScreen = () => {
     >
       <FFAvatar rounded="sm" avatar={item?.avatar?.url} />
       <View>
-        <Text className="text-lg font-semibold">{item.restaurant_name}</Text>
-        <Text>{`${item.address.street}, ${item.address.city}`}</Text>
-        <Text>
+        <FFText className="text-lg font-semibold">
+          {item.restaurant_name}
+        </FFText>
+        <FFText
+          fontSize="sm"
+          style={{ color: colors.grey }}
+        >{`${item.address.street}, ${item.address.city}`}</FFText>
+        <FFText fontSize="sm" style={{ color: colors.grey }}>
           Specialties:{" "}
           {item.specialize_in.map((cat) => cat.name).join(", ") || "N/A"}
-        </Text>
+        </FFText>
       </View>
     </FFView>
   );

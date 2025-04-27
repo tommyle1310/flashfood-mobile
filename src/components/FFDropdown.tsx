@@ -97,7 +97,8 @@ const FFDropdown: React.FC<FFDropdownProps> = ({
             ...styles.selectedText,
             ...textStyle,
             ...(options.length === 0 && styles.disabledText),
-            color: theme === "light" ? "#000" : "#fff",
+            color:
+              theme === "light" ? "#000" : options.length > 0 ? "#eee" : "#888",
           }}
         >
           {getSelectedLabel()}
@@ -218,9 +219,9 @@ const styles = StyleSheet.create({
     backgroundColor: "rgba(0, 0, 0, 0.5)",
   },
   dropdown: {
-    width: "80%",
+    width: "90%",
     borderRadius: 8,
-    padding: spacing.md,
+    padding: spacing.sm,
     maxHeight: 300,
   },
   option: {

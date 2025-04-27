@@ -41,7 +41,7 @@ const OrderSummary = ({
     setSubTotal(calculatedSubTotal);
     setTotalAmountParent(calculatedSubTotal); // Chỉ set subTotal
   }, [orderItem, setTotalAmountParent]);
-
+  console.log("cehck item full", orderItem?.order_items?.[0]);
   return (
     <View className="flex-1">
       <View
@@ -89,10 +89,10 @@ const OrderSummary = ({
                   <View className="flex-row items-center justify-between">
                     <View className="flex-row items-center gap-1">
                       <FFText fontWeight="400" fontSize="sm">
-                        {item.name}
+                        {item.variant_name}
                       </FFText>
                     </View>
-                    <FFText style={{ color: "#111", marginTop: 1 }}>
+                    <FFText colorLight="#111" style={{ marginTop: 1 }}>
                       ${item.price_at_time_of_order}
                     </FFText>
                   </View>

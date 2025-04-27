@@ -15,6 +15,7 @@ import IconIonicon from "react-native-vector-icons/Ionicons";
 
 import FFButton from "@/src/components/FFButton";
 import Spinner from "@/src/components/FFSpinner";
+import { useTheme } from "@/src/hooks/useTheme";
 
 type SignupScreenNavigationProp = StackNavigationProp<
   RootStackParamList,
@@ -33,6 +34,7 @@ const Signup = () => {
   >("ENTER_CODE");
   const [isOpenVerificationModal, setIsOpenVerificationModal] =
     useState<boolean>(false);
+  const { theme } = useTheme();
 
   const handleSignupSubmit = (
     email: string,
@@ -122,7 +124,11 @@ const Signup = () => {
   return (
     <FFSafeAreaView>
       <LinearGradient
-        colors={["#8fa3d9", "#b5b3a1", "#b5e1a1"]}
+        colors={
+          theme === "light"
+            ? ["#8fa3d9", "#b5b3a1", "#b5e1a1"]
+            : ["#51d522", "#144a06", "#5c5d85"]
+        }
         start={[1, 0]}
         end={[0, 1]}
         className="flex-1 items-center justify-center"

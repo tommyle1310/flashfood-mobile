@@ -22,6 +22,7 @@ import FFButton from "@/src/components/FFButton";
 import FFView from "@/src/components/FFView";
 import { spacing } from "@/src/theme";
 import Spinner from "@/src/components/FFSpinner";
+import { useTheme } from "@/src/hooks/useTheme";
 
 type AddressListSreenNavigationProp = StackNavigationProp<
   MainStackParamList,
@@ -49,6 +50,7 @@ const AddressListScreen = () => {
   const { address, id } = useSelector((state: RootState) => state.auth);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const dispatch = useDispatch();
+  const { theme } = useTheme();
 
   const handleSelectAddress = async (item: Props_Address) => {
     setIsLoading(true);
@@ -132,7 +134,13 @@ const AddressListScreen = () => {
                       item.is_default ? "radio-btn-active" : "radio-btn-passive"
                     }
                     size={18}
-                    color={item.is_default ? "#63c550" : "#222"}
+                    color={
+                      item.is_default
+                        ? "#63c550"
+                        : theme === "light"
+                        ? "#222"
+                        : "#ddd"
+                    }
                     className="self-end mr-1"
                   />
                   <View className="gap-2 flex-row items-center justify-center">
@@ -143,9 +151,20 @@ const AddressListScreen = () => {
                         })
                       }
                     >
-                      <IconFeather name="edit" size={18} className="" />
+                      <IconFeather
+                        style={{
+                          color: theme === "light" ? undefined : "#ddd",
+                        }}
+                        name="edit"
+                        size={18}
+                        className=""
+                      />
                     </TouchableOpacity>
-                    <IconMaterialIcons name="delete-outline" size={26} />
+                    <IconMaterialIcons
+                      style={{ color: theme === "light" ? undefined : "#ddd" }}
+                      name="delete-outline"
+                      size={26}
+                    />
                   </View>
                 </View>
               </FFView>

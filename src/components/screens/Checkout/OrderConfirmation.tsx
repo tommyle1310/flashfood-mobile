@@ -6,29 +6,45 @@ import { Order } from "@/src/types/Orders";
 import { useSelector } from "@/src/store/types";
 import { RootState } from "@/src/store/store";
 import FFDropdown from "../../FFDropdown";
+import { spacing } from "@/src/theme";
+import FFInputControl from "../../FFInputControl";
 
 const OrderConfirmation = ({
   handlePlaceOrder,
   selected,
   handleSelect,
+  customerNote,
+  setCustomerNote,
 }: {
   handlePlaceOrder: () => void;
   selected: string;
   handleSelect: (option: string) => void;
+  customerNote: string;
+  setCustomerNote: React.Dispatch<React.SetStateAction<string>>;
 }) => {
   const globalState = useSelector((state: RootState) => state.auth);
   console.log("cehck addres", globalState.address);
 
   return (
     <View className="flex-1 gap-4">
-      <View className="flex-1 gap-1">
-        <FFText fontWeight="500">Deliver to</FFText>
-        <FFDropdown
-          onSelect={handleSelect}
-          options={globalState.address?.map((item) => item.title) || []}
-          placeholder="Select delivery destination"
-          selectedOption={selected}
-        />
+      <View className="flex-1" style={{ gap: spacing.md }}>
+        <View style={{ gap: spacing.sm }}>
+          <FFText fontWeight="500">Deliver to</FFText>
+          <FFDropdown
+            onSelect={handleSelect}
+            options={globalState.address?.map((item) => item.title) || []}
+            placeholder="Select delivery destination"
+            selectedOption={selected}
+          />
+        </View>
+        <View style={{ gap: spacing.sm }}>
+          <FFInputControl
+            label="Note to restaurant"
+            value={customerNote}
+            setValue={setCustomerNote}
+            placeholder="No Cheese please"
+          />
+        </View>
       </View>
       <FFButton onPress={handlePlaceOrder} className="w-full">
         Place Order
