@@ -36,37 +36,48 @@ export const CategoriesSection = ({
           </FFText>
         </TouchableOpacity>
       </View>
-      <ScrollView horizontal className="mt-2">
-        {listFoodCategories?.map((item) => (
-          <TouchableOpacity
-            style={{ marginRight: spacing.sm, paddingHorizontal: 4 }}
-            key={item.id}
-            onPress={() => handleCategoryPress(item.id)}
-            className={`px-2 py-1 mr-2 rounded-md ${
-              selectedFoodCategories?.includes(item.id)
-                ? "bg-[#59bf47]"
-                : "bg-white"
-            }`}
-          >
-            <FFText
-              style={{
-                fontSize: 14,
-                fontWeight: "500",
-                color: selectedFoodCategories?.includes(item.id)
-                  ? "#fff"
-                  : "#111",
-              }}
-            >
-              {item.name}
-            </FFText>
-          </TouchableOpacity>
-        ))}
-      </ScrollView>
-      {isLoading && (
-        <View style={{ width: "100%", gap: 12, flexDirection: "row" }}>
+      {isLoading ? (
+        <View
+          style={{
+            flexDirection: "row",
+            gap: spacing.md,
+            paddingVertical: spacing.sm,
+          }}
+        >
+          <FFSkeleton width={100} height={30} />
           <FFSkeleton width={100} height={30} />
           <FFSkeleton width={100} height={30} />
         </View>
+      ) : (
+        <ScrollView horizontal className="mt-2">
+          {listFoodCategories?.map((item) => (
+            <TouchableOpacity
+              style={{ marginRight: spacing.sm, paddingHorizontal: 4 }}
+              key={item.id}
+              onPress={() => handleCategoryPress(item.id)}
+              className={`px-2 py-1 mr-2 rounded-md ${
+                selectedFoodCategories?.includes(item.id)
+                  ? "bg-[#59bf47]"
+                  : "bg-white"
+              }`}
+            >
+              <FFText
+                style={{
+                  fontSize: 14,
+                  fontWeight: "500",
+                  color: selectedFoodCategories?.includes(item.id)
+                    ? "#fff"
+                    : "#111",
+                }}
+              >
+                {item.name}
+              </FFText>
+            </TouchableOpacity>
+          ))}
+          {listFoodCategories?.length === 0 && (
+            <FFText>No categories found</FFText>
+          )}
+        </ScrollView>
       )}
     </View>
   );

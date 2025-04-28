@@ -32,7 +32,12 @@ export const useHomeScreen = () => {
   const [favoriteRestaurants, setFavoriteRestaurants] = useState<
     FavoriteRestaurant[]
   >([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const [loading, setLoading] = useState({
+    foodCategories: true,
+    restaurants: true,
+    promotions: true,
+    favoriteRestaurants: true,
+  });
 
   useEffect(() => {
     const fetchData = async () => {
@@ -42,14 +47,26 @@ export const useHomeScreen = () => {
           restaurantsResponse,
           promotionsWithRestaurantsResponse,
         ] = await Promise.all([
-          axiosInstance.get("/food-categories"),
-          axiosInstance.get(`/customers/restaurants/${globalState.id}`),
-          axiosInstance.get(`/promotions/valid`),
+          axiosInstance.get("/food-categories").catch((err) => {
+            console.error("Error fetching food categories:", err);
+            return { data: { EC: -1 } };
+          }),
+          axiosInstance
+            .get(`/customers/restaurants/${globalState.id}`)
+            .catch((err) => {
+              console.error("Error fetching restaurants:", err);
+              return { data: { EC: -1 } };
+            }),
+          axiosInstance.get(`/promotions/valid`).catch((err) => {
+            console.error("Error fetching promotions:", err);
+            return { data: { EC: -1 } };
+          }),
         ]);
 
         if (foodCategoriesResponse.data.EC === 0) {
           setListFoodCategories(foodCategoriesResponse.data.data);
         }
+        setLoading((prev) => ({ ...prev, foodCategories: false }));
 
         if (restaurantsResponse.data.EC === 0) {
           const mappedRestaurants = restaurantsResponse.data.data.map(
@@ -66,14 +83,26 @@ export const useHomeScreen = () => {
           );
           setListRestaurants(mappedRestaurants);
         }
+        setLoading((prev) => ({ ...prev, restaurants: false }));
 
         if (promotionsWithRestaurantsResponse.data.EC === 0) {
+          console.log(
+            "check what here",
+            promotionsWithRestaurantsResponse.data.data
+          );
           setAvailablePromotionWithRestaurants(
             promotionsWithRestaurantsResponse.data.data
           );
         }
+        setLoading((prev) => ({ ...prev, promotions: false }));
       } catch (error) {
         console.error("Error fetching data:", error);
+        setLoading((prev) => ({
+          ...prev,
+          foodCategories: false,
+          restaurants: false,
+          promotions: false,
+        }));
       }
     };
 
@@ -88,15 +117,16 @@ export const useHomeScreen = () => {
         }
       } catch (error) {
         console.error("Error fetching favorite restaurants:", error);
+      } finally {
+        setLoading((prev) => ({ ...prev, favoriteRestaurants: false }));
       }
     };
 
-    if (globalState.user_id && isLoading) {
+    if (globalState.user_id) {
       fetchData();
       fetchFavoriteRestaurantData();
-      setIsLoading(false);
     }
-  }, [globalState.user_id, isLoading]);
+  }, [globalState.user_id]);
 
   useEffect(() => {
     if (
@@ -137,12 +167,15 @@ export const useHomeScreen = () => {
       setFilteredRestaurants([]);
       const fetchPromotions = async () => {
         try {
+          setLoading((prev) => ({ ...prev, promotions: true }));
           const response = await axiosInstance.get(`/promotions/valid`);
           if (response.data.EC === 0) {
             setAvailablePromotionWithRestaurants(response.data.data);
           }
         } catch (error) {
           console.error("Error fetching promotions:", error);
+        } finally {
+          setLoading((prev) => ({ ...prev, promotions: false }));
         }
       };
       fetchPromotions();
@@ -179,7 +212,7 @@ export const useHomeScreen = () => {
     listRestaurants,
     availablePromotionWithRestaurants,
     favoriteRestaurants,
-    isLoading,
+    loading, // Trả về object loading thay vì isLoading
     handleToggleFavorite,
   };
 };

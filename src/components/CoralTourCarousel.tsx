@@ -37,14 +37,14 @@ const themes = {
 
 interface CoralTourCarouselProps {
   imageUrls?: string[];
+  onTap?: (id: string) => void;
+  itemIds?: string[];
 }
 
 const CoralTourCarousel: React.FC<CoralTourCarouselProps> = ({
-  imageUrls = [
-    "https://via.placeholder.com/300x200", // Sử dụng placeholder hợp lệ để test
-    "https://via.placeholder.com/300x200",
-    "https://via.placeholder.com/300x200",
-  ],
+  imageUrls,
+  onTap,
+  itemIds = [],
 }) => {
   const { theme } = useTheme();
   const scrollX = useRef(new Animated.Value(0)).current;
@@ -52,7 +52,10 @@ const CoralTourCarousel: React.FC<CoralTourCarouselProps> = ({
   const scrollXValue = useRef(0);
 
   const currentTheme = themes[theme as keyof typeof themes];
-  const data = imageUrls.map((url, index) => ({ id: index.toString(), url }));
+  const data = imageUrls?.map((url, index) => ({
+    id: itemIds[index] || index.toString(),
+    url,
+  }));
 
   useEffect(() => {
     const listenerId = scrollX.addListener(({ value }) => {
@@ -88,25 +91,31 @@ const CoralTourCarousel: React.FC<CoralTourCarouselProps> = ({
     });
 
     return (
-      <Animated.View
-        style={[
-          styles.card,
-          {
-            transform: [{ scale }],
-            opacity,
-            backgroundColor: currentTheme.cardBackground,
-          },
-        ]}
+      <TouchableOpacity
+        activeOpacity={0.9}
+        onPress={() => onTap && onTap(item.id)}
+        style={{ width: CARD_WIDTH + SPACING }}
       >
-        <Image
-          source={{ uri: item.url }}
-          style={styles.image}
-          resizeMode="cover"
-          onError={(e) =>
-            console.log("Image load error:", item.url, e.nativeEvent.error)
-          }
-        />
-      </Animated.View>
+        <Animated.View
+          style={[
+            styles.card,
+            {
+              transform: [{ scale }],
+              opacity,
+              backgroundColor: currentTheme.cardBackground,
+            },
+          ]}
+        >
+          <Image
+            source={{ uri: item.url }}
+            style={styles.image}
+            resizeMode="cover"
+            onError={(e) =>
+              console.log("Image load error:", item.url, e.nativeEvent.error)
+            }
+          />
+        </Animated.View>
+      </TouchableOpacity>
     );
   };
 
@@ -147,8 +156,7 @@ const styles = StyleSheet.create({
   } as ViewStyle,
   card: {
     width: CARD_WIDTH,
-    marginVertical: spacing.md,
-    marginRight: spacing.md,
+    marginRight: spacing.sm,
     height: CARD_HEIGHT,
     borderRadius: 10,
     overflow: "hidden",

@@ -31,10 +31,12 @@ interface PromotionsSectionProps {
   favoriteRestaurants: FavoriteRestaurant[];
   handleToggleFavorite: (restaurantId: string) => void;
   isLoading: boolean;
+  onTap?: (id: string) => void;
 }
 
 export const PromotionsSection = ({
   promotions,
+  onTap,
   favoriteRestaurants,
   handleToggleFavorite,
   isLoading,
@@ -58,6 +60,7 @@ export const PromotionsSection = ({
               </FFText>
               {promotion.restaurants.length === 0 || (
                 <TouchableOpacity
+                  onPress={() => onTap && onTap(promotion.id)}
                   style={{
                     paddingHorizontal: 12,
                     paddingVertical: 4,
@@ -217,12 +220,12 @@ export const PromotionsSection = ({
               ))}
               {promotion.restaurants.length === 0 && null}
             </ScrollView>
-            {isLoading && (
+            {/* {isLoading && (
               <View style={{ width: "100%", gap: 12, flexDirection: "row" }}>
                 <FFSkeleton width={100} height={30} />
                 <FFSkeleton width={100} height={30} />
               </View>
-            )}
+            )} */}
           </View>
         ))}
       </ScrollView>

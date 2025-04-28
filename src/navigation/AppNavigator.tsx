@@ -23,7 +23,10 @@ import { Type_Address } from "../types/Address";
 import SupportCenterScreen from "@/screens/SupportCenterScreen";
 import FChatScreen from "@/screens/FChatScreen";
 import NearYouScreen from "@/screens/NearYouScreen";
-import { Restaurant } from "../types/screens/Home";
+import {
+  AvailablePromotionWithRestaurants,
+  Restaurant,
+} from "../types/screens/Home";
 import RouteToRestaurantScreen from "@/screens/RouteToRestaurantScreen";
 import RatingScreen from "@/screens/RatingScreen";
 import { Avatar } from "../types/common";
@@ -32,6 +35,7 @@ import ChangePasswordScreen from "@/screens/ChangePasswordScreen";
 import SearchScreen from "@/screens/SearchScreen";
 import NotificationScreen from "@/screens/NotificationScreen";
 import HomeScreen from "../screens/HomeScreen";
+import PromotionWithRestaurantsScreen from "@/screens/PromotionWithRestaurantsScreen";
 
 export type RootStackParamList = {
   Login: undefined;
@@ -62,6 +66,10 @@ export type MainStackParamList = {
   Search: undefined;
   Notifications: undefined;
   NearYou: Restaurant[];
+  PromotionsWithRestaurant: {
+    promotionTitle?: string;
+    restaurants: Restaurant[];
+  };
   RouteToRestaurant: { lng: number; lat: number };
   AddressList: undefined;
   AddressDetails?: { addressDetail?: Type_Address; is_create_type?: boolean };
@@ -118,6 +126,11 @@ const MainStackScreen = () => {
         options={{ headerShown: false }}
         name="NearYou"
         component={NearYouScreen}
+      />
+      <MainStack.Screen
+        options={{ headerShown: false }}
+        name="PromotionsWithRestaurant"
+        component={PromotionWithRestaurantsScreen}
       />
       <MainStack.Screen
         options={{ headerShown: false }}

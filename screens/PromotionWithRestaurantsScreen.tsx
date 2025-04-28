@@ -17,17 +17,21 @@ import { RouteProp, useNavigation, useRoute } from "@react-navigation/native";
 import { IMAGE_LINKS } from "@/src/assets/imageLinks";
 import { colors, spacing } from "@/src/theme";
 
-type NearYouSreenNavigationProp = StackNavigationProp<
+type PromotionWithRestaurantsSreenNavigationProp = StackNavigationProp<
   MainStackParamList,
-  "NearYou"
+  "PromotionsWithRestaurant"
 >;
 
-type RestaurantDetailRouteProp = RouteProp<MainStackParamList, "NearYou">;
+type RestaurantDetailRouteProp = RouteProp<
+  MainStackParamList,
+  "PromotionsWithRestaurant"
+>;
 
-const NearYouScreen = () => {
-  const navigation = useNavigation<NearYouSreenNavigationProp>();
+const PromotionWithRestaurantsScreen = () => {
+  const navigation =
+    useNavigation<PromotionWithRestaurantsSreenNavigationProp>();
   const route = useRoute<RestaurantDetailRouteProp>();
-  const restaurantList = route.params;
+  const { restaurants: restaurantList, promotionTitle } = route.params;
   console.log("chec k res list", restaurantList);
 
   const renderRestaurantItem = ({
@@ -90,7 +94,10 @@ const NearYouScreen = () => {
 
   return (
     <FFSafeAreaView>
-      <FFScreenTopSection navigation={navigation} title="Popular Near You" />
+      <FFScreenTopSection
+        navigation={navigation}
+        title={promotionTitle ?? ""}
+      />
       <FlatList
         data={restaurantList}
         keyExtractor={(item) => item.id.toString()}
@@ -102,4 +109,4 @@ const NearYouScreen = () => {
   );
 };
 
-export default NearYouScreen;
+export default PromotionWithRestaurantsScreen;
