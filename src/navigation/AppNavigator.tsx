@@ -36,6 +36,7 @@ import SearchScreen from "@/screens/SearchScreen";
 import NotificationScreen from "@/screens/NotificationScreen";
 import HomeScreen from "../screens/HomeScreen";
 import PromotionWithRestaurantsScreen from "@/screens/PromotionWithRestaurantsScreen";
+import CreateInquiryScreen from "../screens/CreateInquiryScreen";
 
 export type RootStackParamList = {
   Login: undefined;
@@ -59,6 +60,7 @@ export type MainStackParamList = {
   };
   BottomTabs: { screenIndex?: number }; // Thêm tham số screenIndex
   SupportCenter: undefined;
+  CreateInquiry: undefined;
   Checkout: { orderItem: Order };
   Profile: undefined;
   PaymentMethod: undefined;
@@ -156,6 +158,11 @@ const MainStackScreen = () => {
         options={{ headerShown: false }}
         name="SupportCenter"
         component={SupportCenterScreen}
+      />
+      <MainStack.Screen
+        options={{ headerShown: false }}
+        name="CreateInquiry"
+        component={CreateInquiryScreen}
       />
       <MainStack.Screen
         options={{ headerShown: false }}

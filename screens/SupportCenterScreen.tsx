@@ -19,6 +19,9 @@ import FFSkeleton from "@/src/components/FFSkeleton";
 import { spacing } from "@/src/theme";
 import FFView from "@/src/components/FFView";
 import { useTheme } from "@/src/hooks/useTheme";
+import { OrderTracking } from "@/src/types/screens/Order";
+import { useSelector } from "@/src/store/types";
+import { RootState } from "@/src/store/store";
 
 type SupportCenterNavigationProp = StackNavigationProp<
   MainStackParamList,
@@ -53,6 +56,9 @@ const SupportCenterScreen = () => {
   const [faqs, setFaqs] = useState<FAQ[]>([]);
   const [isLoadingFAQ, setIsLoadingFAQ] = useState(false);
   const { theme } = useTheme();
+  const [orders, setOrders] = useState<OrderTracking[]>([]);
+  const [loading, setLoading] = useState(true);
+  const { id } = useSelector((state: RootState) => state.auth);
 
   const fetchFAQs = async () => {
     setIsLoadingFAQ(true);
@@ -94,11 +100,35 @@ const SupportCenterScreen = () => {
     fetchFAQs();
   }, []);
 
+  useEffect(() => {
+    fetchOrders();
+  }, [id]);
+
+  const fetchOrders = async () => {
+    try {
+      setLoading(true);
+      const res = await axiosInstance.get(`/customers/orders/${id}`);
+      const allOrders = res.data.data;
+      const lastThreeOrders = allOrders.slice(-Math.max(3, allOrders.length));
+      setOrders(lastThreeOrders);
+    } catch (error) {
+      console.error("Error fetching orders:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+  console.log("check orders", orders[0]?.order_items?.[0]?.menu_item?.avatar);
+
   const contactOptions = [
     {
       title: "Customer Services",
       icon: "headset",
       onPress: () => navigation.navigate("FChat", { type: "SUPPORT" }),
+    },
+    {
+      title: "Submit a Request",
+      icon: "document-text-outline",
+      onPress: () => navigation.navigate("CreateInquiry"),
     },
     { title: "WhatsApp", icon: "logo-whatsapp" },
     { title: "Website", icon: "globe" },
