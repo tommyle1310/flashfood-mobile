@@ -1,7 +1,12 @@
 import { Avatar } from "../common";
-import { Enum_OrderStatus, Enum_OrderTrackingInfo, OrderItem } from "../Orders";
+import {
+  Enum_OrderStatus,
+  Enum_OrderTrackingInfo,
+  OrderItem,
+  OrderTrackingBase,
+} from "../Orders";
 
-export interface OrderTracking {
+export interface OrderTracking extends OrderTrackingBase {
   customer: {
     avatar: Avatar | null;
     favorite_items: any | null; // you can adjust the type based on the structure of favorite_items
@@ -46,7 +51,10 @@ export interface OrderTracking {
   customer_note: string;
   distance: string;
   delivery_time: string; // You may want to convert this to Date in your application if necessary
-  driver: Driver | null;
+  driver: {
+    id: string;
+    avatar: Avatar | null;
+  } | null;
   driver_id: string | null;
   id: string;
   orderId?: string;
@@ -54,7 +62,10 @@ export interface OrderTracking {
   order_time: string; // You may want to convert this to Date in your application if necessary
   payment_method: string;
   payment_status: "PENDING" | "COMPLETED" | "FAILED"; // Adjust if there are more statuses
-  restaurant: Restaurant;
+  restaurant: {
+    id: string;
+    avatar: Avatar | null;
+  };
   restaurant_id: string;
   restaurant_location: string;
   restaurant_note: string;

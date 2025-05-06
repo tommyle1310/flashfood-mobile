@@ -73,3 +73,55 @@ export type Order = {
   restaurant_note: string;
   order_time: number; // Unix timestamp
 };
+
+export interface OrderTrackingBase {
+  id: string;
+  orderId?: string;
+  status: Enum_OrderStatus;
+  tracking_info: Enum_OrderTrackingInfo;
+  updated_at: number;
+  customer_id: string;
+  driver_id: string;
+  restaurant_id: string;
+  restaurant_avatar: { key: string; url: string } | null;
+  driver_avatar: { key: string; url: string } | null;
+  restaurantAddress: {
+    id: string;
+    street: string;
+    city: string;
+    nationality: string;
+    is_default: boolean;
+    created_at: number;
+    updated_at: number;
+    postal_code: number;
+    location: { lat: number; lon: number };
+    title: string;
+  } | null;
+  customerAddress: {
+    id: string;
+    street: string;
+    city: string;
+    nationality: string;
+    is_default: boolean;
+    created_at: number;
+    updated_at: number;
+    postal_code: number;
+    location: { lat: number; lon: number };
+    title: string;
+  } | null;
+  driverDetails: {
+    id: string;
+    first_name: string;
+    last_name: string;
+    avatar: { key: string; url: string } | null;
+    rating: { average_rating: string };
+    vehicle: {
+      color: string;
+      model: string;
+      license_plate: string;
+    };
+  } | null;
+  restaurantFullAddress: string;
+  customerFullAddress: string;
+  distance?: string;
+}

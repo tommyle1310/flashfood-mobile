@@ -121,7 +121,7 @@ const SupportCenterScreen = () => {
 
   const contactOptions = [
     {
-      title: "Customer Services",
+      title: "Chat with customer care representative",
       icon: "headset",
       onPress: () => navigation.navigate("FChat", { type: "SUPPORT" }),
     },

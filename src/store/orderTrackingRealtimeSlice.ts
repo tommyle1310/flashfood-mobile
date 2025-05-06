@@ -1,152 +1,130 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { OrderTracking as OrderTrackingScreen } from "@/src/types/screens/Order";
+import { OrderTrackingBase } from "@/src/types/Orders";
 import { Enum_OrderStatus, Enum_OrderTrackingInfo } from "@/src/types/Orders";
+import { debounce } from "lodash";
+import { OrderTracking as OrderTrackingType } from "@/src/types/screens/Order";
 
 // src/store/orderTrackingRealtimeSlice.ts
-export interface OrderTracking {
-  orderId: string;
-  status: Enum_OrderStatus;
-  tracking_info: Enum_OrderTrackingInfo;
-  updated_at: number;
-  customer_id: string;
-  driver_id: string;
-  restaurant_id: string;
-  restaurant_avatar: { key: string; url: string } | null;
-  driver_avatar: { key: string; url: string } | null;
-  restaurantAddress: {
-    id: string;
-    street: string;
-    city: string;
-    nationality: string;
-    is_default: boolean;
-    created_at: number;
-    updated_at: number;
-    postal_code: number;
-    location: { lat: number; lon: number };
-    title: string;
-  } | null;
-  customerAddress: {
-    id: string;
-    street: string;
-    city: string;
-    nationality: string;
-    is_default: boolean;
-    created_at: number;
-    updated_at: number;
-    postal_code: number;
-    location: { lat: number; lon: number };
-    title: string;
-  } | null;
-  driverDetails: {
-    id: string;
-    first_name: string;
-    last_name: string;
-    avatar: { key: string; url: string } | null;
-    rating: { average_rating: string };
-    vehicle: {
-      color: string;
-      model: string;
-      license_plate: string;
-    };
-  } | null;
-  customerFullAddress: string;
-  restaurantFullAddress: string;
-  distance?: string; // Optional, as it’s not always present in WebSocket payload
-}
+export type OrderTracking = OrderTrackingType;
 
-interface OrderTrackingRealtimeState {
+export interface OrderTrackingRealtimeState {
   orders: OrderTracking[];
 }
+
+const STORAGE_KEY = "@order_tracking_v1";
 
 const initialState: OrderTrackingRealtimeState = {
   orders: [],
 };
 
-// Thunk để cập nhật và lưu orders cùng lúc
+// Helper function to map order to log format
+const mapOrderToLog = (order: OrderTracking) => ({
+  id: order.orderId,
+  status: order.status,
+  tracking: order.tracking_info,
+});
+
+// Debounced function to save to AsyncStorage
+const debouncedSaveToStorage = debounce(async (orders: OrderTracking[]) => {
+  try {
+    await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(orders));
+    console.log("Successfully saved orders to AsyncStorage:", orders.length);
+  } catch (error) {
+    console.error("Error saving to AsyncStorage:", error);
+  }
+}, 1000);
+
 export const updateAndSaveOrderTracking = createAsyncThunk(
   "orderTrackingRealtime/updateAndSaveOrderTracking",
-  async (newOrder: OrderTracking, { dispatch, getState }) => {
+  async (order: OrderTracking, { getState }) => {
     const state = getState() as {
       orderTrackingRealtime: OrderTrackingRealtimeState;
     };
-    const existingOrderIndex = state.orderTrackingRealtime.orders.findIndex(
-      (order) => order.orderId === newOrder.orderId
+    const currentOrders = state.orderTrackingRealtime.orders;
+
+    // Log current state
+    console.log("Current orders before update:", {
+      count: currentOrders.length,
+      orders: currentOrders.map(mapOrderToLog),
+    });
+
+    // Keep all orders, including completed and cancelled
+    const existingIndex = currentOrders.findIndex(
+      (o) => o.orderId === order.orderId
     );
 
     let updatedOrders: OrderTracking[];
-    if (existingOrderIndex !== -1) {
-      const existingOrder =
-        state.orderTrackingRealtime.orders[existingOrderIndex];
-      if (newOrder.updated_at > existingOrder.updated_at) {
-        updatedOrders = [...state.orderTrackingRealtime.orders];
-        updatedOrders[existingOrderIndex] = newOrder;
-        console.log(`Updated order ${newOrder.orderId} with new tracking info`);
-      } else {
-        console.log(
-          `Skipped updating order ${newOrder.orderId} as the update is older`
-        );
-        return state.orderTrackingRealtime.orders; // Không thay đổi
-      }
+    if (existingIndex !== -1) {
+      // Update existing order
+      updatedOrders = [...currentOrders];
+      updatedOrders[existingIndex] = order;
+      console.log("Updated existing order:", {
+        orderId: order.orderId,
+        oldStatus: currentOrders[existingIndex].status,
+        newStatus: order.status,
+      });
     } else {
-      updatedOrders = [...state.orderTrackingRealtime.orders, newOrder];
-      console.log(`Added new order ${newOrder.orderId} to tracking`);
+      // Add new order
+      updatedOrders = [...currentOrders, order];
+      console.log("Added new order:", {
+        orderId: order.orderId,
+        status: order.status,
+      });
     }
 
-    // Lưu vào AsyncStorage
-    await dispatch(saveOrderTrackingToAsyncStorage(updatedOrders)).unwrap();
+    // Sort orders by updated_at timestamp (most recent first)
+    updatedOrders.sort((a, b) => b.updated_at - a.updated_at);
+
+    // Log final state
+    console.log("Updated orders:", {
+      count: updatedOrders.length,
+      orders: updatedOrders.map(mapOrderToLog),
+    });
+
+    // Save to AsyncStorage
+    await debouncedSaveToStorage(updatedOrders);
+
     return updatedOrders;
   }
 );
 
-// Thunk để lưu orders vào AsyncStorage
-export const saveOrderTrackingToAsyncStorage = createAsyncThunk(
-  "orderTrackingRealtime/saveOrderTracking",
-  async (orders: OrderTracking[], { rejectWithValue }) => {
-    try {
-      const serializedOrders = JSON.stringify(orders);
-      await AsyncStorage.setItem("orderTracking", serializedOrders);
-      console.log("Saved order tracking to AsyncStorage:", orders);
-      const savedData = await AsyncStorage.getItem("orderTracking");
-      console.log(
-        "Data in AsyncStorage after save:",
-        JSON.parse(savedData ?? "[]")
-      );
-      return orders;
-    } catch (error) {
-      console.error("Error saving order tracking to AsyncStorage:", error);
-      return rejectWithValue(error);
-    }
-  }
-);
-
-// Thunk để load orders từ AsyncStorage
 export const loadOrderTrackingFromAsyncStorage = createAsyncThunk(
   "orderTrackingRealtime/loadOrderTracking",
   async () => {
     try {
-      const orderTracking = await AsyncStorage.getItem("orderTracking");
-      const parsedOrders = orderTracking ? JSON.parse(orderTracking) : [];
-      console.log("Loaded order tracking from AsyncStorage:", parsedOrders);
-      return parsedOrders;
-    } catch (error) {
-      console.error("Error loading order tracking from AsyncStorage:", error);
-      return [];
-    }
-  }
-);
+      const stored = await AsyncStorage.getItem(STORAGE_KEY);
+      const orders = stored ? JSON.parse(stored) : [];
 
-// Thunk để xóa orders từ AsyncStorage
-export const clearOrderTrackingFromAsyncStorage = createAsyncThunk(
-  "orderTrackingRealtime/clearOrderTracking",
-  async () => {
-    try {
-      await AsyncStorage.removeItem("orderTracking");
-      console.log("Cleared order tracking from AsyncStorage");
-      return true;
+      // Filter out completed/cancelled orders and sort by updated_at
+      const validOrders = orders
+        .filter(
+          (order: OrderTracking) =>
+            order.status !== Enum_OrderStatus.DELIVERED &&
+            order.status !== Enum_OrderStatus.CANCELLED &&
+            // Also check if the order is in a valid ongoing state
+            [
+              Enum_OrderStatus.PENDING,
+              Enum_OrderStatus.PREPARING,
+              Enum_OrderStatus.READY_FOR_PICKUP,
+              Enum_OrderStatus.RESTAURANT_PICKUP,
+              Enum_OrderStatus.DISPATCHED,
+              Enum_OrderStatus.EN_ROUTE,
+            ].includes(order.status)
+        )
+        .sort(
+          (a: OrderTracking, b: OrderTracking) => b.updated_at - a.updated_at
+        );
+
+      console.log(
+        "Loaded and filtered orders from AsyncStorage:",
+        validOrders.length,
+        validOrders.map(mapOrderToLog)
+      );
+      return validOrders;
     } catch (error) {
-      console.error("Error clearing order tracking from AsyncStorage:", error);
-      throw error;
+      console.error("Error loading from AsyncStorage:", error);
+      return [];
     }
   }
 );
@@ -157,12 +135,15 @@ const orderTrackingRealtimeSlice = createSlice({
   reducers: {
     removeOrderTracking: (state, action) => {
       const orderId = action.payload;
+      console.log("Removing order:", orderId);
       state.orders = state.orders.filter((order) => order.orderId !== orderId);
-      console.log(`Removed order ${orderId} from tracking`);
+      debouncedSaveToStorage(state.orders);
+      console.log("Orders after removal:", state.orders.length);
     },
     clearOrderTracking: (state) => {
+      console.log("Clearing all orders");
       state.orders = [];
-      console.log("Cleared all order tracking data");
+      AsyncStorage.removeItem(STORAGE_KEY);
     },
   },
   extraReducers: (builder) => {
@@ -171,7 +152,9 @@ const orderTrackingRealtimeSlice = createSlice({
         state.orders = action.payload;
       })
       .addCase(updateAndSaveOrderTracking.fulfilled, (state, action) => {
-        state.orders = action.payload;
+        if (action.payload) {
+          state.orders = action.payload;
+        }
       });
   },
 });
