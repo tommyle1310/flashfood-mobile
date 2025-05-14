@@ -59,44 +59,48 @@ const HomeScreen = () => {
             </FFText>
           </Pressable>
 
-          <View
-            style={{
-              width: "100%",
-              paddingRight: spacing.lg,
-            }}
-          >
-            <FFText>Hot Deals</FFText>
-            {loading.promotions ? (
-              <View style={{ flexDirection: "row", gap: spacing.md }}>
-                <FFSkeleton width={200} height={100} />
-                <FFSkeleton width={200} height={100} />
-              </View>
-            ) : (
-              <CoralTourCarousel
-                onTap={(id) => {
-                  setSelectedPromotionId(id);
-                  const selectedPromotion =
-                    availablePromotionWithRestaurants?.find(
-                      (promo) => promo.id === id
-                    );
-                  if (selectedPromotion) {
-                    navigation.navigate("PromotionsWithRestaurant", {
-                      promotionTitle: availablePromotionWithRestaurants?.find(
-                        (promo) => promo.id === id
-                      )?.name,
-                      restaurants: selectedPromotion.restaurants,
-                    });
-                  }
+          {availablePromotionWithRestaurants &&
+            availablePromotionWithRestaurants?.length > 0 && (
+              <View
+                style={{
+                  width: "100%",
+                  paddingRight: spacing.lg,
                 }}
-                imageUrls={availablePromotionWithRestaurants?.map(
-                  (item) => item.avatar.url
+              >
+                <FFText>Hot Deals</FFText>
+                {loading.promotions ? (
+                  <View style={{ flexDirection: "row", gap: spacing.md }}>
+                    <FFSkeleton width={200} height={100} />
+                    <FFSkeleton width={200} height={100} />
+                  </View>
+                ) : (
+                  <CoralTourCarousel
+                    onTap={(id) => {
+                      setSelectedPromotionId(id);
+                      const selectedPromotion =
+                        availablePromotionWithRestaurants?.find(
+                          (promo) => promo.id === id
+                        );
+                      if (selectedPromotion) {
+                        navigation.navigate("PromotionsWithRestaurant", {
+                          promotionTitle:
+                            availablePromotionWithRestaurants?.find(
+                              (promo) => promo.id === id
+                            )?.name,
+                          restaurants: selectedPromotion.restaurants,
+                        });
+                      }
+                    }}
+                    imageUrls={availablePromotionWithRestaurants?.map(
+                      (item) => item.avatar.url
+                    )}
+                    itemIds={availablePromotionWithRestaurants?.map(
+                      (item) => item.id
+                    )}
+                  />
                 )}
-                itemIds={availablePromotionWithRestaurants?.map(
-                  (item) => item.id
-                )}
-              />
+              </View>
             )}
-          </View>
 
           <CategoriesSection
             listFoodCategories={listFoodCategories}

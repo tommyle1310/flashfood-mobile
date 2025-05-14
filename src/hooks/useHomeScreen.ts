@@ -62,6 +62,7 @@ export const useHomeScreen = () => {
             return { data: { EC: -1 } };
           }),
         ]);
+        console.log("check promo", promotionsWithRestaurantsResponse.data.data);
 
         if (foodCategoriesResponse.data.EC === 0) {
           setListFoodCategories(foodCategoriesResponse.data.data);

@@ -34,7 +34,7 @@ const FFAuthForm = ({
   navigation,
   error,
 }: FFAuthFormProps) => {
-  const [email, setEmail] = useState("customer@gmail.com");
+  const [email, setEmail] = useState("thangteo1310@gmail.com");
   const [password, setPassword] = useState("000000");
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");

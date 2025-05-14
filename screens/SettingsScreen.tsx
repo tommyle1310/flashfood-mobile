@@ -15,10 +15,7 @@ import FFAvatar from "@/src/components/FFAvatar";
 import { RootState } from "@/src/store/store";
 import useSettingData from "@/src/data/screens/Settings";
 import FFView from "@/src/components/FFView";
-import {
-  clearOrderTracking,
-  clearOrderTrackingFromAsyncStorage,
-} from "@/src/store/orderTrackingRealtimeSlice";
+import { clearOrderTracking } from "@/src/store/orderTrackingRealtimeSlice";
 import { spacing } from "@/src/theme";
 
 type LogoutSreenNavigationProp = StackNavigationProp<
@@ -101,7 +98,6 @@ const SettingsScreen = () => {
                   onPress={() => {
                     dispatch(logout());
                     dispatch(clearOrderTracking()); // Xóa state
-                    dispatch(clearOrderTrackingFromAsyncStorage()); // Xóa AsyncStorage
                     navigation.navigate("Login");
                   }}
                   className="w-full"

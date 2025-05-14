@@ -104,6 +104,13 @@ const PromotionWithRestaurantsScreen = () => {
         renderItem={renderRestaurantItem}
         contentContainerStyle={{ padding: spacing.md }}
         showsVerticalScrollIndicator={false}
+        ListEmptyComponent={
+          <View>
+            <FFText style={{ color: "#aaa", fontWeight: 400 }}>
+              This promotion has not been applied to any restaurant
+            </FFText>
+          </View>
+        }
       />
     </FFSafeAreaView>
   );
