@@ -163,6 +163,7 @@ const CheckoutScreen = () => {
       validateStatus: () => true,
     });
     const { EC, EM, data } = response.data;
+    console.log("check res", response.data);
     if (EC === 0) {
       dispatch(subtractItemFromCart(response.data.data.order_items));
       dispatch(removeCartItemFromAsyncStorage(response.data.data.order_items));

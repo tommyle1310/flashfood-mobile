@@ -169,8 +169,8 @@ const ProfileScreen = () => {
       lastNameState = user.last_name ? user.last_name : "";
     }
     if (profileData) {
-      setEmail(profileData.user.email);
-      setPhone(profileData.user.phone);
+      setEmail(profileData?.user?.email);
+      setPhone(profileData?.user?.phone);
       setFirstName(firstNameState);
       setLastName(lastNameState);
     }
@@ -216,7 +216,7 @@ const ProfileScreen = () => {
       <View className="p-4">
         {screenStatus === "READONLY" ? (
           <ReadonlyProfileComponents
-            email={profileData.user.email}
+            email={profileData.user?.email}
             firstName={profileData.first_name}
             lastName={profileData.last_name}
             phone={phone}

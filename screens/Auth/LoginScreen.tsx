@@ -38,6 +38,7 @@ const Login = () => {
       email: email,
       password: password,
     };
+    console.log("check req body", requestBody);
     setIsLoading(true);
 
     try {
