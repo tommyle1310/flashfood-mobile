@@ -12,6 +12,7 @@ import { useTheme } from "@/src/hooks/useTheme";
 import FFText from "./FFText";
 import { IMAGE_LINKS } from "../assets/imageLinks";
 import { spacing } from "../theme";
+import { CheckoutSreenNavigationProp } from "./screens/Checkout/OrderConfirmation";
 
 // Type cho option mới
 interface DropdownOption {
@@ -30,6 +31,7 @@ interface FFDropdownProps {
   style?: object;
   textStyle?: object;
   optionStyle?: object;
+  navigation?: CheckoutSreenNavigationProp
 }
 
 const FFDropdown: React.FC<FFDropdownProps> = ({
@@ -37,6 +39,7 @@ const FFDropdown: React.FC<FFDropdownProps> = ({
   selectedOption,
   onSelect,
   placeholder,
+  navigation,
   fallbackText,
   style,
   textStyle,
@@ -45,8 +48,12 @@ const FFDropdown: React.FC<FFDropdownProps> = ({
   const { theme } = useTheme();
   const [isOpen, setIsOpen] = useState(false);
 
+
   const toggleDropdown = () => setIsOpen(!isOpen);
   const selectOption = (option: string) => {
+    if (option === 'Add Address' && navigation) {
+      navigation.navigate('AddressDetails')
+    }
     onSelect(option);
     setIsOpen(false);
   };

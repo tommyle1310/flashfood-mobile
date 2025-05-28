@@ -15,6 +15,7 @@ import IconFeather from "react-native-vector-icons/Feather";
 import FFText from "./FFText";
 import { useTheme } from "../hooks/useTheme";
 import { spacing } from "../theme";
+import { IMAGE_LINKS } from "../assets/imageLinks";
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
 const CARD_WIDTH = SCREEN_WIDTH * 0.8;
@@ -107,7 +108,7 @@ const CoralTourCarousel: React.FC<CoralTourCarouselProps> = ({
           ]}
         >
           <Image
-            source={{ uri: item.url }}
+            source={{ uri: item.url ?? IMAGE_LINKS.DEFAULT_AVATAR_FOOD }}
             style={styles.image}
             resizeMode="cover"
             onError={(e) =>

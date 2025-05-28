@@ -37,9 +37,7 @@ const HomeScreen = () => {
   } = useHomeScreen();
   console.log(
     "check everthign",
-    listRestaurants,
-    listFoodCategories,
-    availablePromotionWithRestaurants
+    availablePromotionWithRestaurants?.[0]
   );
   const renderedRestaurants =
     filteredRestaurants?.length > 0 ? filteredRestaurants : listRestaurants;
@@ -92,10 +90,10 @@ const HomeScreen = () => {
                       }
                     }}
                     imageUrls={availablePromotionWithRestaurants?.map(
-                      (item) => item.avatar.url
+                      (item) => item?.avatar?.url
                     )}
                     itemIds={availablePromotionWithRestaurants?.map(
-                      (item) => item.id
+                      (item) => item?.id
                     )}
                   />
                 )}

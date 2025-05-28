@@ -124,7 +124,7 @@ const PaymentMethodScreen = () => {
 
         {/* Payment Methods Section */}
         <View style={styles.section}>
-          <FFText fontSize="lg" fontWeight="600" style={styles.sectionTitle}>
+          <FFText fontSize="lg" fontWeight="600" >
             Payment Method
           </FFText>
           <TouchableOpacity
@@ -151,7 +151,7 @@ const PaymentMethodScreen = () => {
 
         {/* Transaction History Section */}
         <View style={styles.section}>
-          <FFText fontSize="lg" fontWeight="600" style={styles.sectionTitle}>
+          <FFText fontSize="lg" fontWeight="600" >
             Transaction History
           </FFText>
         </View>
@@ -261,9 +261,6 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     alignItems: "center",
     marginBottom: spacing.md,
-  },
-  sectionTitle: {
-    color: colors.white,
   },
   addPaymentButton: {
     padding: spacing.md,

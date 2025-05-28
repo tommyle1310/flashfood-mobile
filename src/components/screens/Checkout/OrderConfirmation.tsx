@@ -8,6 +8,14 @@ import { RootState } from "@/src/store/store";
 import FFDropdown from "../../FFDropdown";
 import { spacing } from "@/src/theme";
 import FFInputControl from "../../FFInputControl";
+import { useNavigation } from "@react-navigation/native";
+import { StackNavigationProp } from "@react-navigation/stack";
+import { MainStackParamList } from "@/src/navigation/AppNavigator";
+
+export type CheckoutSreenNavigationProp = StackNavigationProp<
+  MainStackParamList,
+  "Checkout"
+>;
 
 const OrderConfirmation = ({
   handlePlaceOrder,
@@ -24,6 +32,7 @@ const OrderConfirmation = ({
 }) => {
   const globalState = useSelector((state: RootState) => state.auth);
   console.log("cehck addres", globalState.address);
+  const navigation = useNavigation<CheckoutSreenNavigationProp>();
 
   return (
     <View className="flex-1 gap-4">
@@ -32,7 +41,8 @@ const OrderConfirmation = ({
           <FFText fontWeight="500">Deliver to</FFText>
           <FFDropdown
             onSelect={handleSelect}
-            options={globalState.address?.map((item) => item.title) || []}
+            navigation={navigation}
+            options={['Add Address', ...(globalState.address?.map((item) => item.title) || [])]}
             placeholder="Select delivery destination"
             selectedOption={selected}
           />

@@ -192,7 +192,6 @@ const CartScreen = () => {
       const itemTotal = item.variant_price_at_time_of_addition * item.quantity;
       return total + itemTotal;
     }, 0);
-    console.log("check what here", selectedRestaurant);
 
     const orderData: Order = {
       customer_id: id,

@@ -21,6 +21,7 @@ import { IMAGE_LINKS } from "@/src/assets/imageLinks";
 import { getTrackingImage, getTrackingText } from "@/src/utils/orderUtils";
 import { OrderScreenNavigationProp } from "@/screens/OrdersScreen";
 import FFSkeleton from "../../FFSkeleton";
+import FFSpinner from "@/src/components/FFSpinner"; // Import FFSpinner
 import { spacing } from "@/src/theme";
 
 interface DetailedOrderProps {
@@ -590,7 +591,9 @@ export const DetailedOrder: React.FC<DetailedOrderProps> = ({
         }}
         visible={isShowTipToDriverModal}
       >
-        {isTippedSuccessful ? (
+        {isLoading ? (
+          <FFSpinner isVisible isOverlay /> // Show FFSpinner while loading
+        ) : isTippedSuccessful ? (
           <View style={{ alignItems: "center" }}>
             <View
               style={{

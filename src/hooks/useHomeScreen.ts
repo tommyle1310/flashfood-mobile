@@ -76,8 +76,8 @@ export const useHomeScreen = () => {
               address: {
                 ...restaurant.address,
                 location: {
-                  lat: restaurant.address.location.lat,
-                  lng: restaurant.address.location.lon,
+                  lat: restaurant?.address?.location?.lat,
+                  lng: restaurant?.address?.location?.lon,
                 },
               },
             })
@@ -87,10 +87,6 @@ export const useHomeScreen = () => {
         setLoading((prev) => ({ ...prev, restaurants: false }));
 
         if (promotionsWithRestaurantsResponse.data.EC === 0) {
-          console.log(
-            "check what here",
-            promotionsWithRestaurantsResponse.data.data
-          );
           setAvailablePromotionWithRestaurants(
             promotionsWithRestaurantsResponse.data.data
           );

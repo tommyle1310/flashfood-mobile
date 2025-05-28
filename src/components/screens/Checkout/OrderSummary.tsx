@@ -41,7 +41,6 @@ const OrderSummary = ({
     setSubTotal(calculatedSubTotal);
     setTotalAmountParent(calculatedSubTotal); // Chỉ set subTotal
   }, [orderItem, setTotalAmountParent]);
-  console.log("cehck item full", orderItem?.order_items?.[0]);
   return (
     <View className="flex-1">
       <View

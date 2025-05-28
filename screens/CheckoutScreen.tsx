@@ -16,7 +16,6 @@ import FFScreenTopSection from "@/src/components/FFScreenTopSection";
 import { StackNavigationProp } from "@react-navigation/stack";
 import {
   removeCartItemFromAsyncStorage,
-  saveCartItemsToAsyncStorage,
   subtractItemFromCart,
 } from "@/src/store/userPreferenceSlice";
 import Spinner from "@/src/components/FFSpinner";
@@ -41,7 +40,7 @@ const CheckoutScreen = () => {
   const [isShowModalStatusCheckout, setIsShowModalStatusCheckout] =
     useState<boolean>(false);
   const [modalContentType, setModalContentType] = useState<
-    "SUCCESS" | "ERROR" | "WARNING"
+    "SUCCESS" | "ERROR" | "WARNING" | "INSUFFICIENT_BALANCE"
   >("ERROR");
   const navigation = useNavigation<CheckoutScreenNavigationProp>();
   const [deliveryFee, setDeliveryFee] = useState<number>(0);
@@ -55,7 +54,7 @@ const CheckoutScreen = () => {
   const [selectedAddress, setSelectedAddress] = useState<string>("");
   const [customerNote, setCustomerNote] = useState<string>("");
   const [isLoading, setIsLoading] = useState<boolean>(false);
-  const [promotionList, setPromotionList] = useState<Promotion[]>();
+  const [promotionList, setPromotionList] = useState<Promotion[]>([]);
   const [financeRules, setFinanceRules] = useState<FinanceRules | null>(null);
 
   const fetchData = async () => {
@@ -66,29 +65,37 @@ const CheckoutScreen = () => {
         axiosInstance.get("/finance-rules"),
       ]);
 
-      // Xử lý restaurant response
+      // Log API responses for debugging
+      console.log("Finance rules response:", JSON.stringify(financeRulesResponse.data));
+
+      // Process restaurant response
       const restaurantData = restaurantResponse.data;
       if (restaurantData.EC === 0) {
-        console.log(
-          "check what heree ",
-          restaurantData.data.promotions,
-          restaurantData.data
-        );
         setPromotionList(
           restaurantData?.data?.promotions?.filter(
-            (item: any) => !(item.food_categories.length > 0)
-          )
+            (item: any) => !(item.food_categories?.length > 0)
+          ) || []
         );
+      } else {
+        console.error("Restaurant API error:", restaurantData.EM);
       }
 
-      // Xử lý finance rules response
+      // Process finance rules response
       const { EC, EM, data } = financeRulesResponse.data;
-      if (EC === 0) {
+      if (EC === 0 && data && data[0]) {
         setFinanceRules(data[0]);
-        setDeliveryFee(DELIVERY_FEE);
+        const deliveryFeeValue = data[0].delivery_fee ?? DELIVERY_FEE ?? 0;
+        setDeliveryFee(deliveryFeeValue);
+        console.log("Set financeRules:", data[0], "Delivery fee:", deliveryFeeValue);
+      } else {
+        console.error("Finance rules API error:", EM, "Data:", data);
+        setFinanceRules(null);
+        setDeliveryFee(0);
       }
     } catch (error) {
-      console.log("Error fetching data:", error);
+      console.error("Error fetching data:", error);
+      setFinanceRules(null);
+      setDeliveryFee(0);
     } finally {
       setIsLoading(false);
     }
@@ -100,16 +107,23 @@ const CheckoutScreen = () => {
     }
   }, [orderItem]);
 
-  // Cập nhật serviceFee và totalAmountActual khi subTotal hoặc financeRules thay đổi
+  // Calculate serviceFee and totalAmountActual
   useEffect(() => {
     if (financeRules && subTotal > 0) {
-      const calculatedServiceFee = +(
-        financeRules.app_service_fee * subTotal
-      ).toFixed(2);
+      const calculatedServiceFee = Number(
+        (financeRules.app_service_fee * subTotal).toFixed(2)
+      );
+      const calculatedTotal = Number(
+        (subTotal + calculatedServiceFee + deliveryFee).toFixed(2)
+      );
       setServiceFee(calculatedServiceFee);
-      setTotalAmountActual(subTotal + calculatedServiceFee + deliveryFee);
+      setTotalAmountActual(calculatedTotal);
+    } else {
+      setServiceFee(0);
+      setTotalAmountActual(0);
     }
   }, [subTotal, financeRules, deliveryFee]);
+  
 
   const handleSelectPaymentMethod = (option: string) => {
     setSelectedPaymentMethod(option);
@@ -157,29 +171,40 @@ const CheckoutScreen = () => {
       delivery_time: new Date().getTime(),
       promotion_applied: selectedPromotion,
     };
-    console.log("cehck req data", orderItem.order_items?.[0]);
 
-    const response = await axiosInstance.post(`/orders`, requestData, {
-      validateStatus: () => true,
-    });
-    const { EC, EM, data } = response.data;
-    console.log("check res", response.data);
-    if (EC === 0) {
-      dispatch(subtractItemFromCart(response.data.data.order_items));
-      dispatch(removeCartItemFromAsyncStorage(response.data.data.order_items));
-      setIsShowModalStatusCheckout(true);
-      setModalContentType("SUCCESS");
-      navigation.navigate("BottomTabs", { screenIndex: 1 });
-    } else {
+    try {
+      const response = await axiosInstance.post(`/orders`, requestData, {
+        validateStatus: () => true,
+      });
+      console.log("Order response:", JSON.stringify(response.data));
+      const { EC, data } = response.data;
+      if (EC === 0) {
+        dispatch(subtractItemFromCart(data.order_items));
+        dispatch(removeCartItemFromAsyncStorage(data.order_items));
+        setIsShowModalStatusCheckout(true);
+        setModalContentType("SUCCESS");
+        navigation.navigate("BottomTabs", { screenIndex: 1 });
+      } else if (EC === -8) {
+        setIsShowModalStatusCheckout(true);
+        setModalContentType("INSUFFICIENT_BALANCE");
+        // console.error("Order API error: Insufficient Balance");
+      } else {
+        setIsShowModalStatusCheckout(true);
+        setModalContentType("ERROR");
+        console.error("Order API error:", response.data.EM);
+      }
+    } catch (error) {
+      console.error("Error placing order:", error);
       setIsShowModalStatusCheckout(true);
       setModalContentType("ERROR");
-      console.log("Error response:", response.data);
+    } finally {
+      setIsLoading(false);
     }
-    setIsLoading(false);
   };
 
   const tabContent = [
     <OrderSummary
+      key="orderSummary"
       orderItem={orderItem}
       deliveryFee={deliveryFee}
       serviceFee={serviceFee}
@@ -187,13 +212,15 @@ const CheckoutScreen = () => {
       selectedPromotion={selectedPromotion}
       promotionList={promotionList}
       handleSelectPromotion={handleSelectPromotion}
-      totalAmountActual={totalAmountActual} // Truyền totalAmountActual
+      totalAmountActual={totalAmountActual}
     />,
     <PaymentInformation
+      key="paymentInfo"
       selected={selectedPaymentMethod}
       handleSelect={handleSelectPaymentMethod}
     />,
     <OrderConfirmation
+      key="orderConfirmation"
       handlePlaceOrder={handlePlaceOrder}
       handleSelect={handleSelectAddress}
       customerNote={customerNote}
