@@ -99,31 +99,53 @@ export const DetailedOrder: React.FC<DetailedOrderProps> = ({
         : detailedOrder ?? firstActiveOrder;
     if (!order) return "N/A";
     const name = order.restaurant?.restaurant_name ?? "";
-    const address = order.restaurantFullAddress ?? "N/A";
+    const address =
+      order.restaurantFullAddress ||
+      (order.restaurantAddress
+        ? `${order.restaurantAddress.street}, ${order.restaurantAddress.city}, ${order.restaurantAddress.nationality}`
+        : "N/A");
     return name ? `${name}, ${address}` : address;
   };
 
   // Helper to get customer address
   const getCustomerAddress = () => {
     if (type === "ACTIVE" && activeOrderDetails) {
-      return activeOrderDetails.customerFullAddress ?? "N/A";
+      return (
+        activeOrderDetails.customerFullAddress ||
+        (activeOrderDetails.customerAddress
+          ? `${activeOrderDetails.customerAddress.street}, ${activeOrderDetails.customerAddress.city}, ${activeOrderDetails.customerAddress.nationality}`
+          : "N/A")
+      );
     }
     return (
-      detailedOrder?.customerFullAddress ??
-      firstActiveOrder?.customerFullAddress ??
-      "N/A"
+      detailedOrder?.customerFullAddress ||
+      (detailedOrder?.customerAddress
+        ? `${detailedOrder.customerAddress.street}, ${detailedOrder.customerAddress.city}, ${detailedOrder.customerAddress.nationality}`
+        : firstActiveOrder?.customerFullAddress ||
+          (firstActiveOrder?.customerAddress
+            ? `${firstActiveOrder.customerAddress.street}, ${firstActiveOrder.customerAddress.city}, ${firstActiveOrder.customerAddress.nationality}`
+            : "N/A"))
     );
   };
 
   // Helper to get restaurant address
   const getRestaurantAddress = () => {
     if (type === "ACTIVE" && activeOrderDetails) {
-      return activeOrderDetails.restaurantFullAddress ?? "N/A";
+      return (
+        activeOrderDetails.restaurantFullAddress ||
+        (activeOrderDetails.restaurantAddress
+          ? `${activeOrderDetails.restaurantAddress.street}, ${activeOrderDetails.restaurantAddress.city}, ${activeOrderDetails.restaurantAddress.nationality}`
+          : "N/A")
+      );
     }
     return (
-      detailedOrder?.restaurantFullAddress ??
-      firstActiveOrder?.restaurantFullAddress ??
-      "N/A"
+      detailedOrder?.restaurantFullAddress ||
+      (detailedOrder?.restaurantAddress
+        ? `${detailedOrder.restaurantAddress.street}, ${detailedOrder.restaurantAddress.city}, ${detailedOrder.restaurantAddress.nationality}`
+        : firstActiveOrder?.restaurantFullAddress ||
+          (firstActiveOrder?.restaurantAddress
+            ? `${firstActiveOrder.restaurantAddress.street}, ${firstActiveOrder.restaurantAddress.city}, ${firstActiveOrder.restaurantAddress.nationality}`
+            : "N/A"))
     );
   };
 
@@ -145,18 +167,32 @@ export const DetailedOrder: React.FC<DetailedOrderProps> = ({
 
   // Helper to get order time
   const getOrderTime = () => {
+    let timestamp: number | undefined;
+    console.log('check time', activeOrderDetails, detailedOrder, firstActiveOrder)
+  
     if (type === "ACTIVE" && activeOrderDetails) {
-      return activeOrderDetails.order_time
-        ? formatTimestampToDate2(Number(activeOrderDetails.order_time))
-        : "N/A";
+      timestamp = Number(activeOrderDetails.order_time);
+    } else if (detailedOrder?.order_time) {
+      timestamp = Number(detailedOrder.order_time);
+    } else if (firstActiveOrder?.order_time) {
+      timestamp = Number(firstActiveOrder.order_time);
     }
-    if (detailedOrder?.order_time) {
-      return formatTimestampToDate2(Number(detailedOrder.order_time));
+  
+    if (!timestamp || isNaN(timestamp)) {
+      console.warn("Invalid order_time, returning N/A", { timestamp });
+      return "N/A";
     }
-    if (firstActiveOrder?.order_time) {
-      return formatTimestampToDate2(Number(firstActiveOrder.order_time));
+  
+    // Check if timestamp is in seconds or milliseconds
+    const isMilliseconds = timestamp > 1e12; // If timestamp is larger than 1 trillion, assume milliseconds
+    const date = new Date(isMilliseconds ? timestamp : timestamp * 1000);
+  
+    if (isNaN(date.getTime())) {
+      console.warn("Invalid date parsed from timestamp", { timestamp });
+      return "N/A";
     }
-    return "N/A";
+  
+    return formatTimestampToDate2(timestamp);
   };
 
   // Helper to get customer note
@@ -359,7 +395,7 @@ export const DetailedOrder: React.FC<DetailedOrderProps> = ({
             label="Order time"
             value={
               detailedOrder.order_time
-                ? formatTimestampToDate(Number(detailedOrder.order_time))
+                ? formatTimestampToDate2(Number(detailedOrder.order_time))
                 : "N/A"
             }
             readonly

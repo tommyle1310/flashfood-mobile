@@ -155,19 +155,21 @@ const OrdersScreen: React.FC = () => {
   const fetchOrders = useCallback(async () => {
     try {
       setLoading(true);
-
-      // Get orders from server first
       const res = await axiosInstance.get(`/customers/orders/${id}`);
       console.log("Fetched orders from API:", res.data.data?.length || 0);
-      const newOrders = res.data.data as OrderTracking[];
-
-      // Update local state with all orders
+      const newOrders = (res.data.data as OrderTracking[]).map((order) => ({
+        ...order,
+        customerFullAddress: order.customerAddress
+          ? `${order.customerAddress.street}, ${order.customerAddress.city}, ${order.customerAddress.nationality}`
+          : order.customerFullAddress || "N/A",
+        restaurantFullAddress: order.restaurantAddress
+          ? `${order.restaurantAddress.street}, ${order.restaurantAddress.city}, ${order.restaurantAddress.nationality}`
+          : order.restaurantFullAddress || "N/A",
+      }));
       setOrders(newOrders || []);
-
-      // Log all orders and their statuses
       console.log(
         "All orders statuses:",
-        (newOrders || []).map((order) => ({
+        newOrders.map((order) => ({
           id: order.id,
           status: order.status,
           tracking_info: order.tracking_info,
@@ -254,10 +256,12 @@ const OrdersScreen: React.FC = () => {
         key="active"
         setIsLoading={setLoading}
         type="ACTIVE"
+        setOrders={setOrders}
         orders={activeOrders}
       />,
       <OrderTabContent
         isLoading={loading}
+        setOrders={setOrders}
         key="completed"
         navigation={navigation}
         type="COMPLETED"
@@ -266,6 +270,7 @@ const OrdersScreen: React.FC = () => {
       />,
       <OrderTabContent
         key="cancelled"
+        setOrders={setOrders}
         type="CANCELLED"
         orders={cancelledOrders}
       />,

@@ -15,6 +15,7 @@ import { spacing } from "@/src/theme";
 interface OrderTabContentProps {
   type: "ACTIVE" | "COMPLETED" | "CANCELLED";
   orders: OrderTrackingScreen[];
+  setOrders?: React.Dispatch<React.SetStateAction<OrderTrackingScreen[]>>; // Add setOrders to props
   refetchOrders?: () => void;
   setIsLoading?: React.Dispatch<React.SetStateAction<boolean>>;
   navigation?: OrderScreenNavigationProp;
@@ -27,6 +28,7 @@ export const OrderTabContent: React.FC<OrderTabContentProps> = ({
   type,
   orders,
   isLoading,
+  setOrders,
   setIsLoading,
   navigation,
   refetchOrders,
@@ -102,13 +104,10 @@ export const OrderTabContent: React.FC<OrderTabContentProps> = ({
 
   useEffect(() => {
     console.log("realtimeOrders:", realtimeOrders);
-    if (realtimeOrders?.length > 0) {
+    if (realtimeOrders?.length > 0 && type === "ACTIVE") {
       const order = realtimeOrders[0];
-      // Find full order from orders prop
       const fullOrder = orders.find((o) => o.id === order.orderId) || null;
-      console.log("check order here", order);
 
-      // Compute customerFullAddress and restaurantFullAddress
       const computedCustomerFullAddress = order.customerAddress
         ? `${order.customerAddress.street}, ${order.customerAddress.city}, ${order.customerAddress.nationality}`
         : order.customerFullAddress || "N/A";
@@ -116,7 +115,6 @@ export const OrderTabContent: React.FC<OrderTabContentProps> = ({
         ? `${order.restaurantAddress.street}, ${order.restaurantAddress.city}, ${order.restaurantAddress.nationality}`
         : order.restaurantFullAddress || "N/A";
 
-      // Use driverDetails from WebSocket payload if available
       setDriverDetails(order.driverDetails || null);
       setActiveOrderDetails({
         ...order,
@@ -195,7 +193,7 @@ export const OrderTabContent: React.FC<OrderTabContentProps> = ({
       setDriverDetails(null);
       setActiveOrderDetails(null);
     }
-  }, [realtimeOrders, orders]);
+  }, [realtimeOrders, orders, type]);
 
   useEffect(() => {
     if (type !== "ACTIVE") {
