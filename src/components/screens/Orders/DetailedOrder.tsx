@@ -1,5 +1,5 @@
 import React from "react";
-import { View, TouchableOpacity, Image, Text } from "react-native";
+import { View, TouchableOpacity, Image, Text, StyleSheet } from "react-native";
 import FFText from "@/src/components/FFText";
 import FFProgressStage from "@/src/components/FFProgressStage";
 import FFView from "@/src/components/FFView";
@@ -22,7 +22,13 @@ import { getTrackingImage, getTrackingText } from "@/src/utils/orderUtils";
 import { OrderScreenNavigationProp } from "@/screens/OrdersScreen";
 import FFSkeleton from "../../FFSkeleton";
 import FFSpinner from "@/src/components/FFSpinner"; // Import FFSpinner
-import { spacing } from "@/src/theme";
+import {
+  borderRadius,
+  colors,
+  shadows,
+  spacing,
+  typography,
+} from "@/src/theme";
 
 interface DetailedOrderProps {
   type: "ACTIVE" | "COMPLETED" | "CANCELLED";
@@ -67,12 +73,6 @@ export const DetailedOrder: React.FC<DetailedOrderProps> = ({
   setIsTippedSuccessful,
   handleTipToDriver,
 }) => {
-  console.log(
-    "check detailed order",
-    activeOrderDetails?.order_time,
-    firstActiveOrder?.order_time
-  );
-
   // Helper to get order items
   const getOrderItems = () => {
     if (type === "ACTIVE" && activeOrderDetails) {
@@ -168,8 +168,13 @@ export const DetailedOrder: React.FC<DetailedOrderProps> = ({
   // Helper to get order time
   const getOrderTime = () => {
     let timestamp: number | undefined;
-    console.log('check time', activeOrderDetails, detailedOrder, firstActiveOrder)
-  
+    console.log(
+      "check time",
+      activeOrderDetails,
+      detailedOrder,
+      firstActiveOrder
+    );
+
     if (type === "ACTIVE" && activeOrderDetails) {
       timestamp = Number(activeOrderDetails.order_time);
     } else if (detailedOrder?.order_time) {
@@ -177,21 +182,21 @@ export const DetailedOrder: React.FC<DetailedOrderProps> = ({
     } else if (firstActiveOrder?.order_time) {
       timestamp = Number(firstActiveOrder.order_time);
     }
-  
+
     if (!timestamp || isNaN(timestamp)) {
       console.warn("Invalid order_time, returning N/A", { timestamp });
       return "N/A";
     }
-  
+
     // Check if timestamp is in seconds or milliseconds
     const isMilliseconds = timestamp > 1e12; // If timestamp is larger than 1 trillion, assume milliseconds
     const date = new Date(isMilliseconds ? timestamp : timestamp * 1000);
-  
+
     if (isNaN(date.getTime())) {
       console.warn("Invalid date parsed from timestamp", { timestamp });
       return "N/A";
     }
-  
+
     return formatTimestampToDate2(timestamp);
   };
 
@@ -359,9 +364,65 @@ export const DetailedOrder: React.FC<DetailedOrderProps> = ({
   // Render completed or cancelled order content
   const renderNonActiveOrderContent = () => {
     if (!detailedOrder) return null;
+    console.log("check detailed order", detailedOrder?.cancellation_title);
 
     return (
       <>
+        {(detailedOrder?.cancellation_title ||
+          detailedOrder?.cancellation_reason ||
+          detailedOrder?.cancellation_description) && (
+          <FFView
+            style={{
+              ...styles.cancellationContainer,
+              width: "100%",
+              padding: spacing.md,
+              borderRadius: 12,
+              gap: 4,
+              elevation: 3,
+            }}
+          >
+            {(detailedOrder?.cancellation_title ||
+              detailedOrder?.cancellation_reason ||
+              detailedOrder?.cancellation_description) && (
+              <>
+                <View style={styles.cancellationHeader}>
+                  <FFText style={styles.cancellationHeaderText}>
+                    Cancellation Details
+                  </FFText>
+                </View>
+
+                {detailedOrder?.cancellation_title && (
+                  <View style={styles.cancellationItem}>
+                    <FFText style={styles.cancellationLabel}>Title:</FFText>
+                    <FFText style={styles.cancellationText}>
+                      {detailedOrder?.cancellation_title}
+                    </FFText>
+                  </View>
+                )}
+
+                {detailedOrder?.cancellation_reason && (
+                  <View style={styles.cancellationItem}>
+                    <FFText style={styles.cancellationLabel}>Reason:</FFText>
+                    <FFText style={styles.cancellationText}>
+                      {detailedOrder?.cancellation_reason}
+                    </FFText>
+                  </View>
+                )}
+
+                {detailedOrder?.cancellation_description && (
+                  <View style={styles.cancellationItem}>
+                    <FFText style={styles.cancellationLabel}>
+                      Description:
+                    </FFText>
+                    <FFText style={styles.cancellationText}>
+                      {detailedOrder?.cancellation_description}
+                    </FFText>
+                  </View>
+                )}
+              </>
+            )}
+          </FFView>
+        )}
         <FFView
           style={{
             width: "100%",
@@ -677,3 +738,52 @@ export const DetailedOrder: React.FC<DetailedOrderProps> = ({
     </>
   );
 };
+
+const styles = StyleSheet.create({
+  cancellationContainer: {
+    marginTop: spacing.md,
+    backgroundColor: "#FFF5F5", // Light red background
+    borderRadius: borderRadius.md,
+    borderWidth: 1,
+    borderColor: "#FED7D7", // Light red border
+    padding: spacing.md,
+    ...shadows.xs,
+  },
+  cancellationHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: spacing.sm,
+    paddingBottom: spacing.xs,
+    borderBottomWidth: 1,
+    borderBottomColor: "#FED7D7",
+  },
+  cancellationHeaderText: {
+    fontSize: typography.fontSize.sm,
+    fontFamily: typography.fontFamily.bold,
+    color: colors.error,
+    textTransform: "uppercase",
+    letterSpacing: 0.5,
+  },
+  cancellationItem: {
+    marginBottom: spacing.sm,
+  },
+  cancellationLabel: {
+    fontSize: typography.fontSize.xs,
+    fontFamily: typography.fontFamily.medium,
+    color: colors.error,
+    marginBottom: spacing.xs,
+    textTransform: "uppercase",
+    letterSpacing: 0.3,
+  },
+  cancellationText: {
+    fontSize: typography.fontSize.sm,
+    fontFamily: typography.fontFamily.regular,
+    color: colors.text,
+    lineHeight: typography.lineHeight.sm,
+    backgroundColor: colors.white,
+    padding: spacing.sm,
+    borderRadius: borderRadius.sm,
+    borderWidth: 1,
+    borderColor: "#FED7D7",
+  },
+});

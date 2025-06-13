@@ -72,14 +72,9 @@ const EditProfileComponent = ({
     }
   };
   useEffect(() => {
-    if (responseUploadImage?.EC === 0) {
-      setModalDetails({
-        status: "SUCCESS",
-        title: "Success",
-        desc: "Your avatar has been updated successfully! ⭐",
-      });
-      dispatch(setAvatar(responseUploadImage.data.avatar)); // This updates Redux state
-      dispatch(setAvatarInAsyncStorage(responseUploadImage.data.avatar)); // This updates AsyncStorage
+    if (responseUploadImage) {
+      dispatch(setAvatar(responseUploadImage.avatar)); // This updates Redux state
+      dispatch(setAvatarInAsyncStorage(responseUploadImage.avatar)); // This updates AsyncStorage
     }
   }, [responseUploadImage]);
 

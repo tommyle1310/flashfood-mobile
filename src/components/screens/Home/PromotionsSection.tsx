@@ -45,7 +45,10 @@ export const PromotionsSection = ({
 
   return (
     <View style={{ marginTop: -spacing.md, marginBottom: spacing.xxxl }}>
-      <ScrollView className="mt-2 px-2 py-2  -ml-2">
+      <ScrollView
+        showsHorizontalScrollIndicator={false}
+        className="mt-2 px-2 py-2  -ml-2"
+      >
         {promotions?.map((promotion, i) => (
           <View key={promotion.id} style={{ marginBottom: spacing.md }}>
             <View className="flex-row items-center justify-between">

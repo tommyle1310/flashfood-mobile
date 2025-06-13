@@ -46,6 +46,9 @@ export interface OrderTracking extends OrderTrackingBase {
     };
     title: string;
   };
+  cancellation_title?: string;
+  cancellation_reason?: string;
+  cancellation_description?: string;
   customer_id: string;
   customer_location: string;
   customer_note: string;
@@ -64,6 +67,8 @@ export interface OrderTracking extends OrderTrackingBase {
   payment_status: "PENDING" | "COMPLETED" | "FAILED"; // Adjust if there are more statuses
   restaurant: {
     id: string;
+    specialize_in?: string[];
+    restaurant_name?: string;
     avatar: Avatar | null;
   };
   restaurant_id: string;
