@@ -78,6 +78,7 @@ const NotificationScreen: React.FC = () => {
       const response = await axiosInstance.get(
         `/customers/notifications/${id}`
       );
+      console.log("check what resp", response.data);
 
       if (response.data.EC === 0) {
         setNotifications(response.data.data);

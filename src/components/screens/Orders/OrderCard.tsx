@@ -45,7 +45,7 @@ export const OrderCard: React.FC<OrderCardProps> = ({
           {type === "COMPLETED" ? "Completed" : "Cancelled"}
         </FFText>
         <FFText style={{ color: "#aaa" }} fontSize="sm">
-          {formatTimestampToDate2(Number(order.delivery_time))}
+          {formatTimestampToDate2(Number(order.updated_at))}
         </FFText>
       </View>
       <FFSeperator />
