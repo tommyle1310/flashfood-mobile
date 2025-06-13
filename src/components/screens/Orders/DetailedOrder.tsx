@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useMemo } from "react";
 import { View, TouchableOpacity, Image, Text, StyleSheet } from "react-native";
 import FFText from "@/src/components/FFText";
 import FFProgressStage from "@/src/components/FFProgressStage";
@@ -36,7 +36,7 @@ interface DetailedOrderProps {
   setDetailedOrder: (order: OrderTracking | null) => void;
   firstActiveOrder: OrderTracking | null;
   activeOrderDetails: OrderTracking | null;
-  driverDetails: any | null;
+  // Removed driverDetails - now accessed through currentOrder.driverDetails
   currentOrderStage: number;
   isLoading?: boolean;
   orderStatusStages?: Enum_OrderStatus[];
@@ -58,7 +58,6 @@ export const DetailedOrder: React.FC<DetailedOrderProps> = ({
   setDetailedOrder,
   firstActiveOrder,
   activeOrderDetails,
-  driverDetails,
   currentOrderStage,
   isLoading,
   orderStatusStages,
@@ -73,146 +72,94 @@ export const DetailedOrder: React.FC<DetailedOrderProps> = ({
   setIsTippedSuccessful,
   handleTipToDriver,
 }) => {
-  // Helper to get order items
+  // SIMPLIFIED DATA SOURCE: Single source of truth for order data
+  // This eliminates the confusing fallback pattern and makes the code much more readable
+  const currentOrder = useMemo(() => {
+    let selectedOrder = null;
+    if (type === "ACTIVE") {
+      // For active orders, prioritize activeOrderDetails (which is now the computed activeOrder from OrderTabContent)
+      selectedOrder = activeOrderDetails || firstActiveOrder;
+    } else {
+      // For completed/cancelled orders, use detailedOrder
+      selectedOrder = detailedOrder;
+    }
+
+    console.log("🎯 CURRENT ORDER DEBUG:", {
+      type,
+      selectedOrderExists: !!selectedOrder,
+      selectedOrderId: selectedOrder?.id,
+      activeOrderDetailsExists: !!activeOrderDetails,
+      firstActiveOrderExists: !!firstActiveOrder,
+      detailedOrderExists: !!detailedOrder,
+      selectedOrderItemsCount: selectedOrder?.order_items?.length || 0,
+      selectedOrderTotalAmount: selectedOrder?.total_amount,
+      selectedOrderDistance: selectedOrder?.distance,
+    });
+
+    return selectedOrder;
+  }, [type, activeOrderDetails, firstActiveOrder, detailedOrder]);
+
+  // CLEAN HELPER FUNCTIONS: Much simpler and easier to understand
   const getOrderItems = () => {
-    if (type === "ACTIVE" && activeOrderDetails) {
-      return activeOrderDetails.order_items ?? [];
-    }
-    return detailedOrder?.order_items ?? firstActiveOrder?.order_items ?? [];
+    const items = currentOrder?.order_items ?? [];
+    console.log("🍽️ DETAILED ORDER ITEMS DEBUG:", {
+      currentOrderExists: !!currentOrder,
+      currentOrderId: currentOrder?.id,
+      totalItems: items.length,
+      itemsWithVariant: items.filter((item) => !!item.menu_item_variant).length,
+      allItems: items.map((item, index) => ({
+        index,
+        name: item.name,
+        quantity: item.quantity,
+        hasMenuItemVariant: !!item.menu_item_variant,
+        menuItemVariant: item.menu_item_variant,
+        price_at_time_of_order: item.price_at_time_of_order,
+      })),
+      sampleVariant: items.find((item) => !!item.menu_item_variant)
+        ?.menu_item_variant,
+    });
+    return items;
   };
 
-  // Helper to get total amount
   const getTotalAmount = () => {
-    if (type === "ACTIVE" && activeOrderDetails) {
-      return Number(activeOrderDetails.total_amount ?? 0).toFixed(2);
-    }
-    return Number(
-      detailedOrder?.total_amount ?? firstActiveOrder?.total_amount ?? 0
-    ).toFixed(2);
+    return Number(currentOrder?.total_amount ?? 0).toFixed(2);
   };
 
-  // Helper to get restaurant info
   const getRestaurantInfo = () => {
-    const order =
-      type === "ACTIVE"
-        ? activeOrderDetails
-        : detailedOrder ?? firstActiveOrder;
-    if (!order) return "N/A";
-    const name = order.restaurant?.restaurant_name ?? "";
-    const address =
-      order.restaurantFullAddress ||
-      (order.restaurantAddress
-        ? `${order.restaurantAddress.street}, ${order.restaurantAddress.city}, ${order.restaurantAddress.nationality}`
-        : "N/A");
+    if (!currentOrder) return "N/A";
+    const name = currentOrder.restaurant?.restaurant_name ?? "";
+    const address = currentOrder.restaurantFullAddress || "N/A";
     return name ? `${name}, ${address}` : address;
   };
 
-  // Helper to get customer address
   const getCustomerAddress = () => {
-    if (type === "ACTIVE" && activeOrderDetails) {
-      return (
-        activeOrderDetails.customerFullAddress ||
-        (activeOrderDetails.customerAddress
-          ? `${activeOrderDetails.customerAddress.street}, ${activeOrderDetails.customerAddress.city}, ${activeOrderDetails.customerAddress.nationality}`
-          : "N/A")
-      );
-    }
-    return (
-      detailedOrder?.customerFullAddress ||
-      (detailedOrder?.customerAddress
-        ? `${detailedOrder.customerAddress.street}, ${detailedOrder.customerAddress.city}, ${detailedOrder.customerAddress.nationality}`
-        : firstActiveOrder?.customerFullAddress ||
-          (firstActiveOrder?.customerAddress
-            ? `${firstActiveOrder.customerAddress.street}, ${firstActiveOrder.customerAddress.city}, ${firstActiveOrder.customerAddress.nationality}`
-            : "N/A"))
-    );
+    return currentOrder?.customerFullAddress || "N/A";
   };
 
-  // Helper to get restaurant address
   const getRestaurantAddress = () => {
-    if (type === "ACTIVE" && activeOrderDetails) {
-      return (
-        activeOrderDetails.restaurantFullAddress ||
-        (activeOrderDetails.restaurantAddress
-          ? `${activeOrderDetails.restaurantAddress.street}, ${activeOrderDetails.restaurantAddress.city}, ${activeOrderDetails.restaurantAddress.nationality}`
-          : "N/A")
-      );
-    }
-    return (
-      detailedOrder?.restaurantFullAddress ||
-      (detailedOrder?.restaurantAddress
-        ? `${detailedOrder.restaurantAddress.street}, ${detailedOrder.restaurantAddress.city}, ${detailedOrder.restaurantAddress.nationality}`
-        : firstActiveOrder?.restaurantFullAddress ||
-          (firstActiveOrder?.restaurantAddress
-            ? `${firstActiveOrder.restaurantAddress.street}, ${firstActiveOrder.restaurantAddress.city}, ${firstActiveOrder.restaurantAddress.nationality}`
-            : "N/A"))
-    );
+    return currentOrder?.restaurantFullAddress || "N/A";
   };
 
-  // Helper to get total distance
   const getTotalDistance = () => {
-    if (type === "ACTIVE" && activeOrderDetails) {
-      return activeOrderDetails.distance
-        ? `${parseFloat(activeOrderDetails.distance).toFixed(2)}km`
-        : "0km";
-    }
-    if (detailedOrder?.distance) {
-      return `${parseFloat(detailedOrder.distance).toFixed(2)}km`;
-    }
-    if (firstActiveOrder?.distance) {
-      return `${parseFloat(firstActiveOrder.distance).toFixed(2)}km`;
-    }
-    return "0km";
+    if (!currentOrder?.distance) return "0km";
+    return `${parseFloat(currentOrder.distance).toFixed(2)}km`;
   };
 
-  // Helper to get order time
   const getOrderTime = () => {
-    let timestamp: number | undefined;
-    console.log(
-      "check time",
-      activeOrderDetails,
-      detailedOrder,
-      firstActiveOrder
-    );
-
-    if (type === "ACTIVE" && activeOrderDetails) {
-      timestamp = Number(activeOrderDetails.order_time);
-    } else if (detailedOrder?.order_time) {
-      timestamp = Number(detailedOrder.order_time);
-    } else if (firstActiveOrder?.order_time) {
-      timestamp = Number(firstActiveOrder.order_time);
-    }
-
+    const timestamp = Number(currentOrder?.updated_at ?? 0);
     if (!timestamp || isNaN(timestamp)) {
-      console.warn("Invalid order_time, returning N/A", { timestamp });
       return "N/A";
     }
-
-    // Check if timestamp is in seconds or milliseconds
-    const isMilliseconds = timestamp > 1e12; // If timestamp is larger than 1 trillion, assume milliseconds
-    const date = new Date(isMilliseconds ? timestamp : timestamp * 1000);
-
-    if (isNaN(date.getTime())) {
-      console.warn("Invalid date parsed from timestamp", { timestamp });
-      return "N/A";
-    }
-
     return formatTimestampToDate2(timestamp);
   };
 
-  // Helper to get customer note
   const getCustomerNote = () => {
-    if (type === "ACTIVE" && activeOrderDetails) {
-      return activeOrderDetails.customer_note ?? "N/A";
-    }
-    return (
-      detailedOrder?.customer_note ?? firstActiveOrder?.customer_note ?? "N/A"
-    );
+    return currentOrder?.customer_note ?? "N/A";
   };
 
   // Render active order content
   const renderActiveOrderContent = () => {
-    if (!detailedOrder && !firstActiveOrder && !activeOrderDetails) {
+    if (!currentOrder) {
       return (
         <View className="w-full gap-4">
           {isLoading ? (
@@ -331,8 +278,20 @@ export const DetailedOrder: React.FC<DetailedOrderProps> = ({
                       fontSize="sm"
                       style={{ color: "#aaa" }}
                     >
-                      {item.variant_id ?? 0}
+                      {/* Show menu_item_variant info if available, fallback to variant_name */}
+                      {item.menu_item_variant?.variant ||
+                        item.variant_name ||
+                        "N/A"}
                     </FFText>
+                    {item.menu_item_variant?.price && (
+                      <FFText
+                        fontWeight="400"
+                        fontSize="sm"
+                        style={{ color: "#4c9f3a" }}
+                      >
+                        ${item.menu_item_variant.price}
+                      </FFText>
+                    )}
                   </View>
                 </View>
                 <TouchableOpacity
@@ -503,13 +462,34 @@ export const DetailedOrder: React.FC<DetailedOrderProps> = ({
                   <FFText style={{ color: "#aaa" }}>
                     {item.name ?? "N/A"}
                   </FFText>
-                  <FFText
-                    fontWeight="400"
-                    fontSize="sm"
-                    style={{ color: "#aaa" }}
-                  >
-                    x{item.quantity ?? 0}
-                  </FFText>
+                  <View className="flex-row gap-2">
+                    <FFText
+                      fontWeight="400"
+                      fontSize="sm"
+                      style={{ color: "#aaa" }}
+                    >
+                      x{item.quantity ?? 0}
+                    </FFText>
+                    <FFText
+                      fontWeight="400"
+                      fontSize="sm"
+                      style={{ color: "#aaa" }}
+                    >
+                      {/* Show menu_item_variant info if available, fallback to variant_name */}
+                      {item.menu_item_variant?.variant ||
+                        item.variant_name ||
+                        "N/A"}
+                    </FFText>
+                    {item.menu_item_variant?.price && (
+                      <FFText
+                        fontWeight="400"
+                        fontSize="sm"
+                        style={{ color: "#4c9f3a" }}
+                      >
+                        ${item.menu_item_variant.price}
+                      </FFText>
+                    )}
+                  </View>
                 </View>
                 <TouchableOpacity
                   onPress={() => setIsExpandedOrderItem(!isExpandedOrderItem)}
@@ -555,7 +535,7 @@ export const DetailedOrder: React.FC<DetailedOrderProps> = ({
         className="flex-col gap-4 w-full items-center"
         style={{ marginBottom: spacing.veryLarge }}
       >
-        {type === "ACTIVE" && firstActiveOrder?.tracking_info && (
+        {type === "ACTIVE" && currentOrder?.tracking_info && (
           <>
             <View style={{ paddingHorizontal: spacing.lg }} className="w-full">
               <FFProgressStage
@@ -582,21 +562,21 @@ export const DetailedOrder: React.FC<DetailedOrderProps> = ({
                 }}
               >
                 {getTrackingText(
-                  firstActiveOrder.status as Enum_OrderStatus,
-                  firstActiveOrder.tracking_info as Enum_OrderTrackingInfo
+                  currentOrder.status as Enum_OrderStatus,
+                  currentOrder.tracking_info as Enum_OrderTrackingInfo
                 )}
               </FFText>
               <Image
                 source={{
                   uri: getTrackingImage(
-                    firstActiveOrder.status as Enum_OrderStatus,
-                    firstActiveOrder.tracking_info as Enum_OrderTrackingInfo
+                    currentOrder.status as Enum_OrderStatus,
+                    currentOrder.tracking_info as Enum_OrderTrackingInfo
                   ),
                 }}
                 style={{ width: "100%", height: 200, resizeMode: "cover" }}
               />
             </View>
-            {firstActiveOrder.driver_id && (
+            {currentOrder.driver_id && (
               <FFView
                 style={{
                   width: "100%",
@@ -610,7 +590,9 @@ export const DetailedOrder: React.FC<DetailedOrderProps> = ({
                   <View className="relative">
                     <FFAvatar
                       size={50}
-                      avatar={driverDetails?.avatar?.url ?? null}
+                      avatar={
+                        currentOrder?.driverDetails?.avatar?.url ?? undefined
+                      }
                     />
                     <View className="absolute -bottom-2 left-3 p-1 rounded-lg bg-[#56a943]">
                       <FFText
@@ -618,23 +600,25 @@ export const DetailedOrder: React.FC<DetailedOrderProps> = ({
                         fontWeight="400"
                         style={{ color: "#fff" }}
                       >
-                        {driverDetails?.rating?.average_rating ?? "4.8"}
+                        {currentOrder?.driverDetails?.rating?.average_rating ??
+                          "4.8"}
                       </FFText>
                     </View>
                   </View>
                   <View>
                     <View className="flex-row items-center gap-2">
                       <FFText style={{ color: "#4c9f3a" }}>
-                        {driverDetails?.first_name ?? "N/A"},{" "}
-                        {driverDetails?.last_name ?? "N/A"}
+                        {currentOrder?.driverDetails?.first_name ?? "N/A"},{" "}
+                        {currentOrder?.driverDetails?.last_name ?? "N/A"}
                       </FFText>
                       <FFText fontSize="sm" style={{ marginTop: 2 }}>
-                        {driverDetails?.vehicle?.license_plate ?? "N/A"}
+                        {currentOrder?.driverDetails?.vehicle?.license_plate ??
+                          "N/A"}
                       </FFText>
                     </View>
                     <FFText fontWeight="400" fontSize="sm">
-                      {driverDetails?.vehicle?.color ?? "N/A"}{" "}
-                      {driverDetails?.vehicle?.model ?? "N/A"}
+                      {currentOrder?.driverDetails?.vehicle?.color ?? "N/A"}{" "}
+                      {currentOrder?.driverDetails?.vehicle?.model ?? "N/A"}
                     </FFText>
                   </View>
                 </View>

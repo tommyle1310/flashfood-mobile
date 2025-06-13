@@ -7,6 +7,7 @@ import {
   Enum_OrderStatus,
   Enum_OrderTrackingInfo,
   OrderTrackingBase,
+  OrderItem,
 } from "../types/Orders";
 import {
   removeOrderTracking,
@@ -59,6 +60,15 @@ interface OrderTrackingSocket {
   } | null;
   customerFullAddress: string;
   restaurantFullAddress: string;
+  // NEW: order_items field that sometimes comes with menu_item_variant data
+  order_items?: OrderItem[] | null;
+  // NEW: Additional fields that sometimes come with notifyOrderStatus
+  total_amount?: number | string;
+  delivery_fee?: number | string;
+  service_fee?: number | string;
+  distance?: number | string;
+  total_restaurant_earn?: number | string;
+  promotions_applied?: any[];
 }
 
 interface OrderTrackingState {
@@ -279,61 +289,209 @@ export const useActiveOrderTrackingSocket = () => {
           };
         };
 
-        // Normalize data before dispatching
-        const normalizedData: OrderTracking = {
+        // Get existing order from store to preserve data not included in the update
+        const currentState = store.getState();
+        const existingOrder = currentState.orderTrackingRealtime.orders.find(
+          (order) => order.orderId === data.orderId
+        );
+
+        // SMART ORDER_ITEMS MERGE: Preserve menu_item_variant data when it exists
+        const mergeOrderItems = (
+          incomingItems: OrderItem[] | null | undefined,
+          existingItems: OrderItem[] | undefined
+        ): OrderItem[] => {
+          // If no incoming items, keep existing
+          if (!incomingItems || incomingItems.length === 0) {
+            return existingItems || [];
+          }
+
+          // If no existing items, use incoming
+          if (!existingItems || existingItems.length === 0) {
+            return incomingItems;
+          }
+
+          // Merge items intelligently - preserve menu_item_variant when it exists
+          return incomingItems.map((incomingItem) => {
+            const existingItem = existingItems.find(
+              (existing) =>
+                existing.item_id === incomingItem.item_id &&
+                existing.variant_id === incomingItem.variant_id
+            );
+
+            if (!existingItem) {
+              return incomingItem;
+            }
+
+            // Merge the items, preserving menu_item_variant if it exists in either
+            return {
+              ...incomingItem,
+              // CRITICAL: Only overwrite menu_item_variant if incoming has a truthy value
+              // Otherwise preserve existing menu_item_variant
+              menu_item_variant:
+                incomingItem.menu_item_variant ||
+                existingItem.menu_item_variant,
+            };
+          });
+        };
+
+        console.log("🔍 DETAILED notifyOrderStatus DATA:", {
+          orderId: data.orderId,
+          status: data.status,
+          tracking_info: data.tracking_info,
+          hasOrderItems: !!data.order_items,
+          orderItemsCount: data.order_items?.length || 0,
+          orderItemsDetails: data.order_items?.map((item) => ({
+            name: item.name,
+            quantity: item.quantity,
+            price_at_time_of_order: item.price_at_time_of_order,
+            hasMenuItemVariant: !!item.menu_item_variant,
+            menuItemVariant: item.menu_item_variant,
+          })),
+          totalAmount: (data as any).total_amount,
+          deliveryFee: (data as any).delivery_fee,
+          serviceFee: (data as any).service_fee,
+          distance: (data as any).distance,
+          allIncomingFields: Object.keys(data),
+        });
+
+        console.log("📊 MERGE INFO:", {
+          orderId: data.orderId,
+          existingOrderFound: !!existingOrder,
+          incomingDriverDetails: !!data.driverDetails,
+          existingDriverDetails: !!existingOrder?.driverDetails,
+          incomingOrderItems: !!data.order_items,
+          incomingOrderItemsCount: data.order_items?.length || 0,
+          existingOrderItemsCount: existingOrder?.order_items?.length || 0,
+          hasMenuItemVariant:
+            data.order_items?.some((item) => !!item.menu_item_variant) || false,
+        });
+
+        // Create merged data - preserve existing data and only update fields present in the incoming data
+        const mergedData: OrderTracking = {
+          // Always update these core tracking fields
           id: data.orderId,
           orderId: data.orderId,
           status: orderStatus,
           tracking_info: trackingInfo,
           updated_at: data.updated_at,
           customer_id: data.customer_id,
-          driver_id: data.driver_id || "",
           restaurant_id: data.restaurant_id,
-          restaurant_avatar: data.restaurant_avatar || null,
-          driver_avatar: data.driver_avatar || null,
-          restaurantAddress: convertAddress(data.restaurantAddress),
-          customerAddress: convertAddress(data.customerAddress),
-          driverDetails: data.driverDetails || null,
-          restaurantFullAddress: data.restaurantFullAddress || "",
-          customerFullAddress: data.customerFullAddress || "",
-          // Add required fields for OrderTracking type
-          customer: {
+
+          // Conditionally update these fields only if they're present in the incoming data
+          driver_id:
+            data.driver_id !== undefined
+              ? data.driver_id || ""
+              : existingOrder?.driver_id || "",
+          restaurant_avatar:
+            data.restaurant_avatar !== undefined
+              ? data.restaurant_avatar
+              : existingOrder?.restaurant_avatar || null,
+          driver_avatar:
+            data.driver_avatar !== undefined
+              ? data.driver_avatar
+              : existingOrder?.driver_avatar || null,
+          restaurantAddress:
+            data.restaurantAddress !== undefined
+              ? convertAddress(data.restaurantAddress)
+              : existingOrder?.restaurantAddress || null,
+          customerAddress:
+            data.customerAddress !== undefined
+              ? convertAddress(data.customerAddress)
+              : existingOrder?.customerAddress || null,
+
+          // CRITICAL FIX: Only update driverDetails if it's actually present in the incoming data
+          // This prevents overwriting existing driver details with null when the update doesn't include them
+          driverDetails:
+            data.driverDetails !== undefined
+              ? data.driverDetails
+              : existingOrder?.driverDetails || null,
+
+          // CRITICAL FIX: Compute full addresses from address objects when available
+          restaurantFullAddress:
+            data.restaurantFullAddress !== undefined
+              ? data.restaurantFullAddress
+              : data.restaurantAddress
+              ? `${data.restaurantAddress.street}, ${data.restaurantAddress.city}, ${data.restaurantAddress.nationality}`
+              : existingOrder?.restaurantFullAddress || "",
+          customerFullAddress:
+            data.customerFullAddress !== undefined
+              ? data.customerFullAddress
+              : data.customerAddress
+              ? `${data.customerAddress.street}, ${data.customerAddress.city}, ${data.customerAddress.nationality}`
+              : existingOrder?.customerFullAddress || "",
+
+          // Preserve existing order details or use defaults for new orders
+          customer: existingOrder?.customer || {
             avatar: null,
             favorite_items: null,
             first_name: "",
             id: data.customer_id,
             last_name: "",
           },
-          customer_location: "",
-          customer_note: "",
-          delivery_time: "0",
-          distance: "0",
+          customer_location: existingOrder?.customer_location || "",
+          customer_note: existingOrder?.customer_note || "",
+          delivery_time: existingOrder?.delivery_time || "0",
+          // CRITICAL FIX: Update distance if incoming has it, otherwise preserve existing
+          distance:
+            (data as any).distance !== undefined
+              ? String((data as any).distance)
+              : existingOrder?.distance || "0",
           driver: data.driver_id
             ? {
                 id: data.driver_id,
                 avatar: data.driver_avatar,
               }
-            : null,
-          order_items: [],
-          order_time: "0",
-          payment_method: "",
-          payment_status: "PENDING",
-          restaurant: {
+            : existingOrder?.driver || null,
+          // SMART MERGE: Use the intelligent order_items merge function
+          order_items: mergeOrderItems(
+            data.order_items,
+            existingOrder?.order_items
+          ),
+          order_time: existingOrder?.order_time || "0",
+          payment_method: existingOrder?.payment_method || "",
+          payment_status: existingOrder?.payment_status || "PENDING",
+          restaurant: existingOrder?.restaurant || {
             id: data.restaurant_id,
             avatar: data.restaurant_avatar,
           },
-          restaurant_location: "",
-          restaurant_note: "",
-          total_amount: "0",
+          restaurant_location: existingOrder?.restaurant_location || "",
+          restaurant_note: existingOrder?.restaurant_note || "",
+          // CRITICAL FIX: Update total_amount if incoming has it, otherwise preserve existing
+          total_amount:
+            (data as any).total_amount !== undefined
+              ? String((data as any).total_amount)
+              : existingOrder?.total_amount || "0",
         };
 
-        console.log("Updating order tracking:", {
-          orderId: normalizedData.orderId,
-          status: normalizedData.status,
-          tracking_info: normalizedData.tracking_info,
+        console.log("🚀 FINAL MERGED DATA:", {
+          orderId: mergedData.orderId,
+          status: mergedData.status,
+          tracking_info: mergedData.tracking_info,
+          driverDetailsPreserved: !!mergedData.driverDetails,
+          wasExistingOrder: !!existingOrder,
+          orderItemsCount: mergedData.order_items.length,
+          totalAmount: mergedData.total_amount,
+          distance: mergedData.distance,
+          customerFullAddress: mergedData.customerFullAddress,
+          restaurantFullAddress: mergedData.restaurantFullAddress,
+          hasMenuItemVariantData: mergedData.order_items.some(
+            (item) => !!item.menu_item_variant
+          ),
+          menuItemVariantItems: mergedData.order_items
+            .filter((item) => !!item.menu_item_variant)
+            .map((item) => ({
+              name: item.name,
+              variant: item.menu_item_variant?.variant,
+              price: item.menu_item_variant?.price,
+            })),
+          orderItemsDetails: mergedData.order_items.map((item) => ({
+            name: item.name,
+            quantity: item.quantity,
+            hasMenuItemVariant: !!item.menu_item_variant,
+          })),
         });
 
-        dispatch(updateAndSaveOrderTracking(normalizedData));
+        dispatch(updateAndSaveOrderTracking(mergedData));
       } catch (error) {
         console.error("Error handling order update:", error);
         // If we can't verify the order with the server, remove it from tracking

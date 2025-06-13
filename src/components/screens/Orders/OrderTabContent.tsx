@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useMemo } from "react";
 import { ScrollView, View } from "react-native";
 import { useSelector } from "@/src/store/types";
 import { RootState } from "@/src/store/store";
@@ -35,23 +35,137 @@ export const OrderTabContent: React.FC<OrderTabContentProps> = ({
   orderStatusStages,
   onReOrder,
 }) => {
-  console.log("check type", type);
-
   const { orders: realtimeOrders } = useSelector(
     (state: RootState) => state.orderTrackingRealtime
   );
+
+  // UI state management - simplified and cleaner
   const [isExpandedOrderItem, setIsExpandedOrderItem] = useState(false);
   const [detailedOrder, setDetailedOrder] =
     useState<OrderTrackingScreen | null>(null);
   const [tipAmount, setTipAmount] = useState<string | number>(0);
-  const [driverDetails, setDriverDetails] = useState<any | null>(null);
   const [isShowTipToDriverModal, setShowTipToDriverModal] = useState(false);
-  const [activeOrderDetails, setActiveOrderDetails] =
-    useState<OrderTrackingScreen | null>(null);
-  const firstActiveOrder =
-    (realtimeOrders[0] as unknown as OrderTrackingScreen) || null;
   const [isTippedSuccessful, setIsTippedSuccessful] = useState(false);
   const [currentOrderStage, setCurrentOrderStage] = useState<number>(0);
+
+  // SIMPLIFIED DATA SOURCE: Create a single computed active order instead of multiple state variables
+  // This eliminates the confusing fallback pattern and provides a single source of truth
+  const activeOrder = useMemo(() => {
+    if (type !== "ACTIVE" || !realtimeOrders.length) {
+      return null;
+    }
+
+    const realtimeOrder = realtimeOrders[0];
+    const fullOrderDetails = orders.find((o) => o.id === realtimeOrder.orderId);
+
+    // Merge real-time data with full order details for a complete picture
+    const mergedOrder: OrderTrackingScreen = {
+      // Use real-time data for tracking information
+      ...realtimeOrder,
+      id: realtimeOrder.orderId,
+      status: realtimeOrder.status as Enum_OrderStatus,
+      tracking_info: realtimeOrder.tracking_info as Enum_OrderTrackingInfo,
+
+      // Compute addresses consistently
+      customerFullAddress: realtimeOrder.customerAddress
+        ? `${realtimeOrder.customerAddress.street}, ${realtimeOrder.customerAddress.city}, ${realtimeOrder.customerAddress.nationality}`
+        : realtimeOrder.customerFullAddress || "N/A",
+      restaurantFullAddress: realtimeOrder.restaurantAddress
+        ? `${realtimeOrder.restaurantAddress.street}, ${realtimeOrder.restaurantAddress.city}, ${realtimeOrder.restaurantAddress.nationality}`
+        : realtimeOrder.restaurantFullAddress || "N/A",
+
+      // Use full order details for comprehensive data, fallback to real-time data
+      customer: fullOrderDetails?.customer ?? {
+        id: realtimeOrder.customer_id,
+        first_name: "",
+        last_name: "",
+        avatar: null,
+        favorite_items: null,
+      },
+      customerAddress: realtimeOrder.customerAddress ?? {
+        id: "",
+        street: "",
+        city: "",
+        nationality: "",
+        is_default: false,
+        created_at: 0,
+        updated_at: 0,
+        postal_code: 0,
+        location: { lat: 0, lon: 0 },
+        title: "",
+      },
+      restaurantAddress: realtimeOrder.restaurantAddress ?? {
+        id: "",
+        street: "",
+        city: "",
+        nationality: "",
+        is_default: false,
+        created_at: 0,
+        updated_at: 0,
+        postal_code: 0,
+        location: { lat: 0, lon: 0 },
+        title: "",
+      },
+      customer_location: fullOrderDetails?.customer_location ?? "",
+      customer_note: fullOrderDetails?.customer_note ?? "",
+      distance: String(
+        realtimeOrder.distance || fullOrderDetails?.distance || ""
+      ),
+      delivery_time: fullOrderDetails?.delivery_time ?? "",
+      driver: realtimeOrder.driver_id
+        ? {
+            id: realtimeOrder.driver_id,
+            avatar: realtimeOrder.driver_avatar,
+          }
+        : null,
+      order_items:
+        realtimeOrder.order_items || fullOrderDetails?.order_items || [],
+      order_time: fullOrderDetails?.order_time ?? "",
+      payment_method: fullOrderDetails?.payment_method ?? "",
+      payment_status: fullOrderDetails?.payment_status ?? "PENDING",
+      restaurant: fullOrderDetails?.restaurant ?? {
+        id: realtimeOrder.restaurant_id,
+        restaurant_name: "",
+        address_id: "",
+        avatar: realtimeOrder.restaurant_avatar,
+        contact_email: [],
+        contact_phone: [],
+        created_at: 0,
+        specialize_in: [],
+        description: null,
+        images_gallery: null,
+        opening_hours: null,
+        owner_id: "",
+        owner_name: "",
+        promotions: null,
+        ratings: null,
+        status: null,
+        updated_at: 0,
+      },
+      restaurant_location: fullOrderDetails?.restaurant_location ?? "",
+      restaurant_note: fullOrderDetails?.restaurant_note ?? "",
+      total_amount: String(
+        realtimeOrder.total_amount || fullOrderDetails?.total_amount || "0"
+      ),
+    };
+
+    console.log("🔄 ACTIVE ORDER COMPUTATION:", {
+      type,
+      realtimeOrdersCount: realtimeOrders.length,
+      realtimeOrderId: realtimeOrder?.orderId,
+      realtimeOrderItems: realtimeOrder?.order_items?.length || 0,
+      realtimeOrderItemsDetails: realtimeOrder?.order_items?.map((item) => ({
+        name: item.name,
+        hasMenuItemVariant: !!item.menu_item_variant,
+      })),
+      fullOrderDetailsFound: !!fullOrderDetails,
+      mergedOrderItemsCount: mergedOrder.order_items.length,
+      mergedOrderTotalAmount: mergedOrder.total_amount,
+      mergedOrderDistance: mergedOrder.distance,
+    });
+
+    return mergedOrder;
+  }, [realtimeOrders, orders, type]);
 
   const handleTipToDriver = async () => {
     if (!setIsLoading) return;
@@ -60,7 +174,7 @@ export const OrderTabContent: React.FC<OrderTabContentProps> = ({
       console.log("check tip amount", parseFloat(String(tipAmount)));
       const tipValue = parseFloat(String(tipAmount)) || 0;
       const response = await axiosInstance.post("/orders/tip", {
-        orderId: firstActiveOrder?.orderId || activeOrderDetails?.id,
+        orderId: activeOrder?.orderId || activeOrder?.id,
         tipAmount: tipValue,
       });
       console.log("tip to driver response", response.data);
@@ -75,131 +189,33 @@ export const OrderTabContent: React.FC<OrderTabContentProps> = ({
     }
   };
 
+  // SIMPLIFIED EFFECTS: Much cleaner and easier to understand
   useEffect(() => {
-    setCurrentOrderStage(() => {
-      switch (firstActiveOrder?.status) {
-        case Enum_OrderStatus.PENDING:
-          return 1;
-        case Enum_OrderStatus.PREPARING:
-          return 2;
-        case Enum_OrderStatus.DISPATCHED:
-          return 3;
-        case Enum_OrderStatus.READY_FOR_PICKUP:
-          return 4;
-        case Enum_OrderStatus.RESTAURANT_PICKUP:
-          return 5;
-        case Enum_OrderStatus.EN_ROUTE:
-          return 6;
-        default:
-          return 0;
+    // Update current order stage based on active order status
+    if (activeOrder?.status) {
+      const stageMap = {
+        [Enum_OrderStatus.PENDING]: 1,
+        [Enum_OrderStatus.PREPARING]: 2,
+        [Enum_OrderStatus.DISPATCHED]: 3,
+        [Enum_OrderStatus.READY_FOR_PICKUP]: 4,
+        [Enum_OrderStatus.RESTAURANT_PICKUP]: 5,
+        [Enum_OrderStatus.EN_ROUTE]: 6,
+      };
+      setCurrentOrderStage(stageMap[activeOrder.status] || 0);
+
+      // Trigger refetch when order is dispatched
+      if (refetchOrders && activeOrder.status === Enum_OrderStatus.DISPATCHED) {
+        refetchOrders();
       }
-    });
-    if (
-      refetchOrders &&
-      firstActiveOrder?.status === Enum_OrderStatus.DISPATCHED
-    ) {
-      refetchOrders();
-    }
-  }, [firstActiveOrder, refetchOrders]);
-
-  useEffect(() => {
-    console.log("realtimeOrders:", realtimeOrders);
-    if (realtimeOrders?.length > 0 && type === "ACTIVE") {
-      const order = realtimeOrders[0];
-      const fullOrder = orders.find((o) => o.id === order.orderId) || null;
-
-      const computedCustomerFullAddress = order.customerAddress
-        ? `${order.customerAddress.street}, ${order.customerAddress.city}, ${order.customerAddress.nationality}`
-        : order.customerFullAddress || "N/A";
-      const computedRestaurantFullAddress = order.restaurantAddress
-        ? `${order.restaurantAddress.street}, ${order.restaurantAddress.city}, ${order.restaurantAddress.nationality}`
-        : order.restaurantFullAddress || "N/A";
-
-      setDriverDetails(order.driverDetails || null);
-      setActiveOrderDetails({
-        ...order,
-        id: order.orderId,
-        customer: fullOrder?.customer ?? {
-          id: "",
-          first_name: "",
-          last_name: "",
-          avatar: null,
-          favorite_items: null,
-        },
-        customerAddress: order.customerAddress ?? {
-          id: "",
-          street: "",
-          city: "",
-          nationality: "",
-          is_default: false,
-          created_at: 0,
-          updated_at: 0,
-          postal_code: 0,
-          location: { lat: 0, lon: 0 },
-          title: "",
-        },
-        restaurantAddress: order.restaurantAddress ?? {
-          id: "",
-          street: "",
-          city: "",
-          nationality: "",
-          is_default: false,
-          created_at: 0,
-          updated_at: 0,
-          postal_code: 0,
-          location: { lat: 0, lon: 0 },
-          title: "",
-        },
-        customer_id: order.customer_id,
-        customer_location: fullOrder?.customer_location ?? "",
-        customer_note: fullOrder?.customer_note ?? "",
-        distance: fullOrder?.distance ?? order.distance ?? "",
-        delivery_time: fullOrder?.delivery_time ?? "",
-        driver: null,
-        driver_id: order.driver_id,
-        order_items: fullOrder?.order_items ?? [],
-        order_time: fullOrder?.order_time ?? "",
-        payment_method: fullOrder?.payment_method ?? "",
-        payment_status: fullOrder?.payment_status ?? "PENDING",
-        restaurant: fullOrder?.restaurant ?? {
-          id: order.restaurant_id,
-          restaurant_name: "",
-          address_id: "",
-          avatar: null,
-          contact_email: [],
-          contact_phone: [],
-          created_at: 0,
-          specialize_in: [],
-          description: null,
-          images_gallery: null,
-          opening_hours: null,
-          owner_id: "",
-          owner_name: "",
-          promotions: null,
-          ratings: null,
-          status: null,
-          updated_at: 0,
-        },
-        restaurant_id: order.restaurant_id,
-        restaurant_location: fullOrder?.restaurant_location ?? "",
-        restaurant_note: fullOrder?.restaurant_note ?? "",
-        status: order.status as Enum_OrderStatus,
-        total_amount: fullOrder?.total_amount ?? "0",
-        tracking_info: order.tracking_info as Enum_OrderTrackingInfo,
-        customerFullAddress: computedCustomerFullAddress,
-        restaurantFullAddress: computedRestaurantFullAddress,
-      });
     } else {
-      setDriverDetails(null);
-      setActiveOrderDetails(null);
+      setCurrentOrderStage(0);
     }
-  }, [realtimeOrders, orders, type]);
+  }, [activeOrder?.status, refetchOrders]);
 
+  // Clear detailed order when switching away from ACTIVE tab
   useEffect(() => {
     if (type !== "ACTIVE") {
-      setActiveOrderDetails(null);
       setDetailedOrder(null);
-      setDriverDetails(null);
     }
   }, [type]);
 
@@ -237,9 +253,9 @@ export const OrderTabContent: React.FC<OrderTabContentProps> = ({
           type={type}
           detailedOrder={detailedOrder}
           setDetailedOrder={setDetailedOrder}
-          firstActiveOrder={firstActiveOrder}
-          activeOrderDetails={activeOrderDetails}
-          driverDetails={driverDetails}
+          // SIMPLIFIED: Use single activeOrder instead of multiple confusing props
+          firstActiveOrder={activeOrder}
+          activeOrderDetails={activeOrder}
           currentOrderStage={currentOrderStage}
           orderStatusStages={orderStatusStages}
           navigation={navigation}

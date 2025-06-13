@@ -45,8 +45,17 @@ export type OrderItem = {
   quantity?: number | null;
   variant_name?: string;
   menu_item?: any;
-  price_at_time_of_order?: number | null;
+  price_at_time_of_order?: number | string | null;
+  price_after_applied_promotion?: number | string | null;
   variant_id?: string | null;
+  // NEW: menu_item_variant field that sometimes comes from notifyOrderStatus
+  menu_item_variant?: {
+    id: string;
+    menu_id: string;
+    variant: string;
+    description: string;
+    price: string | number;
+  } | null;
   restaurant?: {
     id: string;
   };

@@ -156,7 +156,6 @@ const OrdersScreen: React.FC = () => {
     try {
       setLoading(true);
       const res = await axiosInstance.get(`/customers/orders/${id}`);
-      console.log("Fetched orders from API:", res.data.data?.length || 0);
       const newOrders = (res.data.data as OrderTracking[]).map((order) => ({
         ...order,
         customerFullAddress: order.customerAddress
@@ -167,14 +166,6 @@ const OrdersScreen: React.FC = () => {
           : order.restaurantFullAddress || "N/A",
       }));
       setOrders(newOrders || []);
-      console.log(
-        "All orders statuses:",
-        newOrders.map((order) => ({
-          id: order.id,
-          status: order.status,
-          tracking_info: order.tracking_info,
-        }))
-      );
     } catch (error) {
       console.error("Error fetching orders:", error);
       setOrders([]);
