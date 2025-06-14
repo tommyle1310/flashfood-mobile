@@ -8,6 +8,7 @@ import FFSafeAreaView from "@/src/components/FFSafeAreaView";
 import { useActiveOrderTrackingSocket } from "@/src/hooks/useActiveOrderTrackingSocket";
 import { loadOrderTrackingFromAsyncStorage } from "@/src/store/orderTrackingRealtimeSlice";
 import { loadTokenFromAsyncStorage } from "@/src/store/authSlice";
+import { loadChatDataFromStorage } from "@/src/store/chatSlice";
 
 const AppContent = () => {
   const dispatch = useDispatch();
@@ -17,6 +18,7 @@ const AppContent = () => {
     const loadInitialData = async () => {
       await dispatch(loadTokenFromAsyncStorage());
       await dispatch(loadOrderTrackingFromAsyncStorage());
+      await dispatch(loadChatDataFromStorage());
     };
 
     loadInitialData();
