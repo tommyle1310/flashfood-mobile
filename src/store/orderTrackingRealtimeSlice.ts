@@ -35,14 +35,15 @@ const debouncedSaveToStorage = debounce(async (orders: OrderTracking[]) => {
   }
 }, 500); // Reduced debounce time for faster saves
 
-// Immediate save function for critical updates
-const saveToStorageImmediate = async (orders: OrderTracking[]) => {
-  try {
-    await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(orders));
-    console.log("🚀 Immediately saved orders to AsyncStorage:", orders.length);
-  } catch (error) {
-    console.error("❌ Error immediately saving to AsyncStorage:", error);
-  }
+// NON-BLOCKING save function - don't await to avoid blocking event listeners
+const saveToStorageNonBlocking = (orders: OrderTracking[]) => {
+  AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(orders))
+    .then(() => {
+      console.log("🚀 Saved orders to AsyncStorage:", orders.length);
+    })
+    .catch((error) => {
+      console.error("❌ Error saving to AsyncStorage:", error);
+    });
 };
 
 export const updateAndSaveOrderTracking = createAsyncThunk(
@@ -92,8 +93,8 @@ export const updateAndSaveOrderTracking = createAsyncThunk(
       orders: updatedOrders.map(mapOrderToLog),
     });
 
-    // Save to AsyncStorage
-    await debouncedSaveToStorage(updatedOrders);
+    // Save to AsyncStorage - NON-BLOCKING to avoid interfering with event listeners
+    debouncedSaveToStorage(updatedOrders);
 
     return updatedOrders;
   }
@@ -141,26 +142,6 @@ export const loadOrderTrackingFromAsyncStorage = createAsyncThunk(
   }
 );
 
-// NEW: Manual save function for immediate persistence
-export const saveOrderTrackingToAsyncStorage = createAsyncThunk(
-  "orderTrackingRealtime/saveOrderTracking",
-  async (_: void, { getState }) => {
-    const state = getState() as {
-      orderTrackingRealtime: OrderTrackingRealtimeState;
-    };
-    const orders = state.orderTrackingRealtime.orders;
-
-    try {
-      await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(orders));
-      console.log("💾 Manually saved orders to AsyncStorage:", orders.length);
-      return orders;
-    } catch (error) {
-      console.error("❌ Error manually saving to AsyncStorage:", error);
-      throw error;
-    }
-  }
-);
-
 const orderTrackingRealtimeSlice = createSlice({
   name: "orderTrackingRealtime",
   initialState,
@@ -169,23 +150,23 @@ const orderTrackingRealtimeSlice = createSlice({
       const orderId = action.payload;
       console.log("🗑️ Removing order:", orderId);
       state.orders = state.orders.filter((order) => order.orderId !== orderId);
-      // CRITICAL FIX: Immediate save for important state changes
-      saveToStorageImmediate(state.orders);
+      // NON-BLOCKING save to avoid interfering with event listeners
+      saveToStorageNonBlocking(state.orders);
       console.log("📊 Orders after removal:", state.orders.length);
     },
     clearOrderTracking: (state) => {
       console.log("🧹 Clearing all orders");
       state.orders = [];
-      // CRITICAL FIX: Immediate save for clearing
-      saveToStorageImmediate([]);
+      // NON-BLOCKING save to avoid interfering with event listeners
+      saveToStorageNonBlocking([]);
     },
-    // NEW: Direct state update with immediate save
+    // NEW: Direct state update with non-blocking save
     updateOrderTrackingState: (state, action) => {
       const orders = action.payload;
       console.log("🔄 Direct state update with orders:", orders.length);
       state.orders = orders;
-      // CRITICAL FIX: Immediate save for state updates
-      saveToStorageImmediate(orders);
+      // NON-BLOCKING save to avoid interfering with event listeners
+      saveToStorageNonBlocking(orders);
     },
   },
   extraReducers: (builder) => {
@@ -204,8 +185,7 @@ const orderTrackingRealtimeSlice = createSlice({
             action.payload.length
           );
           state.orders = action.payload;
-          // CRITICAL FIX: Ensure immediate save after async thunk
-          saveToStorageImmediate(action.payload);
+          // The async thunk already handles saving, no need to save again here
         }
       })
       .addCase(loadOrderTrackingFromAsyncStorage.rejected, (state, action) => {
@@ -217,12 +197,6 @@ const orderTrackingRealtimeSlice = createSlice({
       })
       .addCase(updateAndSaveOrderTracking.rejected, (state, action) => {
         console.error("❌ Failed to update and save orders:", action.error);
-      })
-      .addCase(saveOrderTrackingToAsyncStorage.fulfilled, (state, action) => {
-        console.log("✅ Manual save completed successfully");
-      })
-      .addCase(saveOrderTrackingToAsyncStorage.rejected, (state, action) => {
-        console.error("❌ Manual save failed:", action.error);
       });
   },
 });

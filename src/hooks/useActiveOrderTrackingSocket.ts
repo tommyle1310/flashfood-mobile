@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState } from "react";
 import { io, Socket } from "socket.io-client";
 import { useDispatch, useSelector } from "@/src/store/types";
 import store, { RootState } from "@/src/store/store";
@@ -12,7 +12,6 @@ import {
 import {
   removeOrderTracking,
   updateAndSaveOrderTracking,
-  clearOrderTracking,
 } from "@/src/store/orderTrackingRealtimeSlice";
 import { useNavigation } from "@react-navigation/native";
 import { StackNavigationProp } from "@react-navigation/stack";
@@ -95,42 +94,9 @@ export const useActiveOrderTrackingSocket = () => {
   const [socket, setSocket] = useState<Socket | null>(null);
   const { accessToken, id } = useSelector((state: RootState) => state.auth);
   const dispatch = useDispatch();
-  const [reconnectAttempts, setReconnectAttempts] = useState(0);
-  const MAX_RECONNECT_ATTEMPTS = 5;
-
-  const cleanupStaleOrders = useCallback(async () => {
-    try {
-      const response = await axiosInstance.get(`/customers/orders/${id}`);
-      const serverOrders = response.data.data || [];
-      const serverOrderIds = new Set(
-        serverOrders.map((o: OrderTracking) => o.id)
-      );
-
-      // Get current orders from Redux
-      const state = store.getState() as {
-        orderTrackingRealtime: OrderTrackingState;
-      };
-      const currentOrders = state.orderTrackingRealtime.orders;
-
-      // Remove any orders that don't exist on the server
-      currentOrders.forEach((order: OrderTracking) => {
-        if (!serverOrderIds.has(order.orderId || order.id)) {
-          console.log(
-            `Removing stale order ${
-              order.orderId || order.id
-            } - not found on server`
-          );
-          dispatch(removeOrderTracking(order.orderId || order.id));
-        }
-      });
-    } catch (error) {
-      console.error("Error cleaning up stale orders:", error);
-    }
-  }, [id, dispatch]);
 
   useEffect(() => {
-    if (!accessToken) {
-      console.log("No access token available");
+    if (!accessToken || !id) {
       return;
     }
 
@@ -139,41 +105,47 @@ export const useActiveOrderTrackingSocket = () => {
       extraHeaders: {
         auth: `Bearer ${accessToken}`,
       },
-      reconnectionAttempts: MAX_RECONNECT_ATTEMPTS,
-      reconnectionDelay: 1000,
-      reconnectionDelayMax: 5000,
     });
 
     socketInstance.on("connect", () => {
-      console.log("Connected to order tracking server");
+      console.log("🟢 Connected to order tracking server");
       setSocket(socketInstance);
-      setReconnectAttempts(0);
-      // Clean up stale orders on successful connection
-      cleanupStaleOrders();
+
+      // Clean up stale orders on successful connection (inline to avoid dependency issues)
+      axiosInstance
+        .get(`/customers/orders/${id}`)
+        .then((response) => {
+          const serverOrders = response.data.data || [];
+          const serverOrderIds = new Set(
+            serverOrders.map((o: OrderTracking) => o.id)
+          );
+
+          // Get current orders from Redux
+          const state = store.getState() as {
+            orderTrackingRealtime: OrderTrackingState;
+          };
+          const currentOrders = state.orderTrackingRealtime.orders;
+
+          // Remove any orders that don't exist on the server
+          currentOrders.forEach((order: OrderTracking) => {
+            if (!serverOrderIds.has(order.orderId || order.id)) {
+              console.log(
+                `Removing stale order ${
+                  order.orderId || order.id
+                } - not found on server`
+              );
+              dispatch(removeOrderTracking(order.orderId || order.id));
+            }
+          });
+        })
+        .catch((error) => {
+          console.error("Error cleaning up stale orders:", error);
+        });
     });
 
     socketInstance.on("disconnect", (reason) => {
-      console.log("Disconnected from order tracking server:", reason);
+      console.log("🔴 Disconnected:", reason);
       setSocket(null);
-
-      if (
-        reason === "io server disconnect" ||
-        reason === "io client disconnect"
-      ) {
-        // Server/client initiated the disconnect, don't attempt to reconnect
-        return;
-      }
-
-      setReconnectAttempts((prev) => {
-        const newAttempts = prev + 1;
-        if (newAttempts >= MAX_RECONNECT_ATTEMPTS) {
-          console.log(
-            "Max reconnection attempts reached, clearing order tracking"
-          );
-          dispatch(clearOrderTracking());
-        }
-        return newAttempts;
-      });
     });
 
     socketInstance.on("connect_error", (error) => {
@@ -189,23 +161,27 @@ export const useActiveOrderTrackingSocket = () => {
       });
 
       try {
-        // Validate that this order exists on the server
-        const response = await axiosInstance.get(
-          `/orders/${data.orderId}/status`
-        );
-
-        if (!response.data) {
-          console.log(
-            "Order not found on server, removing from tracking:",
-            data.orderId
-          );
-          dispatch(removeOrderTracking(data.orderId));
-          return;
-        }
-
-        // Use socket status if server status is not available
-        const orderStatus = response.data.status || data.status;
+        // CRITICAL FIX: Don't block event listener with server verification
+        // Use socket data directly and verify in background
+        const orderStatus = data.status;
         const trackingInfo = data.tracking_info;
+
+        // Background server verification (non-blocking)
+        axiosInstance
+          .get(`/orders/${data.orderId}/status`)
+          .then((response) => {
+            if (!response.data) {
+              console.log(
+                "Order not found on server, removing from tracking:",
+                data.orderId
+              );
+              dispatch(removeOrderTracking(data.orderId));
+            }
+          })
+          .catch((error) => {
+            console.log("Background verification failed:", error.message);
+            // Don't remove order if verification fails due to network issues
+          });
 
         // Log status changes
         console.log("Order status update:", {
@@ -213,7 +189,6 @@ export const useActiveOrderTrackingSocket = () => {
           previousStatus: data.status,
           newStatus: orderStatus,
           tracking: trackingInfo,
-          serverStatus: response.data.status,
         });
 
         // For delivered orders, show rating screen but keep the order
@@ -358,7 +333,15 @@ export const useActiveOrderTrackingSocket = () => {
           orderId: data.orderId,
           existingOrderFound: !!existingOrder,
           incomingDriverDetails: !!data.driverDetails,
+          incomingDriverDetailsValid: !!(
+            data.driverDetails && Object.keys(data.driverDetails).length > 0
+          ),
           existingDriverDetails: !!existingOrder?.driverDetails,
+          willPreserveExistingDriverDetails: !!(
+            existingOrder?.driverDetails &&
+            (!data.driverDetails ||
+              Object.keys(data.driverDetails).length === 0)
+          ),
           incomingOrderItems: !!data.order_items,
           incomingOrderItemsCount: data.order_items?.length || 0,
           existingOrderItemsCount: existingOrder?.order_items?.length || 0,
@@ -393,16 +376,16 @@ export const useActiveOrderTrackingSocket = () => {
           restaurantAddress:
             data.restaurantAddress !== undefined
               ? convertAddress(data.restaurantAddress)
-              : existingOrder?.restaurantAddress || null,
+              : existingOrder?.restaurantAddress || convertAddress(null),
           customerAddress:
             data.customerAddress !== undefined
               ? convertAddress(data.customerAddress)
-              : existingOrder?.customerAddress || null,
+              : existingOrder?.customerAddress || convertAddress(null),
 
-          // CRITICAL FIX: Only update driverDetails if it's actually present in the incoming data
-          // This prevents overwriting existing driver details with null when the update doesn't include them
+          // CRITICAL FIX: Only update driverDetails if it has a truthy value
+          // NEVER overwrite existing driverDetails with null/undefined - preserve existing data
           driverDetails:
-            data.driverDetails !== undefined
+            data.driverDetails && Object.keys(data.driverDetails).length > 0
               ? data.driverDetails
               : existingOrder?.driverDetails || null,
 
@@ -499,7 +482,13 @@ export const useActiveOrderTrackingSocket = () => {
       }
     };
 
+    // Test if socket can receive any events
+    socketInstance.onAny((eventName) => {
+      console.log("🎯 Socket received ANY event:", eventName);
+    });
+
     socketInstance.on("notifyOrderStatus", (data: OrderTrackingSocket) => {
+      console.log("🚨 NOTIFYORDERSTATUS EVENT RECEIVED!");
       console.log("check data:", JSON.stringify(data, null, 2));
       handleOrderUpdate(data);
     });
@@ -509,14 +498,11 @@ export const useActiveOrderTrackingSocket = () => {
     return () => {
       if (socketInstance) {
         socketInstance.disconnect();
-        // Clean up orders when unmounting
-        dispatch(clearOrderTracking());
       }
     };
-  }, [accessToken, id, dispatch, navigation, cleanupStaleOrders]);
+  }, [accessToken, id]); // CRITICAL: Only depend on auth data to prevent re-renders
 
   return {
     socket,
-    reconnectAttempts,
   };
 };

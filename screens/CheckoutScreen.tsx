@@ -66,7 +66,10 @@ const CheckoutScreen = () => {
       ]);
 
       // Log API responses for debugging
-      console.log("Finance rules response:", JSON.stringify(financeRulesResponse.data));
+      console.log(
+        "Finance rules response:",
+        JSON.stringify(financeRulesResponse.data)
+      );
 
       // Process restaurant response
       const restaurantData = restaurantResponse.data;
@@ -86,7 +89,12 @@ const CheckoutScreen = () => {
         setFinanceRules(data[0]);
         const deliveryFeeValue = data[0].delivery_fee ?? DELIVERY_FEE ?? 0;
         setDeliveryFee(deliveryFeeValue);
-        console.log("Set financeRules:", data[0], "Delivery fee:", deliveryFeeValue);
+        console.log(
+          "Set financeRules:",
+          data[0],
+          "Delivery fee:",
+          deliveryFeeValue
+        );
       } else {
         console.error("Finance rules API error:", EM, "Data:", data);
         setFinanceRules(null);
@@ -123,7 +131,6 @@ const CheckoutScreen = () => {
       setTotalAmountActual(0);
     }
   }, [subTotal, financeRules, deliveryFee]);
-  
 
   const handleSelectPaymentMethod = (option: string) => {
     setSelectedPaymentMethod(option);
@@ -176,6 +183,8 @@ const CheckoutScreen = () => {
       const response = await axiosInstance.post(`/orders`, requestData, {
         validateStatus: () => true,
       });
+      console.log("check whar req data", requestData);
+
       console.log("Order response:", JSON.stringify(response.data));
       const { EC, data } = response.data;
       if (EC === 0) {

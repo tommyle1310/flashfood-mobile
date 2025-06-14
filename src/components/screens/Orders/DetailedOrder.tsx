@@ -98,6 +98,7 @@ export const DetailedOrder: React.FC<DetailedOrderProps> = ({
 
     return selectedOrder;
   }, [type, activeOrderDetails, firstActiveOrder, detailedOrder]);
+  console.log("cehck driverdetails ", currentOrder?.driverDetails);
 
   // CLEAN HELPER FUNCTIONS: Much simpler and easier to understand
   const getOrderItems = () => {
