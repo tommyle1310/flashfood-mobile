@@ -35,7 +35,8 @@ const OrderSummary = ({
   useEffect(() => {
     const calculatedSubTotal = orderItem.order_items.reduce((total, item) => {
       return (
-        total + (item?.price_at_time_of_order ?? 0) * (item?.quantity ?? 1)
+        total +
+        ((item?.price_at_time_of_order as number) ?? 0) * (item?.quantity ?? 1)
       );
     }, 0);
     setSubTotal(calculatedSubTotal);
@@ -45,7 +46,7 @@ const OrderSummary = ({
     <View className="flex-1">
       <View
         style={{
-          height: "60%",
+          // height: "60%",
           padding: spacing.md,
           borderRadius: 8,
         }}

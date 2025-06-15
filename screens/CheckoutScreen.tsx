@@ -1,7 +1,6 @@
-import { View } from "react-native";
+import { View, TouchableOpacity, ScrollView } from "react-native";
 import React, { useEffect, useState } from "react";
 import { RouteProp, useNavigation, useRoute } from "@react-navigation/native";
-import FFTab from "@/src/components/FFTab";
 import FFSafeAreaView from "@/src/components/FFSafeAreaView";
 import OrderSummary from "@/src/components/screens/Checkout/OrderSummary";
 import OrderConfirmation from "@/src/components/screens/Checkout/OrderConfirmation";
@@ -21,6 +20,12 @@ import {
 import Spinner from "@/src/components/FFSpinner";
 import { Promotion } from "@/src/types/Promotion";
 import { DELIVERY_FEE } from "@/src/utils/constants";
+import FFText from "@/src/components/FFText";
+import FFButton from "@/src/components/FFButton";
+import { colors, spacing } from "@/src/theme";
+import { useTheme } from "@/src/hooks/useTheme";
+import IconIonicons from "react-native-vector-icons/Ionicons";
+import FFToast from "@/src/components/FFToast";
 
 type CheckoutRouteProps = RouteProp<MainStackParamList, "Checkout">;
 type CheckoutScreenNavigationProp = StackNavigationProp<
@@ -42,12 +47,20 @@ const CheckoutScreen = () => {
   const [modalContentType, setModalContentType] = useState<
     "SUCCESS" | "ERROR" | "WARNING" | "INSUFFICIENT_BALANCE"
   >("ERROR");
+
+  // New modal states for the improved UX
+  const [isOrderSummaryModalVisible, setIsOrderSummaryModalVisible] =
+    useState(false);
+  const [isPaymentModalVisible, setIsPaymentModalVisible] = useState(false);
+  const [isConfirmationModalVisible, setIsConfirmationModalVisible] =
+    useState(false);
   const navigation = useNavigation<CheckoutScreenNavigationProp>();
   const [deliveryFee, setDeliveryFee] = useState<number>(0);
   const [serviceFee, setServiceFee] = useState<number>(0);
   const [subTotal, setSubTotal] = useState<number>(0);
   const [totalAmountActual, setTotalAmountActual] = useState<number>(0);
   const globalState = useSelector((state: RootState) => state.auth);
+  const { theme } = useTheme();
   const [selectedPaymentMethod, setSelectedPaymentMethod] =
     useState<string>("");
   const [selectedPromotion, setSelectedPromotion] = useState<string>("");
@@ -55,8 +68,15 @@ const CheckoutScreen = () => {
   const [customerNote, setCustomerNote] = useState<string>("");
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [promotionList, setPromotionList] = useState<Promotion[]>([]);
+  const [toastDetails, setToastDetails] = useState<{
+    status: "SUCCESS" | "DANGER" | "INFO" | "WARNING" | "HIDDEN";
+    title: string;
+    desc: string;
+  }>({ status: "HIDDEN", title: "", desc: "" });
   const [financeRules, setFinanceRules] = useState<FinanceRules | null>(null);
-
+  const realtimeOrders = useSelector(
+    (state: RootState) => state.orderTrackingRealtime.orders
+  );
   const fetchData = async () => {
     setIsLoading(true);
     try {
@@ -136,6 +156,18 @@ const CheckoutScreen = () => {
 
   const handlePlaceOrder = async () => {
     setIsLoading(true);
+    if (realtimeOrders && realtimeOrders?.[0]?.orderId) {
+      console.log("check what here", realtimeOrders);
+
+      setToastDetails({
+        status: "DANGER",
+        title: "Action Denied",
+        desc: "You are currently have 1 active order, please try again when that order is completed.",
+      });
+      setIsLoading(false);
+      return;
+    }
+
     if (!selectedPaymentMethod || !selectedAddress) {
       setIsShowModalStatusCheckout(true);
       setModalContentType("ERROR");
@@ -208,32 +240,99 @@ const CheckoutScreen = () => {
     }
   };
 
-  const tabContent = [
-    <OrderSummary
-      key="orderSummary"
-      orderItem={orderItem}
-      deliveryFee={deliveryFee}
-      serviceFee={serviceFee}
-      setTotalAmountParent={setSubTotal}
-      selectedPromotion={selectedPromotion}
-      promotionList={promotionList}
-      handleSelectPromotion={handleSelectPromotion}
-      totalAmountActual={totalAmountActual}
-    />,
-    <PaymentInformation
-      key="paymentInfo"
-      selected={selectedPaymentMethod}
-      handleSelect={handleSelectPaymentMethod}
-    />,
-    <OrderConfirmation
-      key="orderConfirmation"
-      handlePlaceOrder={handlePlaceOrder}
-      handleSelect={handleSelectAddress}
-      customerNote={customerNote}
-      setCustomerNote={setCustomerNote}
-      selected={selectedAddress}
-    />,
-  ];
+  console.log("cehck curen active", realtimeOrders);
+
+  // Helper function to get completion status for each section
+  const getSectionStatus = (
+    section: "summary" | "payment" | "confirmation"
+  ) => {
+    switch (section) {
+      case "summary":
+        return orderItem && orderItem.order_items.length > 0;
+      case "payment":
+        return selectedPaymentMethod !== "";
+      case "confirmation":
+        return selectedAddress !== "" && selectedAddress !== "Add Address";
+      default:
+        return false;
+    }
+  };
+
+  // Helper function to render section card
+  const renderSectionCard = (
+    title: string,
+    subtitle: string,
+    isCompleted: boolean,
+    onPress: () => void,
+    stepNumber: number
+  ) => {
+    const backgroundColor = theme === "light" ? "#fff" : "#333";
+    const borderColor = isCompleted
+      ? "#10B981"
+      : theme === "light"
+      ? "#E5E7EB"
+      : "#4B5563";
+    const textColor = theme === "light" ? "#111827" : "#F9FAFB";
+    const subtitleColor = theme === "light" ? "#6B7280" : "#9CA3AF";
+
+    return (
+      <TouchableOpacity
+        onPress={onPress}
+        style={{
+          backgroundColor,
+          borderWidth: 2,
+          borderColor,
+          borderRadius: 12,
+          padding: spacing.lg,
+          marginBottom: spacing.md,
+          flexDirection: "row",
+          alignItems: "center",
+          elevation: 2,
+          shadowColor: "#000",
+          shadowOffset: { width: 0, height: 2 },
+          shadowOpacity: 0.1,
+          shadowRadius: 4,
+        }}
+      >
+        {/* Step number circle */}
+        <View
+          style={{
+            width: 32,
+            height: 32,
+            borderRadius: 16,
+            backgroundColor: isCompleted ? "#10B981" : borderColor,
+            justifyContent: "center",
+            alignItems: "center",
+            marginRight: spacing.md,
+          }}
+        >
+          {isCompleted ? (
+            <IconIonicons name="checkmark" size={18} color="white" />
+          ) : (
+            <FFText style={{ color: "white", fontWeight: "bold" }}>
+              {stepNumber}
+            </FFText>
+          )}
+        </View>
+
+        {/* Content */}
+        <View style={{ flex: 1 }}>
+          <FFText
+            fontWeight="600"
+            style={{ color: textColor, marginBottom: 4 }}
+          >
+            {title}
+          </FFText>
+          <FFText fontSize="sm" style={{ color: subtitleColor }}>
+            {subtitle}
+          </FFText>
+        </View>
+
+        {/* Arrow icon */}
+        <IconIonicons name="chevron-forward" size={20} color={subtitleColor} />
+      </TouchableOpacity>
+    );
+  };
 
   if (isLoading) {
     return <Spinner isVisible isOverlay />;
@@ -242,16 +341,140 @@ const CheckoutScreen = () => {
   return (
     <FFSafeAreaView>
       <FFScreenTopSection title="Check Out" navigation={navigation} />
-      <View className="flex-1 p-4">
-        <FFTab
-          tabTitles={[
-            "Order Summary",
-            "Payment Information",
-            "Order Confirmation",
-          ]}
-          tabContent={tabContent}
+      <ScrollView
+        style={{ flex: 1 }}
+        contentContainerStyle={{ padding: spacing.lg }}
+      >
+        {/* Progress Header */}
+        <View style={{ marginBottom: spacing.xl }}>
+          <FFText
+            fontWeight="600"
+            fontSize="lg"
+            style={{ marginBottom: spacing.sm }}
+          >
+            Complete Your Order
+          </FFText>
+          <FFText
+            fontSize="sm"
+            style={{ color: theme === "light" ? "#6B7280" : "#9CA3AF" }}
+          >
+            Follow these steps to place your order
+          </FFText>
+        </View>
+
+        {/* Section Cards */}
+        {renderSectionCard(
+          "Order Summary",
+          orderItem
+            ? `${
+                orderItem.order_items.length
+              } items • $${totalAmountActual.toFixed(2)}`
+            : "Review your order",
+          getSectionStatus("summary"),
+          () => setIsOrderSummaryModalVisible(true),
+          1
+        )}
+
+        {renderSectionCard(
+          "Payment Information",
+          selectedPaymentMethod || "Select payment method",
+          getSectionStatus("payment"),
+          () => setIsPaymentModalVisible(true),
+          2
+        )}
+
+        {renderSectionCard(
+          "Order Confirmation",
+          selectedAddress && selectedAddress !== "Add Address"
+            ? selectedAddress
+            : "Select delivery address",
+          getSectionStatus("confirmation"),
+          () => setIsConfirmationModalVisible(true),
+          3
+        )}
+
+        {/* Place Order Button */}
+        <View style={{ marginTop: spacing.xl }}>
+          {(() => {
+            const isDisabled =
+              !getSectionStatus("summary") ||
+              !getSectionStatus("payment") ||
+              !getSectionStatus("confirmation");
+
+            return (
+              // <></>
+              <FFButton
+                style={{ width: "100%" }}
+                className="w-full"
+                onPress={isDisabled ? () => {} : handlePlaceOrder}
+              >
+                <FFText colorLight={colors.white} fontWeight="500">
+                  Place Order • ${totalAmountActual.toFixed(2)}
+                </FFText>
+              </FFButton>
+            );
+          })()}
+        </View>
+      </ScrollView>
+      <FFToast
+        onClose={() =>
+          setToastDetails({ status: "HIDDEN", title: "", desc: "" })
+        }
+        visible={toastDetails.status !== "HIDDEN"}
+        variant={"DANGER"}
+        title={toastDetails.title}
+      >
+        <FFText
+          fontWeight="400"
+          style={{ color: colors.textSecondary, fontSize: 14 }}
+        >
+          {" "}
+          {toastDetails.desc}
+        </FFText>
+      </FFToast>
+      {/* Modals */}
+      <FFModal
+        visible={isOrderSummaryModalVisible}
+        onClose={() => setIsOrderSummaryModalVisible(false)}
+      >
+        <OrderSummary
+          orderItem={orderItem}
+          deliveryFee={deliveryFee}
+          serviceFee={serviceFee}
+          setTotalAmountParent={setSubTotal}
+          selectedPromotion={selectedPromotion}
+          promotionList={promotionList}
+          handleSelectPromotion={handleSelectPromotion}
+          totalAmountActual={totalAmountActual}
         />
-      </View>
+      </FFModal>
+
+      <FFModal
+        visible={isPaymentModalVisible}
+        onClose={() => setIsPaymentModalVisible(false)}
+      >
+        <PaymentInformation
+          selected={selectedPaymentMethod}
+          handleSelect={handleSelectPaymentMethod}
+        />
+      </FFModal>
+
+      <FFModal
+        visible={isConfirmationModalVisible}
+        onClose={() => setIsConfirmationModalVisible(false)}
+      >
+        <OrderConfirmation
+          handlePlaceOrder={() => {
+            setIsConfirmationModalVisible(false);
+            handlePlaceOrder();
+          }}
+          handleSelect={handleSelectAddress}
+          customerNote={customerNote}
+          setCustomerNote={setCustomerNote}
+          selected={selectedAddress}
+        />
+      </FFModal>
+
       <FFModal
         visible={isShowModalStatusCheckout}
         onClose={() => setIsShowModalStatusCheckout(false)}
