@@ -121,7 +121,6 @@ export const loadCartItemsFromAsyncStorage = createAsyncThunk(
   "userPreference/loadCartItems",
   async () => {
     const cart_items = await AsyncStorage.getItem("cart_items");
-    console.log("Loaded cart_items from AsyncStorage:", cart_items);
     return cart_items ? JSON.parse(cart_items) : [];
   }
 );

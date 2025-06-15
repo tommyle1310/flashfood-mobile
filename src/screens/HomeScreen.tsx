@@ -35,10 +35,6 @@ const HomeScreen = () => {
     favoriteRestaurants,
     loading,
   } = useHomeScreen();
-  console.log(
-    "check everthign",
-    availablePromotionWithRestaurants?.[0]
-  );
   const renderedRestaurants =
     filteredRestaurants?.length > 0 ? filteredRestaurants : listRestaurants;
 

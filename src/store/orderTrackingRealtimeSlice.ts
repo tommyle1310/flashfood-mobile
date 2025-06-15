@@ -20,7 +20,7 @@ const initialState: OrderTrackingRealtimeState = {
 
 // Helper function to map order to log format
 const mapOrderToLog = (order: OrderTracking) => ({
-  id: order.orderId,
+  id: order.orderId || order.id,
   status: order.status,
   tracking: order.tracking_info,
 });
@@ -29,7 +29,11 @@ const mapOrderToLog = (order: OrderTracking) => ({
 const debouncedSaveToStorage = debounce(async (orders: OrderTracking[]) => {
   try {
     await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(orders));
-    console.log("✅ Successfully saved orders to AsyncStorage:", orders.length);
+    console.log("✅ Successfully saved orders to AsyncStorage:", {
+      count: orders.length,
+      orderIds: orders.map((o) => o.orderId || o.id),
+      statuses: orders.map((o) => o.status),
+    });
   } catch (error) {
     console.error("❌ Error saving to AsyncStorage:", error);
   }
@@ -39,7 +43,11 @@ const debouncedSaveToStorage = debounce(async (orders: OrderTracking[]) => {
 const saveToStorageNonBlocking = (orders: OrderTracking[]) => {
   AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(orders))
     .then(() => {
-      console.log("🚀 Saved orders to AsyncStorage:", orders.length);
+      console.log("🚀 Saved orders to AsyncStorage:", {
+        count: orders.length,
+        orderIds: orders.map((o) => o.orderId || o.id),
+        statuses: orders.map((o) => o.status),
+      });
     })
     .catch((error) => {
       console.error("❌ Error saving to AsyncStorage:", error);
@@ -61,8 +69,9 @@ export const updateAndSaveOrderTracking = createAsyncThunk(
     });
 
     // Keep all orders, including completed and cancelled
+    // CRITICAL FIX: Handle both orderId and id fields for proper matching
     const existingIndex = currentOrders.findIndex(
-      (o) => o.orderId === order.orderId
+      (o) => (o.orderId || o.id) === (order.orderId || order.id)
     );
 
     let updatedOrders: OrderTracking[];
@@ -112,17 +121,17 @@ export const loadOrderTrackingFromAsyncStorage = createAsyncThunk(
       const allOrders = orders
         .filter((order: OrderTracking) => {
           // Only filter out invalid/corrupted data
-          return order && order.orderId && order.status && order.tracking_info;
+          // CRITICAL FIX: Handle both orderId and id fields
+          return (
+            order &&
+            (order.orderId || order.id) &&
+            order.status &&
+            order.tracking_info
+          );
         })
         .sort(
           (a: OrderTracking, b: OrderTracking) => b.updated_at - a.updated_at
         );
-
-      console.log(
-        "📱 Loaded ALL orders from AsyncStorage (including completed/cancelled):",
-        allOrders.length,
-        allOrders.map(mapOrderToLog)
-      );
 
       // Log breakdown by status
       const statusBreakdown = allOrders.reduce(
@@ -149,7 +158,10 @@ const orderTrackingRealtimeSlice = createSlice({
     removeOrderTracking: (state, action) => {
       const orderId = action.payload;
       console.log("🗑️ Removing order:", orderId);
-      state.orders = state.orders.filter((order) => order.orderId !== orderId);
+      // CRITICAL FIX: Handle both orderId and id fields for proper matching
+      state.orders = state.orders.filter(
+        (order) => (order.orderId || order.id) !== orderId
+      );
       // NON-BLOCKING save to avoid interfering with event listeners
       saveToStorageNonBlocking(state.orders);
       console.log("📊 Orders after removal:", state.orders.length);
@@ -176,7 +188,57 @@ const orderTrackingRealtimeSlice = createSlice({
           "📥 Loading orders from AsyncStorage:",
           action.payload.length
         );
-        state.orders = action.payload;
+
+        // CRITICAL FIX: Don't overwrite existing realtime orders with empty persisted data
+        // Merge persisted data with existing state to preserve realtime updates
+        const persistedOrders = action.payload;
+        const currentOrders = state.orders;
+
+        if (persistedOrders.length === 0 && currentOrders.length > 0) {
+          console.log(
+            "🚫 Skipping empty AsyncStorage load - preserving realtime orders:",
+            currentOrders.length
+          );
+          // Don't overwrite existing realtime orders with empty persisted data
+          return;
+        }
+
+        // Merge persisted orders with current orders
+        const mergedOrders = [...currentOrders];
+
+        persistedOrders.forEach((persistedOrder: OrderTracking) => {
+          const existingIndex = mergedOrders.findIndex(
+            (o) =>
+              (o.orderId || o.id) ===
+              (persistedOrder.orderId || persistedOrder.id)
+          );
+
+          if (existingIndex !== -1) {
+            // Update existing order only if persisted data is newer
+            if (
+              persistedOrder.updated_at > mergedOrders[existingIndex].updated_at
+            ) {
+              mergedOrders[existingIndex] = persistedOrder;
+              console.log(
+                "🔄 Updated order from persisted data:",
+                persistedOrder.orderId || persistedOrder.id
+              );
+            }
+          } else {
+            // Add new persisted order
+            mergedOrders.push(persistedOrder);
+            console.log(
+              "➕ Added persisted order:",
+              persistedOrder.orderId || persistedOrder.id
+            );
+          }
+        });
+
+        // Sort by updated_at
+        mergedOrders.sort((a, b) => b.updated_at - a.updated_at);
+
+        state.orders = mergedOrders;
+        console.log("📊 Final merged orders count:", mergedOrders.length);
       })
       .addCase(updateAndSaveOrderTracking.fulfilled, (state, action) => {
         if (action.payload) {

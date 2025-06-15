@@ -227,7 +227,6 @@ const RestaurantDetail = () => {
             },
           })
         );
-        console.log("cehck address finally here", modalData.variants);
         setModalDetails({
           status: "ERROR",
           desc: "Your order has been added to your cart 👌",

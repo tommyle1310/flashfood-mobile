@@ -31,7 +31,6 @@ const OrderConfirmation = ({
   setCustomerNote: React.Dispatch<React.SetStateAction<string>>;
 }) => {
   const globalState = useSelector((state: RootState) => state.auth);
-  console.log("cehck addres", globalState.address);
   const navigation = useNavigation<CheckoutSreenNavigationProp>();
 
   return (
@@ -42,7 +41,10 @@ const OrderConfirmation = ({
           <FFDropdown
             onSelect={handleSelect}
             navigation={navigation}
-            options={['Add Address', ...(globalState.address?.map((item) => item.title) || [])]}
+            options={[
+              "Add Address",
+              ...(globalState.address?.map((item) => item.title) || []),
+            ]}
             placeholder="Select delivery destination"
             selectedOption={selected}
           />

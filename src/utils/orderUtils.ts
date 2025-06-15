@@ -40,7 +40,6 @@ export const mapOrderTrackingToOrder = (
   };
 
   const mapOrderItems = (items: OrderTracking["order_items"]): OrderItem[] => {
-    console.log("check itesm here", items);
     return items.map((item) => ({
       item_id: item.item_id,
       name: item.name,
@@ -86,10 +85,7 @@ export const getTrackingImage = (
     case Enum_OrderStatus.READY_FOR_PICKUP:
       return IMAGE_LINKS.FOOD_PACKED;
     case Enum_OrderStatus.PENDING:
-      if (tracking_info === Enum_OrderTrackingInfo.ORDER_PLACED) {
-        return IMAGE_LINKS.ORDER_PLACED;
-      }
-      break;
+      return IMAGE_LINKS.ORDER_PLACED;
     case Enum_OrderStatus.RESTAURANT_PICKUP:
       return IMAGE_LINKS.RESTAURANT_PICKUP;
     default:

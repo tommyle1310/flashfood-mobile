@@ -28,43 +28,138 @@ const isValidOrderStatus = (status: string): status is Enum_OrderStatus => {
   return Object.values(Enum_OrderStatus).includes(status as Enum_OrderStatus);
 };
 
-// Helper function to convert OrderTracking to StoreOrderTracking
-const mapToStoreOrder = (order: OrderTracking): Partial<StoreOrderTracking> => {
-  const now = Math.floor(Date.now() / 1000);
-  const orderStatus = order.status || order.tracking_info;
-
-  if (!isValidOrderStatus(orderStatus)) {
-    console.log(
-      "Warning: Invalid order status in mapToStoreOrder",
-      orderStatus
-    );
-    // Return a minimal valid object instead of null
-    return {
-      orderId: order.id,
-      status: Enum_OrderStatus.PENDING, // Default to PENDING if invalid
-      updated_at: now,
-      customer_id: order.customer_id,
-      restaurant_id: order.restaurant_id,
-    };
-  }
-
-  return {
-    orderId: order.id,
-    status: orderStatus,
+// Helper function to convert StoreOrderTracking to OrderTracking
+const convertRealtimeToOrderTracking = (
+  realtimeOrders: StoreOrderTracking[]
+): OrderTracking[] => {
+  return realtimeOrders.map((order) => ({
+    id: order.orderId || "",
+    orderId: order.orderId,
+    status: order.status,
     tracking_info: order.tracking_info,
-    updated_at: now,
     customer_id: order.customer_id,
     driver_id: order.driver_id || "",
     restaurant_id: order.restaurant_id,
-    restaurant_avatar: order.restaurant?.avatar || null,
-    driver_avatar: null,
-    restaurantAddress: order.restaurantAddress || null,
-    customerAddress: order.customerAddress || null,
-    driverDetails: null,
+    updated_at: order.updated_at,
+    // Required fields with defaults
+    customer: {
+      avatar: null,
+      favorite_items: null,
+      first_name: "",
+      id: order.customer_id,
+      last_name: "",
+    },
+    restaurant: order.restaurant_avatar
+      ? {
+          id: order.restaurant_id,
+          avatar: order.restaurant_avatar,
+          specialize_in: [],
+          restaurant_name: "",
+        }
+      : {
+          id: order.restaurant_id,
+          avatar: null,
+          specialize_in: [],
+          restaurant_name: "",
+        },
+    driver: order.driverDetails
+      ? {
+          id: order.driverDetails.id,
+          avatar: order.driverDetails.avatar,
+        }
+      : null,
+    restaurantAddress: order.restaurantAddress || {
+      id: "",
+      street: "",
+      city: "",
+      nationality: "",
+      is_default: false,
+      created_at: 0,
+      updated_at: 0,
+      postal_code: 0,
+      location: { lat: 0, lon: 0 },
+      title: "",
+    },
+    customerAddress: order.customerAddress || {
+      id: "",
+      street: "",
+      city: "",
+      nationality: "",
+      is_default: false,
+      created_at: 0,
+      updated_at: 0,
+      postal_code: 0,
+      location: { lat: 0, lon: 0 },
+      title: "",
+    },
     customerFullAddress: order.customerFullAddress || "",
     restaurantFullAddress: order.restaurantFullAddress || "",
-    distance: order.distance,
-  };
+    distance: order.distance || "0",
+    customer_location: "",
+    customer_note: "",
+    delivery_time: "",
+    order_items: order.order_items || [],
+    order_time: order.updated_at.toString(),
+    payment_method: "COD",
+    payment_status: "PENDING" as const,
+    restaurant_location: "",
+    restaurant_note: "",
+    total_amount: order.total_amount?.toString() || "0",
+    created_at: order.updated_at,
+    // Add missing fields from OrderTrackingBase
+    restaurant_avatar: order.restaurant_avatar,
+    driver_avatar: order.driver_avatar,
+    driverDetails: order.driverDetails,
+  })) as OrderTracking[];
+};
+
+// Helper function to merge API orders with realtime persisted data
+const mergeOrdersWithRealtimeData = (
+  apiOrders: OrderTracking[],
+  realtimeOrders: StoreOrderTracking[]
+): OrderTracking[] => {
+  const mergedOrders = [...apiOrders];
+
+  // Add or update orders from realtime data that have more recent updates
+  realtimeOrders.forEach((realtimeOrder) => {
+    const apiOrderIndex = mergedOrders.findIndex(
+      (order) => order.id === realtimeOrder.orderId
+    );
+
+    if (apiOrderIndex !== -1) {
+      // Order exists in API data - check if realtime data is more recent
+      const apiOrder = mergedOrders[apiOrderIndex];
+      const apiUpdatedAt = apiOrder.updated_at || 0;
+      const realtimeUpdatedAt = realtimeOrder.updated_at || 0;
+
+      if (realtimeUpdatedAt > apiUpdatedAt) {
+        // Realtime data is more recent - merge it with API data
+        mergedOrders[apiOrderIndex] = {
+          ...apiOrder,
+          status: realtimeOrder.status,
+          tracking_info: realtimeOrder.tracking_info,
+          updated_at: realtimeOrder.updated_at,
+          // Preserve realtime-specific data that API might not have
+          ...(realtimeOrder.driverDetails && {
+            driverDetails: realtimeOrder.driverDetails,
+          }),
+          ...(realtimeOrder.order_items && {
+            order_items: realtimeOrder.order_items,
+          }),
+        };
+        console.log(
+          `🔄 Updated order ${realtimeOrder.orderId} with realtime data`
+        );
+      }
+    } else {
+      // Order doesn't exist in API data - add it from realtime data
+      const convertedOrder = convertRealtimeToOrderTracking([realtimeOrder])[0];
+      mergedOrders.push(convertedOrder);
+      console.log(`➕ Added order ${realtimeOrder.orderId} from realtime data`);
+    }
+  });
+
+  return mergedOrders;
 };
 
 const OrdersScreen: React.FC = () => {
@@ -156,7 +251,7 @@ const OrdersScreen: React.FC = () => {
     try {
       setLoading(true);
       const res = await axiosInstance.get(`/customers/orders/${id}`);
-      const newOrders = (res.data.data as OrderTracking[]).map((order) => ({
+      const apiOrders = (res.data.data as OrderTracking[]).map((order) => ({
         ...order,
         customerFullAddress: order.customerAddress
           ? `${order.customerAddress.street}, ${order.customerAddress.city}, ${order.customerAddress.nationality}`
@@ -165,14 +260,67 @@ const OrdersScreen: React.FC = () => {
           ? `${order.restaurantAddress.street}, ${order.restaurantAddress.city}, ${order.restaurantAddress.nationality}`
           : order.restaurantFullAddress || "N/A",
       }));
-      setOrders(newOrders || []);
+
+      // CRITICAL FIX: Merge API data with persisted Redux state
+      // This ensures we don't lose real-time updates when fetching fresh data
+      const mergedOrders = mergeOrdersWithRealtimeData(
+        apiOrders,
+        realtimeOrders
+      );
+      setOrders(mergedOrders || []);
+
+      console.log("📊 Orders merged:", {
+        apiCount: apiOrders.length,
+        realtimeCount: realtimeOrders.length,
+        mergedCount: mergedOrders.length,
+      });
     } catch (error) {
       console.error("Error fetching orders:", error);
-      setOrders([]);
+      // CRITICAL FIX: If API fails, still use persisted data
+      const fallbackOrders = convertRealtimeToOrderTracking(realtimeOrders);
+      setOrders(fallbackOrders);
+      console.log("📊 Using fallback persisted data:", fallbackOrders.length);
     } finally {
       setLoading(false);
     }
-  }, [id]);
+  }, [id, realtimeOrders]);
+
+  // REMOVED: Duplicate loading - RootLayout already loads persisted data
+  // The issue was that OrdersScreen was loading persisted data AFTER socket events
+  // Now RootLayout loads it first, then socket connects, then OrdersScreen uses the data
+
+  // CRITICAL FIX: React to changes in realtime orders and merge with local state
+  useEffect(() => {
+    if (realtimeOrders.length > 0) {
+      console.log(
+        "🔄 Realtime orders changed, updating local state:",
+        realtimeOrders.length
+      );
+      // Merge realtime orders with existing orders
+      const mergedOrders = mergeOrdersWithRealtimeData(orders, realtimeOrders);
+
+      // Only update if there are actual changes
+      if (
+        mergedOrders.length !== orders.length ||
+        mergedOrders.some(
+          (order, index) =>
+            !orders[index] || order.updated_at !== orders[index].updated_at
+        )
+      ) {
+        setOrders(mergedOrders);
+        console.log(
+          "📊 Updated orders from realtime data:",
+          mergedOrders.length
+        );
+      }
+    } else if (realtimeOrders.length === 0 && orders.length > 0) {
+      // CRITICAL FIX: Don't clear orders when realtime becomes empty
+      // This prevents the race condition where AsyncStorage load clears realtime orders
+      console.log(
+        "🚫 Preventing order clearing - realtime orders became empty but local orders exist"
+      );
+    }
+  }, [realtimeOrders]);
 
   useEffect(() => {
     fetchOrders();
@@ -206,12 +354,6 @@ const OrdersScreen: React.FC = () => {
       return orderStatus === Enum_OrderStatus.CANCELLED;
     });
 
-    console.log("Order counts:", {
-      active: active.length,
-      completed: completed.length,
-      cancelled: cancelled.length,
-    });
-
     return {
       activeOrders: active,
       completedOrders: completed,
@@ -228,14 +370,7 @@ const OrdersScreen: React.FC = () => {
   );
 
   // Add an effect to monitor active orders
-  useEffect(() => {
-    console.log("Order state check:", {
-      localActive: activeOrders.length,
-      realtimeOrders: realtimeOrders.length,
-      activeStatuses: activeOrders.map((o) => o.status),
-      realtimeStatuses: realtimeOrders.map((o) => o.status),
-    });
-  }, [activeOrders, realtimeOrders]);
+  useEffect(() => {}, [activeOrders, realtimeOrders]);
 
   const tabContent = useMemo(
     () => [

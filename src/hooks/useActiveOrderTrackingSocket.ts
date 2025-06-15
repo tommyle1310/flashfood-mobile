@@ -111,7 +111,8 @@ export const useActiveOrderTrackingSocket = () => {
       console.log("🟢 Connected to order tracking server");
       setSocket(socketInstance);
 
-      // Clean up stale orders on successful connection (inline to avoid dependency issues)
+      // CRITICAL FIX: Intelligent cleanup - only remove truly stale orders
+      // Don't remove recent orders that might not be on server yet
       axiosInstance
         .get(`/customers/orders/${id}`)
         .then((response) => {
@@ -126,15 +127,25 @@ export const useActiveOrderTrackingSocket = () => {
           };
           const currentOrders = state.orderTrackingRealtime.orders;
 
-          // Remove any orders that don't exist on the server
+          // Only remove orders that are:
+          // 1. Not found on server AND
+          // 2. Older than 5 minutes (to allow for server processing delay)
+          const fiveMinutesAgo = Math.floor(Date.now() / 1000) - 5 * 60;
+
           currentOrders.forEach((order: OrderTracking) => {
-            if (!serverOrderIds.has(order.orderId || order.id)) {
+            const orderId = order.orderId || order.id;
+            const isOnServer = serverOrderIds.has(orderId);
+            const isOld = order.updated_at < fiveMinutesAgo;
+
+            if (!isOnServer && isOld) {
               console.log(
-                `Removing stale order ${
-                  order.orderId || order.id
-                } - not found on server`
+                `Removing stale order ${orderId} - not found on server and older than 5 minutes`
               );
-              dispatch(removeOrderTracking(order.orderId || order.id));
+              dispatch(removeOrderTracking(orderId));
+            } else if (!isOnServer && !isOld) {
+              console.log(
+                `Keeping recent order ${orderId} - not on server yet but less than 5 minutes old`
+              );
             }
           });
         })
@@ -166,22 +177,13 @@ export const useActiveOrderTrackingSocket = () => {
         const orderStatus = data.status;
         const trackingInfo = data.tracking_info;
 
-        // Background server verification (non-blocking)
-        axiosInstance
-          .get(`/orders/${data.orderId}/status`)
-          .then((response) => {
-            if (!response.data) {
-              console.log(
-                "Order not found on server, removing from tracking:",
-                data.orderId
-              );
-              dispatch(removeOrderTracking(data.orderId));
-            }
-          })
-          .catch((error) => {
-            console.log("Background verification failed:", error.message);
-            // Don't remove order if verification fails due to network issues
-          });
+        // CRITICAL FIX: Disable aggressive background verification
+        // The socket event itself is the source of truth, don't second-guess it
+        // Background server verification was removing valid orders too quickly
+        console.log(
+          "📡 Socket event is source of truth, skipping background verification for:",
+          data.orderId
+        );
 
         // Log status changes
         console.log("Order status update:", {

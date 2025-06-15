@@ -66,10 +66,6 @@ const CheckoutScreen = () => {
       ]);
 
       // Log API responses for debugging
-      console.log(
-        "Finance rules response:",
-        JSON.stringify(financeRulesResponse.data)
-      );
 
       // Process restaurant response
       const restaurantData = restaurantResponse.data;
@@ -89,12 +85,6 @@ const CheckoutScreen = () => {
         setFinanceRules(data[0]);
         const deliveryFeeValue = data[0].delivery_fee ?? DELIVERY_FEE ?? 0;
         setDeliveryFee(deliveryFeeValue);
-        console.log(
-          "Set financeRules:",
-          data[0],
-          "Delivery fee:",
-          deliveryFeeValue
-        );
       } else {
         console.error("Finance rules API error:", EM, "Data:", data);
         setFinanceRules(null);
@@ -152,11 +142,13 @@ const CheckoutScreen = () => {
       setIsLoading(false);
       return;
     }
+    console.log("cehck orderitem", orderItem);
 
     const requestData = {
       ...orderItem,
       restaurant_location:
-        orderItem.order_items?.[0]?.item?.restaurantDetails?.address_id,
+        orderItem.order_items?.[0]?.item?.restaurantDetails?.address_id ||
+        orderItem?.restaurant_location,
       payment_method: selectedPaymentMethod,
       customer_note: customerNote,
       customer_location: globalState?.address?.find(
@@ -172,7 +164,9 @@ const CheckoutScreen = () => {
         price_at_time_of_order: item.price_at_time_of_order,
         quantity: item.quantity,
       })),
-      restaurant_id: orderItem.order_items?.[0]?.item?.restaurantDetails?.id,
+      restaurant_id:
+        orderItem.order_items?.[0]?.item?.restaurantDetails?.id ||
+        orderItem?.restaurant_id,
       status: "PENDING",
       payment_status: "PENDING",
       delivery_time: new Date().getTime(),
@@ -183,7 +177,10 @@ const CheckoutScreen = () => {
       const response = await axiosInstance.post(`/orders`, requestData, {
         validateStatus: () => true,
       });
-      console.log("check whar req data", requestData);
+      console.log(
+        "================================check whar req data",
+        requestData
+      );
 
       console.log("Order response:", JSON.stringify(response.data));
       const { EC, data } = response.data;

@@ -1,7 +1,7 @@
 import React, { useEffect } from "react";
 import { Provider } from "react-redux";
 import store from "@/src/store/store";
-import { useDispatch, useSelector } from "@/src/store/types";
+import { useDispatch } from "@/src/store/types";
 import { ThemeProvider } from "@/src/hooks/useTheme";
 import AppNavigator from "@/src/navigation/AppNavigator";
 import FFSafeAreaView from "@/src/components/FFSafeAreaView";
@@ -12,21 +12,20 @@ import { loadChatDataFromStorage } from "@/src/store/chatSlice";
 
 const AppContent = () => {
   const dispatch = useDispatch();
-  const orders = useSelector((state) => state.orderTrackingRealtime.orders);
 
   useEffect(() => {
     const loadInitialData = async () => {
+      console.log("🔄 RootLayout: Loading initial data...");
       await dispatch(loadTokenFromAsyncStorage());
       await dispatch(loadOrderTrackingFromAsyncStorage());
       await dispatch(loadChatDataFromStorage());
+      console.log("✅ RootLayout: Initial data loaded");
     };
 
     loadInitialData();
   }, [dispatch]);
 
   useActiveOrderTrackingSocket();
-
-  console.log("check orders in RootLayout", orders);
 
   return (
     <ThemeProvider>

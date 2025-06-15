@@ -12,13 +12,14 @@ import FFButton from "@/src/components/FFButton";
 import IconAntDesign from "react-native-vector-icons/AntDesign";
 import { RouteProp, useNavigation, useRoute } from "@react-navigation/native";
 import { MainStackParamList } from "@/src/navigation/AppNavigator";
-import { useSelector } from "@/src/store/types";
+import { useDispatch, useSelector } from "@/src/store/types";
 import { RootState } from "@/src/store/store";
 import axiosInstance from "@/src/utils/axiosConfig";
 import { StackNavigationProp } from "@react-navigation/stack";
 import FFAvatar from "@/src/components/FFAvatar";
 import Spinner from "@/src/components/FFSpinner";
 import { spacing } from "@/src/theme";
+import { clearOrderTracking } from "@/src/store/orderTrackingRealtimeSlice";
 
 type RatingScreenRouteProp = RouteProp<MainStackParamList, "Rating">;
 
@@ -28,6 +29,7 @@ type RatingScreenNavigationProp = StackNavigationProp<
 >;
 
 const RatingScreen = () => {
+  const dispatch = useDispatch();
   const navigation = useNavigation<RatingScreenNavigationProp>();
   const [rating, setRating] = useState(0);
   const [review, setReview] = useState("");
@@ -89,6 +91,7 @@ const RatingScreen = () => {
           setTypeRating("RESTAURANT");
           return;
         }
+        dispatch(clearOrderTracking());
         navigation.reset({
           index: 0,
           routes: [{ name: "BottomTabs", params: { screenIndex: 0 } }],
@@ -152,12 +155,13 @@ const RatingScreen = () => {
         <View style={styles.buttonContainer}>
           <FFButton
             variant="link"
-            onPress={() =>
+            onPress={() => {
+              dispatch(clearOrderTracking());
               navigation.reset({
                 index: 0,
                 routes: [{ name: "BottomTabs", params: { screenIndex: 0 } }],
-              })
-            }
+              });
+            }}
             style={styles.skipButton}
           >
             Skip
