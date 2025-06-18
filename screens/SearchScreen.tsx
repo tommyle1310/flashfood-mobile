@@ -238,6 +238,7 @@ const styles = StyleSheet.create({
   },
   resultDetails: {
     flex: 1,
+    gap: spacing.sm,
   },
   resultDescription: {
     color: "#888",

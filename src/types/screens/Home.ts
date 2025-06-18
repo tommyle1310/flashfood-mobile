@@ -6,6 +6,8 @@ export interface Restaurant {
   avatar: { url: string; key: string } | null;
   address: {
     street: string;
+    city?: string;
+    nationality?: string;
     location: {
       lat: number;
       lng: number;

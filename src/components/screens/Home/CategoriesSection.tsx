@@ -27,12 +27,37 @@ export const CategoriesSection = ({
   };
 
   return (
-    <View className="my-4">
-      <View className="flex-row items-center justify-between">
-        <FFText>Hot Categories</FFText>
-        <TouchableOpacity>
-          <FFText style={{ color: "#3FB854", fontWeight: "400", fontSize: 12 }}>
-            Show All
+    <View style={{ marginBottom: spacing.sm }}>
+      <View style={{
+        flexDirection: "row",
+        alignItems: "center",
+        justifyContent: "space-between",
+        // marginBottom: spacing.sm,
+        paddingHorizontal: spacing.xs
+      }}>
+        <FFText style={{
+          fontSize: 22,
+          fontWeight: "700",
+          color: "#1f2937"
+        }}>
+          🍕 Categories
+        </FFText>
+        <TouchableOpacity
+          style={{
+            backgroundColor: "#fef3c7",
+            paddingHorizontal: spacing.md,
+            paddingVertical: spacing.sm,
+            borderRadius: 20,
+            borderWidth: 1,
+            borderColor: "#fde68a"
+          }}
+        >
+          <FFText style={{ 
+            color: "#d97706", 
+            fontWeight: "600", 
+            fontSize: 13
+          }}>
+            View All
           </FFText>
         </TouchableOpacity>
       </View>
@@ -42,32 +67,56 @@ export const CategoriesSection = ({
             flexDirection: "row",
             gap: spacing.md,
             paddingVertical: spacing.sm,
+            paddingHorizontal: spacing.sm
           }}
         >
-          <FFSkeleton width={100} height={30} />
-          <FFSkeleton width={100} height={30} />
-          <FFSkeleton width={100} height={30} />
+          <FFSkeleton width={100} height={40} style={{ borderRadius: 20 }} />
+          <FFSkeleton width={120} height={40} style={{ borderRadius: 20 }} />
+          <FFSkeleton width={90} height={40} style={{ borderRadius: 20 }} />
         </View>
       ) : (
-        <ScrollView horizontal className="mt-2">
+        <ScrollView 
+          horizontal 
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={{
+            paddingHorizontal: spacing.sm,
+            paddingVertical: spacing.sm,
+            gap: spacing.sm
+          }}
+        >
           {listFoodCategories?.map((item) => (
             <TouchableOpacity
-              style={{ marginRight: spacing.sm, paddingHorizontal: 4 }}
               key={item.id}
               onPress={() => handleCategoryPress(item.id)}
-              className={`px-2 py-1 mr-2 rounded-md ${
-                selectedFoodCategories?.includes(item.id)
-                  ? "bg-[#59bf47]"
-                  : "bg-white"
-              }`}
+              style={{
+                paddingHorizontal: spacing.sm,
+                paddingVertical: spacing.sm,
+                borderRadius: 25,
+                backgroundColor: selectedFoodCategories?.includes(item.id)
+                  ? "#10b981"
+                  : "#ffffff",
+                borderWidth: 2,
+                borderColor: selectedFoodCategories?.includes(item.id)
+                  ? "#10b981"
+                  : "#e5e7eb",
+                shadowColor: "#000",
+                shadowOffset: { width: 0, height: 2 },
+                shadowOpacity: selectedFoodCategories?.includes(item.id) ? 0.15 : 0.05,
+                shadowRadius: 8,
+                elevation: selectedFoodCategories?.includes(item.id) ? 4 : 2,
+                minWidth: 80,
+                alignItems: "center",
+                justifyContent: "center"
+              }}
             >
               <FFText
                 style={{
-                  fontSize: 14,
-                  fontWeight: "500",
+                  fontSize: 15,
+                  fontWeight: "600",
                   color: selectedFoodCategories?.includes(item.id)
-                    ? "#fff"
-                    : "#111",
+                    ? "#ffffff"
+                    : "#374151",
+                  textAlign: "center"
                 }}
               >
                 {item.name}
@@ -75,7 +124,25 @@ export const CategoriesSection = ({
             </TouchableOpacity>
           ))}
           {listFoodCategories?.length === 0 && (
-            <FFText>No categories found</FFText>
+            <View style={{
+              backgroundColor: "#ffffff",
+              borderRadius: 16,
+              padding: spacing.xl,
+              alignItems: "center",
+              justifyContent: "center",
+              minWidth: 200,
+              borderWidth: 2,
+              borderColor: "#e5e7eb",
+              borderStyle: "dashed"
+            }}>
+              <FFText style={{
+                color: "#9ca3af",
+                fontSize: 16,
+                fontWeight: "500"
+              }}>
+                🏷️ No categories found
+              </FFText>
+            </View>
           )}
         </ScrollView>
       )}

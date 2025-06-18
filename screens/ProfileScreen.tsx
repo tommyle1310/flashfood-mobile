@@ -21,6 +21,7 @@ import { spacing } from "@/src/theme";
 interface Address {
   id: string;
   street: string;
+  nationality?: string;
   city: string;
   postal_code: number;
   location: {
@@ -55,6 +56,7 @@ interface Props_ProfileData {
   address: string[];
   first_name: string;
   last_name: string;
+  phone?: string;
   user: {
     id: string;
     first_name: string;
@@ -111,6 +113,7 @@ const ProfileScreen = () => {
       try {
         const response = await axiosInstance.get(`/customers/${id}`);
         const { EC, EM, data } = response.data;
+        console.log('check resposne here', response.data)
         if (EC === 0) {
           setProfileData(data);
         }
@@ -132,7 +135,6 @@ const ProfileScreen = () => {
         const response = await axiosInstance.get(
           `/customers/favorite-restaurants/${id}`
         );
-        console.log("check res", response.data);
         const { EC, EM, data } = response.data;
         if (EC === 0) {
           console.log("check data", data);
@@ -170,12 +172,11 @@ const ProfileScreen = () => {
     }
     if (profileData) {
       setEmail(profileData?.user?.email);
-      setPhone(profileData?.user?.phone);
+      setPhone(profileData?.user?.phone ?? profileData?.phone);
       setFirstName(firstNameState);
       setLastName(lastNameState);
     }
   }, [profileData]);
-  console.log("check list res", favorite_restaurants);
 
   // Render item cho FlatList
   const renderRestaurantItem = ({ item }: { item: FavoriteRestaurant }) => (
@@ -201,7 +202,7 @@ const ProfileScreen = () => {
         <FFText
           fontSize="sm"
           style={{ color: colors.grey }}
-        >{`${item.address.street}, ${item.address.city}`}</FFText>
+        >{!item?.address?.street ? "N/A" : `${item?.address?.street}, ${item?.address?.city}, ${item?.address?.nationality}`}</FFText>
         <FFText fontSize="sm" style={{ color: colors.grey }}>
           Specialties:{" "}
           {item.specialize_in.map((cat) => cat.name).join(", ") || "N/A"}

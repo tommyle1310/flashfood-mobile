@@ -38,14 +38,38 @@ export const NearYouSection = ({
   const navigation = useNavigation<HomeRestaurantSreenNavigationProp>();
 
   return (
-    <View>
-      <View className="flex-row items-center justify-between">
-        <FFText>Near You</FFText>
+    <View style={{ marginBottom: spacing.sm }}>
+      <View style={{
+        flexDirection: "row",
+        alignItems: "center",
+        justifyContent: "space-between",
+        marginBottom: spacing.sm,
+        paddingHorizontal: spacing.xs
+      }}>
+        <FFText style={{
+          fontSize: 22,
+          fontWeight: "700",
+          color: "#1f2937"
+        }}>
+          📍 Near You
+        </FFText>
         <TouchableOpacity
           onPress={() => navigation.navigate("NearYou", restaurants ?? [])}
+          style={{
+            backgroundColor: "#f0fdf4",
+            paddingHorizontal: spacing.md,
+            paddingVertical: spacing.sm,
+            borderRadius: 20,
+            borderWidth: 1,
+            borderColor: "#bbf7d0"
+          }}
         >
-          <FFText style={{ color: "#3FB854", fontWeight: "400", fontSize: 12 }}>
-            Show All
+          <FFText style={{ 
+            color: "#16a34a", 
+            fontWeight: "600", 
+            fontSize: 13
+          }}>
+            View All
           </FFText>
         </TouchableOpacity>
       </View>
@@ -53,16 +77,25 @@ export const NearYouSection = ({
         <View
           style={{
             flexDirection: "row",
-            gap: spacing.md,
+            gap: spacing.lg,
             paddingVertical: spacing.sm,
+            paddingHorizontal: spacing.sm
           }}
         >
-          <FFSkeleton width={140} height={140} />
-          <FFSkeleton width={140} height={140} />
-          <FFSkeleton width={140} height={140} />
+          <FFSkeleton width={160} height={180} style={{ borderRadius: 20 }} />
+          <FFSkeleton width={160} height={180} style={{ borderRadius: 20 }} />
+          <FFSkeleton width={160} height={180} style={{ borderRadius: 20 }} />
         </View>
       ) : (
-        <ScrollView horizontal className="py-2 px-2 -ml-2">
+        <ScrollView 
+          horizontal 
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={{
+            paddingHorizontal: spacing.sm,
+            paddingBottom: spacing.sm,
+            gap: spacing.sm
+          }}
+        >
           {(restaurants ?? []).slice(0, 5).map((item) => (
             <FFView
               onPress={() =>
@@ -72,13 +105,16 @@ export const NearYouSection = ({
               }
               key={item.id}
               style={{
-                elevation: 6,
-                borderRadius: 12,
-                paddingHorizontal: 8,
-                width: 140,
-                marginRight: spacing.sm,
-                height: 140,
-                paddingTop: 8,
+                backgroundColor: "#ffffff",
+                borderRadius: 20,
+                width: 160,
+                height: 180,
+                shadowColor: "#000",
+                shadowOffset: { width: 0, height: 4 },
+                shadowOpacity: 0.08,
+                shadowRadius: 12,
+                elevation: 8,
+                overflow: "hidden"
               }}
             >
               <ImageBackground
@@ -86,26 +122,30 @@ export const NearYouSection = ({
                   uri: item?.avatar?.url ?? IMAGE_LINKS.DEFAULT_AVATAR_FOOD,
                 }}
                 style={{
-                  height: 80,
-                  borderRadius: 8,
-                  backgroundColor: "gray",
+                  height: 100,
+                  backgroundColor: "#f3f4f6",
                 }}
-                imageStyle={{ borderRadius: 8 }}
+                imageStyle={{ backgroundColor: "#f3f4f6" }}
               >
                 <View
-                  className="flex-row absolute items-center gap-1 top-1 left-1"
                   style={{
-                    backgroundColor: "rgba(0, 0, 0, 0.3)",
-                    padding: spacing.sm,
-                    borderRadius: 8,
+                    position: "absolute",
+                    top: spacing.sm,
+                    left: spacing.sm,
+                    backgroundColor: "rgba(0, 0, 0, 0.7)",
+                    paddingHorizontal: spacing.sm,
+                    paddingVertical: spacing.xs,
+                    borderRadius: 12,
+                    flexDirection: "row",
+                    alignItems: "center"
                   }}
                 >
-                  <IconAntDesign name="star" color="#7dbf72" />
+                  <IconAntDesign name="star" color="#fbbf24" size={14} />
                   <FFText
                     style={{
-                      fontSize: 10,
-                      fontWeight: "600",
-                      color: "#eee",
+                      fontSize: 12,
+                      fontWeight: "700",
+                      color: "#ffffff",
                       marginLeft: spacing.xs,
                     }}
                   >
@@ -115,11 +155,18 @@ export const NearYouSection = ({
 
                 <Pressable
                   onPress={() => handleToggleFavorite(item.id)}
-                  className="flex-row absolute items-center gap-1 top-1 right-1"
                   style={{
-                    backgroundColor: "rgba(0, 0, 0, 0.3)",
+                    position: "absolute",
+                    top: spacing.sm,
+                    right: spacing.sm,
+                    backgroundColor: "#ffffff",
                     padding: spacing.sm,
-                    borderRadius: 8,
+                    borderRadius: 16,
+                    shadowColor: "#000",
+                    shadowOffset: { width: 0, height: 2 },
+                    shadowOpacity: 0.1,
+                    shadowRadius: 4,
+                    elevation: 3
                   }}
                 >
                   <IconAntDesign
@@ -129,31 +176,63 @@ export const NearYouSection = ({
                         : "hearto"
                     }
                     size={16}
-                    color="#7dbf72"
+                    color={
+                      favoriteRestaurants?.some((fav) => fav.id === item.id)
+                        ? "#ef4444"
+                        : "#9ca3af"
+                    }
                   />
                 </Pressable>
               </ImageBackground>
 
-              <View style={{ paddingTop: 4, flex: 1 }}>
+              <View style={{ 
+                padding: spacing.sm,
+                flex: 1,
+                justifyContent: "space-between"
+              }}>
                 <FFText
                   style={{
                     fontWeight: "600",
-                    fontSize: 14,
-                    marginTop: spacing.xs,
-                    lineHeight: 14,
+                    fontSize: 15,
+                    color: "#1f2937",
+                    lineHeight: 18,
+                    marginBottom: spacing.xs
                   }}
                 >
                   {item.restaurant_name}
                 </FFText>
+             {item?.address?.street && 
                 <FFText
-                  style={{ color: "#aaa", fontSize: 11, marginBottom: 4 }}
-                >
-                  {item?.address?.street}
-                </FFText>
+                style={{ 
+                  color: "#6b7280", 
+                  fontSize: 12,
+                  fontWeight: "400"
+                }}
+              >
+                📍 {item?.address?.street}, {item?.address?.city}, {item?.address?.nationality}
+              </FFText>
+             }
               </View>
             </FFView>
           ))}
-          {restaurants?.length === 0 && <FFText>No restaurant found</FFText>}
+          {restaurants?.length === 0 && (
+            <View style={{
+              backgroundColor: "#ffffff",
+              borderRadius: 16,
+              padding: spacing.xl,
+              alignItems: "center",
+              justifyContent: "center",
+              minWidth: 200
+            }}>
+              <FFText style={{
+                color: "#9ca3af",
+                fontSize: 16,
+                fontWeight: "500"
+              }}>
+                🍽️ No restaurants found
+              </FFText>
+            </View>
+          )}
         </ScrollView>
       )}
     </View>

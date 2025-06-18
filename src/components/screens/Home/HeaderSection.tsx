@@ -9,6 +9,7 @@ import FFAvatar from "@/src/components/FFAvatar";
 import FFText from "@/src/components/FFText";
 import { useSelector } from "@/src/store/types";
 import { RootState } from "@/src/store/store";
+import { spacing } from "@/src/theme";
 
 type HomeRestaurantSreenNavigationProp = StackNavigationProp<
   MainStackParamList,
@@ -20,7 +21,7 @@ export const HeaderSection = () => {
   const globalState = useSelector((state: RootState) => state.auth);
 
   return (
-    <View className="flex-row justify-between items-center">
+    <View style={{ paddingHorizontal: spacing.sm}} className="flex-row justify-between items-center ">
       <View className="flex-row items-center gap-2">
         <FFAvatar
           onPress={() => navigation.navigate("Profile")}

@@ -10,7 +10,7 @@ import { PromotionsSection } from "@/src/components/screens/Home/PromotionsSecti
 import { useNavigation } from "@react-navigation/native";
 import { StackNavigationProp } from "@react-navigation/stack";
 import { MainStackParamList } from "@/src/navigation/AppNavigator";
-import { spacing } from "../theme";
+import { borderRadius, colors, spacing } from "../theme";
 import CoralTourCarousel from "../components/CoralTourCarousel";
 import FFSkeleton from "@/src/components/FFSkeleton";
 
@@ -40,32 +40,74 @@ const HomeScreen = () => {
 
   return (
     <FFSafeAreaView>
-      <ScrollView className="p-4 gap-6" style={{ gap: spacing.md }}>
+      <ScrollView 
+        style={{ 
+          flex: 1,
+          backgroundColor: colors.background
+        }}
+        contentContainerStyle={{ 
+          paddingHorizontal: spacing.sm,
+          paddingBottom: spacing.xxxl,
+          // gap: spacing.xl
+        }}
+        showsVerticalScrollIndicator={false}
+      >
         <View style={{ gap: spacing.md }}>
           <HeaderSection />
 
           <Pressable
             onPress={() => navigation.navigate("Search")}
-            className="bg-gray-200 rounded-lg border border-gray-300 p-4 my-4"
+            style={{
+              backgroundColor: "#ffffff",
+              borderRadius: borderRadius.input,
+              paddingHorizontal: spacing.md,
+              paddingVertical: spacing.md,
+              marginVertical: spacing.sm,
+              marginHorizontal: spacing.sm,
+              shadowColor: "#000",
+              shadowOffset: { width: 0, height: 2 },
+              shadowOpacity: 0.05,
+              shadowRadius: 8,
+              elevation: 3,
+              borderWidth: 1,
+              borderColor: "#f0f2f5"
+            }}
           >
-            <FFText style={{ fontSize: 14, color: "#aaa" }}>
-              Search anything...
+            <FFText style={{ 
+              fontSize: 16, 
+              color: "#9ca3af",
+              fontWeight: "400"
+            }}>
+              🔍 Search restaurants, food...
             </FFText>
           </Pressable>
 
           {availablePromotionWithRestaurants &&
             availablePromotionWithRestaurants?.length > 0 && (
-              <View
-                style={{
-                  width: "100%",
-                  paddingRight: spacing.lg,
-                }}
-              >
-                <FFText>Hot Deals</FFText>
+              <View style={{ width: "100%" }}>
+                <View style={{
+                  flexDirection: "row",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                  // marginBottom: spacing.md,
+                  paddingHorizontal: spacing.xs
+                }}>
+                  <FFText style={{
+                    fontSize: 22,
+                    fontWeight: "700",
+                    color: "#1f2937"
+                  }}>
+                    🔥 Hot Deals
+                  </FFText>
+                </View>
                 {loading.promotions ? (
-                  <View style={{ flexDirection: "row", gap: spacing.md }}>
-                    <FFSkeleton width={200} height={100} />
-                    <FFSkeleton width={200} height={100} />
+                  <View style={{ 
+                    flexDirection: "row", 
+                    gap: spacing.md,
+                    paddingHorizontal: spacing.sm
+                  }}>
+                    <FFSkeleton width={280} height={140} style={{ borderRadius: 20 }} />
+                    <FFSkeleton width={280} height={140} style={{ borderRadius: 20 }} />
                   </View>
                 ) : (
                   <CoralTourCarousel
@@ -125,7 +167,7 @@ const HomeScreen = () => {
                 });
               }
             }}
-            promotions={availablePromotionWithRestaurants}
+            promotions={availablePromotionWithRestaurants?.filter(item => item?.restaurants?.length > 0)}
             favoriteRestaurants={favoriteRestaurants}
             handleToggleFavorite={handleToggleFavorite}
             isLoading={loading.promotions}

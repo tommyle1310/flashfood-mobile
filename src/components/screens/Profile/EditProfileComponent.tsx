@@ -86,6 +86,7 @@ const EditProfileComponent = ({
         {
           first_name: firstName,
           last_name: lastName,
+          phone
         },
         {
           validateStatus: () => true,
