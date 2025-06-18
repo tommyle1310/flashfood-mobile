@@ -36,7 +36,7 @@ const HomeScreen = () => {
     loading,
   } = useHomeScreen();
   const renderedRestaurants =
-    filteredRestaurants?.length > 0 ? filteredRestaurants : listRestaurants;
+    filteredRestaurants && filteredRestaurants.length > 0 ? filteredRestaurants : listRestaurants;
 
   return (
     <FFSafeAreaView>
@@ -167,7 +167,7 @@ const HomeScreen = () => {
                 });
               }
             }}
-            promotions={availablePromotionWithRestaurants?.filter(item => item?.restaurants?.length > 0)}
+            promotions={availablePromotionWithRestaurants ? availablePromotionWithRestaurants.filter(item => item?.restaurants?.length > 0) : null}
             favoriteRestaurants={favoriteRestaurants}
             handleToggleFavorite={handleToggleFavorite}
             isLoading={loading.promotions}

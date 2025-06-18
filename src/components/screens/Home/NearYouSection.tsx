@@ -5,6 +5,7 @@ import {
   ScrollView,
   ImageBackground,
   Pressable,
+  Text,
 } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import { StackNavigationProp } from "@react-navigation/stack";
@@ -114,6 +115,7 @@ export const NearYouSection = ({
                 shadowOpacity: 0.08,
                 shadowRadius: 12,
                 elevation: 8,
+
                 overflow: "hidden"
               }}
             >
@@ -187,31 +189,38 @@ export const NearYouSection = ({
 
               <View style={{ 
                 padding: spacing.sm,
-                flex: 1,
-                justifyContent: "space-between"
-              }}>
-                <FFText
+                justifyContent: 'center',
+                height: 80, // Fixed height for consistent layout
+}}>
+                <Text
                   style={{
                     fontWeight: "600",
                     fontSize: 15,
                     color: "#1f2937",
                     lineHeight: 18,
-                    marginBottom: spacing.xs
+
+                    marginBottom: spacing.xs,
+                    minHeight: 36, // Reserve space for up to 2 lines
                   }}
+                  numberOfLines={2}
                 >
                   {item.restaurant_name}
-                </FFText>
-             {item?.address?.street && 
-                <FFText
-                style={{ 
-                  color: "#6b7280", 
-                  fontSize: 12,
-                  fontWeight: "400"
-                }}
-              >
-                📍 {item?.address?.street}, {item?.address?.city}, {item?.address?.nationality}
-              </FFText>
-             }
+                </Text>
+                <Text
+                  style={{ 
+                    color: "#6b7280", 
+                    fontSize: 12,
+                    fontWeight: "400",
+                    lineHeight: 16,
+                    minHeight: 16, // Consistent space whether address exists or not
+                  }}
+                  numberOfLines={2}
+                >
+                  {item?.address?.street 
+                    ? `📍 ${item?.address?.street}, ${item?.address?.city}, ${item?.address?.nationality}`
+                    : "📍 Location not available"
+                  }
+                </Text>
               </View>
             </FFView>
           ))}
