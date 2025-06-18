@@ -3,7 +3,7 @@ import { View, TouchableOpacity, ScrollView } from "react-native";
 import FFText from "@/src/components/FFText";
 import FFSkeleton from "@/src/components/FFSkeleton";
 import { FoodCategory } from "@/src/types/screens/Home";
-import { spacing } from "@/src/theme";
+import { colors, spacing } from "@/src/theme";
 
 interface CategoriesSectionProps {
   listFoodCategories: FoodCategory[] | null;
@@ -93,11 +93,11 @@ export const CategoriesSection = ({
                 paddingVertical: spacing.sm,
                 borderRadius: 25,
                 backgroundColor: selectedFoodCategories?.includes(item.id)
-                  ? "#10b981"
+                  ? colors.primary
                   : "#ffffff",
                 borderWidth: 2,
                 borderColor: selectedFoodCategories?.includes(item.id)
-                  ? "#10b981"
+                  ? colors.primary_dark
                   : "#e5e7eb",
                 shadowColor: "#000",
                 shadowOffset: { width: 0, height: 2 },
