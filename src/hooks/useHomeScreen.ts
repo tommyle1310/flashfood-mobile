@@ -55,43 +55,22 @@ const createMockPromotions = () => Array(2).fill(0).map((_, index) => ({
 export const useHomeScreen = () => {
   const dispatch = useDispatch();
   const globalState = useSelector((state: RootState) => state.auth);
-
-  // Initialize with fallback data right away
-  const mockRestaurants = createMockRestaurants();
-  const mockPromotions = createMockPromotions();
   
-  const [filteredRestaurants, setFilteredRestaurants] = useState<Restaurant[] | null>(
-    null
-  );
-  const [selectedFoodCategories, setSelectedFoodCategories] = useState<
-    string[] | null
-  >(null);
-  const [listFoodCategories, setListFoodCategories] = useState<
-    FoodCategory[] | null
-  >([{ id: "cat1", name: "Category 1" }]); // Initialize with mock data
-  const [listRestaurants, setListRestaurants] = useState<Restaurant[] | null>(
-    mockRestaurants // Initialize with mock data
-  );
-  const [
-    availablePromotionWithRestaurants,
-    setAvailablePromotionWithRestaurants,
-  ] = useState<AvailablePromotionWithRestaurants[] | null>(mockPromotions);
-  const [
-    originalPromotionWithRestaurants,
-    setOriginalPromotionWithRestaurants,
-  ] = useState<AvailablePromotionWithRestaurants[] | null>(mockPromotions);
-  const [favoriteRestaurants, setFavoriteRestaurants] = useState<
-    FavoriteRestaurant[]
-  >([]);
+  const [filteredRestaurants, setFilteredRestaurants] = useState<Restaurant[] | null>(null);
+  const [selectedFoodCategories, setSelectedFoodCategories] = useState<string[] | null>(null);
+  const [listFoodCategories, setListFoodCategories] = useState<FoodCategory[] | null>(null);
+  const [listRestaurants, setListRestaurants] = useState<Restaurant[] | null>(null);
+  const [availablePromotionWithRestaurants, setAvailablePromotionWithRestaurants] = useState<AvailablePromotionWithRestaurants[] | null>(null);
+  const [originalPromotionWithRestaurants, setOriginalPromotionWithRestaurants] = useState<AvailablePromotionWithRestaurants[] | null>(null);
+  const [favoriteRestaurants, setFavoriteRestaurants] = useState<FavoriteRestaurant[]>([]);
   const [loading, setLoading] = useState({
-    foodCategories: false, // Start with loading false since we have mock data
-    restaurants: false,    // Start with loading false since we have mock data
-    promotions: false,     // Start with loading false since we have mock data
+    foodCategories: true, // Start with loading true
+    restaurants: true,    // Start with loading true
+    promotions: true,     // Start with loading true
     favoriteRestaurants: false,
   });
 
   useEffect(() => {
-    
     // Force loading to be false after a maximum time (3 seconds)
     const forceLoadingTimeout = setTimeout(() => {
       setLoading({
@@ -122,7 +101,6 @@ export const useHomeScreen = () => {
     
     const fetchData = async () => {
       try {
-        
         // Use Promise.all with our timeout wrapper
         const [
           foodCategoriesResponse,
@@ -136,11 +114,13 @@ export const useHomeScreen = () => {
 
         if (foodCategoriesResponse.data.EC === 0) {
           setListFoodCategories(foodCategoriesResponse.data.data);
+        } else {
+          // Only use fallback data when there's an error
+          setListFoodCategories([{ id: "cat1", name: "Category 1" }]);
         }
         setLoading((prev) => ({ ...prev, foodCategories: false }));
 
         if (restaurantsResponse.data.EC === 0) {
-          
           const mappedRestaurants = restaurantsResponse.data.data.map(
             (restaurant: any) => ({
               ...restaurant,
@@ -161,6 +141,9 @@ export const useHomeScreen = () => {
           );
           
           setListRestaurants(mappedRestaurants);
+        } else {
+          // Only use fallback data when there's an error
+          setListRestaurants(createMockRestaurants());
         }
         setLoading((prev) => ({ ...prev, restaurants: false }));
 
@@ -191,13 +174,22 @@ export const useHomeScreen = () => {
           
           setOriginalPromotionWithRestaurants(processedPromotions);
           setAvailablePromotionWithRestaurants(processedPromotions);
+        } else {
+          // Only use fallback data when there's an error
+          const mockPromotions = createMockPromotions();
+          setOriginalPromotionWithRestaurants(mockPromotions);
+          setAvailablePromotionWithRestaurants(mockPromotions);
         }
         setLoading((prev) => ({ ...prev, promotions: false }));
       } catch (error) {
         console.error("Error fetching data:", error);
         
-        // We already have fallback data initialized, just make sure loading is turned off
-        console.log("Error caught, ensuring loading state is off");
+        // Use fallback data on error
+        setListFoodCategories([{ id: "cat1", name: "Category 1" }]);
+        setListRestaurants(createMockRestaurants());
+        const mockPromotions = createMockPromotions();
+        setOriginalPromotionWithRestaurants(mockPromotions);
+        setAvailablePromotionWithRestaurants(mockPromotions);
         
         // Turn off loading states
         setLoading({
@@ -236,6 +228,13 @@ export const useHomeScreen = () => {
       fetchFavoriteRestaurantData();
     } else {
       console.log("No user ID available, skipping API calls");
+      // Turn off loading if we're not making API calls
+      setLoading({
+        foodCategories: false,
+        restaurants: false,
+        promotions: false,
+        favoriteRestaurants: false
+      });
     }
     
     // Clean up the timeout when component unmounts
@@ -311,7 +310,7 @@ export const useHomeScreen = () => {
     listRestaurants,
     availablePromotionWithRestaurants,
     favoriteRestaurants,
-    loading, // Trả về object loading thay vì isLoading
+    loading,
     handleToggleFavorite,
   };
 };

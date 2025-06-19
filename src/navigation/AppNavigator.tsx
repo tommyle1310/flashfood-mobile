@@ -6,6 +6,10 @@ import { useDispatch } from "../store/types";
 import { loadTokenFromAsyncStorage } from "../store/authSlice";
 import { useNavigation } from "@react-navigation/native"; // Giữ useNavigation từ đây
 import { StackScreenProps } from "@react-navigation/stack"; // Import StackScreenProps từ @react-navigation/stack
+import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
+import { NavigationContainer } from "@react-navigation/native";
+import { View, Text, TouchableOpacity } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
 
 import CartScreen from "@/screens/CartScreen";
 import OrdersScreen from "@/screens/OrdersScreen";
@@ -75,6 +79,10 @@ export type MainStackParamList = {
   RouteToRestaurant: { lng: number; lat: number };
   AddressList: undefined;
   AddressDetails?: { addressDetail?: Type_Address; is_create_type?: boolean };
+  OrderChat: {
+    withUserId: string;
+    orderId: string;
+  };
 };
 
 const RootStack = createStackNavigator<RootStackParamList>();

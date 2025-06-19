@@ -65,8 +65,6 @@ export const NearYouSection = ({
   isLoading,
 }: NearYouSectionProps) => {
   const navigation = useNavigation<HomeRestaurantSreenNavigationProp>();
-  
-  // Debug info
 
   return (
     <View style={{ marginBottom: spacing.md }}>
@@ -106,19 +104,6 @@ export const NearYouSection = ({
         </TouchableOpacity>
       </View>
       {isLoading ? (
-        <View
-          style={{
-            flexDirection: "row",
-            gap: spacing.md,
-            paddingHorizontal: spacing.md,
-            paddingVertical: spacing.sm
-          }}
-        >
-          <FFSkeleton width={140} height={220} style={{ borderRadius: 16 }} />
-          <FFSkeleton width={140} height={220} style={{ borderRadius: 16 }} />
-          <FFSkeleton width={140} height={220} style={{ borderRadius: 16 }} />
-        </View>
-      ) : (
         <ScrollView 
           horizontal 
           showsHorizontalScrollIndicator={false}
@@ -128,7 +113,26 @@ export const NearYouSection = ({
             gap: spacing.md
           }}
         >
-          {(restaurants ?? []).slice(0, 5).map((item) => (
+          {Array(3).fill(0).map((_, index) => (
+            <FFSkeleton 
+              key={`skeleton-${index}`}
+              width={140} 
+              height={220} 
+              style={{ borderRadius: 16 }} 
+            />
+          ))}
+        </ScrollView>
+      ) : restaurants && restaurants.length > 0 ? (
+        <ScrollView 
+          horizontal 
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={{
+            paddingHorizontal: spacing.md,
+            paddingBottom: spacing.sm,
+            gap: spacing.md
+          }}
+        >
+          {restaurants.slice(0, 5).map((item) => (
             <FFView
               onPress={() =>
                 navigation.navigate("RestaurantDetail", {
@@ -282,20 +286,6 @@ export const NearYouSection = ({
                   justifyContent: "space-between",
                   marginTop: 4,
                 }}>
-                  {/* <View style={{
-                    backgroundColor: "#fee2e2",
-                    paddingHorizontal: 8,
-                    paddingVertical: 2,
-                    borderRadius: 12,
-                  }}>
-                    <Text style={{
-                      color: "#ef4444",
-                      fontSize: 10,
-                      fontWeight: "600",
-                    }}>
-                      Giảm 20K
-                    </Text>
-                  </View> */}
                   <Text style={{
                     color: "#9ca3af",
                     fontSize: 12,
@@ -306,25 +296,25 @@ export const NearYouSection = ({
               </View>
             </FFView>
           ))}
-          {restaurants?.length === 0 && (
-            <View style={{
-              backgroundColor: "#ffffff",
-              borderRadius: 16,
-              padding: spacing.xl,
-              alignItems: "center",
-              justifyContent: "center",
-              minWidth: 200
-            }}>
-              <FFText style={{
-                color: "#9ca3af",
-                fontSize: 16,
-                fontWeight: "500"
-              }}>
-                🍽️ No restaurants found
-              </FFText>
-            </View>
-          )}
         </ScrollView>
+      ) : (
+        <View style={{
+          backgroundColor: "#ffffff",
+          borderRadius: 16,
+          padding: spacing.xl,
+          alignItems: "center",
+          justifyContent: "center",
+          marginHorizontal: spacing.md,
+          minHeight: 220
+        }}>
+          <FFText style={{
+            color: "#9ca3af",
+            fontSize: 16,
+            fontWeight: "500"
+          }}>
+            🍽️ No restaurants found
+          </FFText>
+        </View>
       )}
     </View>
   );

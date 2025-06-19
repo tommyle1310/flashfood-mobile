@@ -84,41 +84,15 @@ export const DetailedOrder: React.FC<DetailedOrderProps> = ({
       selectedOrder = detailedOrder;
     }
 
-    console.log("🎯 CURRENT ORDER DEBUG:", {
-      type,
-      selectedOrderExists: !!selectedOrder,
-      selectedOrderId: selectedOrder?.id,
-      activeOrderDetailsExists: !!activeOrderDetails,
-      firstActiveOrderExists: !!firstActiveOrder,
-      detailedOrderExists: !!detailedOrder,
-      selectedOrderItemsCount: selectedOrder?.order_items?.length || 0,
-      selectedOrderTotalAmount: selectedOrder?.total_amount,
-      selectedOrderDistance: selectedOrder?.distance,
-    });
+  
 
     return selectedOrder;
   }, [type, activeOrderDetails, firstActiveOrder, detailedOrder]);
-  console.log("cehck driverdetails ", currentOrder?.driverDetails);
 
   // CLEAN HELPER FUNCTIONS: Much simpler and easier to understand
   const getOrderItems = () => {
     const items = currentOrder?.order_items ?? [];
-    console.log("🍽️ DETAILED ORDER ITEMS DEBUG:", {
-      currentOrderExists: !!currentOrder,
-      currentOrderId: currentOrder?.id,
-      totalItems: items.length,
-      itemsWithVariant: items.filter((item) => !!item.menu_item_variant).length,
-      allItems: items.map((item, index) => ({
-        index,
-        name: item.name,
-        quantity: item.quantity,
-        hasMenuItemVariant: !!item.menu_item_variant,
-        menuItemVariant: item.menu_item_variant,
-        price_at_time_of_order: item.price_at_time_of_order,
-      })),
-      sampleVariant: items.find((item) => !!item.menu_item_variant)
-        ?.menu_item_variant,
-    });
+  
     return items;
   };
 
@@ -156,6 +130,33 @@ export const DetailedOrder: React.FC<DetailedOrderProps> = ({
 
   const getCustomerNote = () => {
     return currentOrder?.customer_note ?? "N/A";
+  };
+
+  // Handle navigation to order chat
+  const handleNavigateToOrderChat = () => {
+    if (!currentOrder || !navigation) return;
+    
+    // Determine who to chat with based on the order status
+    let withUserId;
+    
+    if (currentOrder.driver_id) {
+      // If there's a driver, chat with the driver
+      withUserId = currentOrder.driver_id;
+    } else if (currentOrder.restaurant?.id) {
+      // If no driver but there's a restaurant, chat with the restaurant
+      withUserId = currentOrder.restaurant.id;
+    } else {
+      // Fallback to customer care if neither is available
+      console.log("No driver or restaurant ID available for chat");
+      return;
+    }
+    
+    // Navigate to FChat screen with order-specific parameters
+    navigation.navigate("FChat", {
+      withUserId,
+      type: "ORDER",
+      orderId: currentOrder.id
+    });
   };
 
   // Render active order content
@@ -636,7 +637,10 @@ export const DetailedOrder: React.FC<DetailedOrderProps> = ({
                   >
                     <IconFeather name="phone" size={20} color="#222" />
                   </TouchableOpacity>
-                  <TouchableOpacity className="flex-row bg-gray-200 p-4 rounded-full flex-1">
+                  <TouchableOpacity 
+                    className="flex-row bg-gray-200 p-4 rounded-full flex-1"
+                    onPress={handleNavigateToOrderChat}
+                  >
                     <Text>Send a Message</Text>
                   </TouchableOpacity>
                   <TouchableOpacity

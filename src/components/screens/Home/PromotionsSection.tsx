@@ -95,10 +95,25 @@ export const PromotionsSection = ({
       </View>
 
       {isLoading ? (
-        <View style={styles.loadingContainer}>
-          <FFSkeleton width={CARD_WIDTH} height={180} style={styles.skeleton} />
-        </View>
-      ) : (
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.scrollContent}
+          decelerationRate="fast"
+        >
+          {Array(2).fill(0).map((_, index) => (
+            <FFSkeleton 
+              key={`promotion-skeleton-${index}`}
+              width={CARD_WIDTH} 
+              height={300} 
+              style={{
+                borderRadius: 16,
+                marginRight: spacing.md
+              }} 
+            />
+          ))}
+        </ScrollView>
+      ) : promotions && promotions.length > 0 ? (
         <ScrollView
           horizontal
           showsHorizontalScrollIndicator={false}
@@ -107,9 +122,8 @@ export const PromotionsSection = ({
           snapToInterval={CARD_WIDTH + spacing.md}
           snapToAlignment="center"
         >
-          {promotions?.map((promotion, i) => {
+          {promotions.map((promotion, i) => {
             const colors = getPromotionColors(i);
-            
             return (
               <TouchableOpacity 
                 key={promotion.id} 
@@ -134,7 +148,7 @@ export const PromotionsSection = ({
                     </View>
                     <View>
                       <FFText style={styles.promotionName}>
-                        {promotion.title}
+                        {promotion.name}
                       </FFText>
                       <View style={styles.discountContainer}>
                         <FFText 
@@ -257,6 +271,24 @@ export const PromotionsSection = ({
             );
           })}
         </ScrollView>
+      ) : (
+        <View style={{
+          backgroundColor: "#ffffff",
+          borderRadius: 16,
+          padding: spacing.xl,
+          alignItems: "center",
+          justifyContent: "center",
+          marginHorizontal: spacing.md,
+          minHeight: 200
+        }}>
+          <FFText style={{
+            color: "#9ca3af",
+            fontSize: 16,
+            fontWeight: "500"
+          }}>
+            No promotions available
+          </FFText>
+        </View>
       )}
     </View>
   );

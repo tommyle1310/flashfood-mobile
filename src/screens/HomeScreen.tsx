@@ -16,6 +16,8 @@ import FFSkeleton from "@/src/components/FFSkeleton";
 import { useSelector, useDispatch } from "../store/types";
 import { RootState } from "../store/store";
 import { loadTokenFromAsyncStorage } from "../store/authSlice";
+import PromotionsSliderSection from "../components/screens/Home/PromotionsSliderSection";
+import { IMAGE_LINKS } from "@/src/assets/imageLinks";
 
 type HomeRestaurantSreenNavigationProp = StackNavigationProp<
   MainStackParamList,
@@ -29,7 +31,6 @@ const HomeScreen = () => {
     null
   );
   
-
   const {
     filteredRestaurants,
     selectedFoodCategories,
@@ -41,10 +42,20 @@ const HomeScreen = () => {
     favoriteRestaurants,
     loading,
   } = useHomeScreen();
-  // Log loading state and available data
   
   const renderedRestaurants =
     filteredRestaurants && filteredRestaurants.length > 0 ? filteredRestaurants : listRestaurants;
+
+  // Format promotions for PromotionsSliderSection
+  const formattedPromotions = availablePromotionWithRestaurants?.map(promo => ({
+    avatar: { 
+      url: promo.restaurants?.[0]?.avatar?.url || IMAGE_LINKS?.DEFAULT_AVATAR_FOOD, 
+      key: promo.id || '' 
+    },
+    id: promo.id,
+    name: promo.name || '',
+    desc: promo.description || ''
+  }));
 
   return (
     <FFSafeAreaView>
@@ -56,7 +67,6 @@ const HomeScreen = () => {
         contentContainerStyle={{ 
           paddingHorizontal: spacing.sm,
           paddingBottom: spacing.xxxl,
-          // gap: spacing.xl
         }}
         showsVerticalScrollIndicator={false}
       >
@@ -90,62 +100,41 @@ const HomeScreen = () => {
             </FFText>
           </Pressable>
 
-          {availablePromotionWithRestaurants &&
-            availablePromotionWithRestaurants?.length > 0 && (
-              <View style={{ width: "100%" }}>
-                <View style={{
-                  flexDirection: "row",
-                  alignItems: "center",
-                  justifyContent: "space-between",
-                  // marginBottom: spacing.md,
-                  paddingHorizontal: spacing.xs
-                }}>
-                  <FFText style={{
-                    fontWeight: "700",
-                    color: "#1f2937"
-                  }}
-                  fontSize="lg"
-                  >
-                    🔥 Hot Deals
-                  </FFText>
-                </View>
-                {loading.promotions ? (
-                  <View style={{ 
-                    flexDirection: "row", 
-                    gap: spacing.md,
-                    paddingHorizontal: spacing.sm
-                  }}>
-                    <FFSkeleton width={280} height={140} style={{ borderRadius: 20 }} />
-                    <FFSkeleton width={280} height={140} style={{ borderRadius: 20 }} />
-                  </View>
-                ) : (
-                  <CoralTourCarousel
-                    onTap={(id) => {
-                      setSelectedPromotionId(id);
-                      const selectedPromotion =
-                        availablePromotionWithRestaurants?.find(
-                          (promo) => promo.id === id
-                        );
-                      if (selectedPromotion) {
-                        navigation.navigate("PromotionsWithRestaurant", {
-                          promotionTitle:
-                            availablePromotionWithRestaurants?.find(
-                              (promo) => promo.id === id
-                            )?.name,
-                          restaurants: selectedPromotion.restaurants,
-                        });
-                      }
-                    }}
-                    imageUrls={availablePromotionWithRestaurants?.map(
-                      (item) => item?.avatar?.url
-                    )}
-                    itemIds={availablePromotionWithRestaurants?.map(
-                      (item) => item?.id
-                    )}
-                  />
-                )}
-              </View>
-            )}
+          {/* Hot Deals Section */}
+          <View style={{ width: "100%" }}>
+            <View style={{
+              flexDirection: "row",
+              alignItems: "center",
+              justifyContent: "space-between",
+              paddingHorizontal: spacing.xs
+            }}>
+              <FFText style={{
+                fontWeight: "700",
+                color: "#1f2937"
+              }}
+              fontSize="lg"
+              >
+                🔥 Hot Deals
+              </FFText>
+            </View>
+            
+            <PromotionsSliderSection 
+            onTap={(id) => {
+              setSelectedPromotionId(id);
+              const selectedPromotion = availablePromotionWithRestaurants?.find(
+                (promo) => promo.id === id
+              );
+              if (selectedPromotion) {
+                navigation.navigate("PromotionsWithRestaurant", {
+                  promotionTitle: selectedPromotion.name,
+                  restaurants: selectedPromotion.restaurants,
+                });
+              }
+            }}
+              promotionList={formattedPromotions}
+              isLoading={loading.promotions}
+            />
+          </View>
 
           <CategoriesSection
             listFoodCategories={listFoodCategories}
@@ -169,9 +158,7 @@ const HomeScreen = () => {
               );
               if (selectedPromotion) {
                 navigation.navigate("PromotionsWithRestaurant", {
-                  promotionTitle: availablePromotionWithRestaurants?.find(
-                    (promo) => promo.id === id
-                  )?.name,
+                  promotionTitle: selectedPromotion.name,
                   restaurants: selectedPromotion.restaurants,
                 });
               }

@@ -19,6 +19,7 @@ import { StackNavigationProp } from "@react-navigation/stack";
 import { useFChatSocket } from "@/src/hooks/useFChatSocket";
 import { useSelector } from "@/src/store/types";
 import { RootState } from "@/src/store/store";
+import { truncateString } from "@/src/utils/functions";
 
 type FChatNavigationProp = StackNavigationProp<MainStackParamList, "FChat">;
 type FChatRouteProp = RouteProp<MainStackParamList, "FChat">;
@@ -40,6 +41,7 @@ const FChatScreen = () => {
     startChat,
     sendMessage,
     getChatHistory,
+    chatType,
   } = useFChatSocket();
 
   const { user_id, id, accessToken } = useSelector(
@@ -47,7 +49,19 @@ const FChatScreen = () => {
   );
 
   // Initial state logic - check if we have essential chat data
-  const hasEssentialChatData = roomId && currentSession && messages;
+  const hasEssentialChatData = roomId && currentSession;
+
+  // Get the chat type from route params or default to SUPPORT
+  const routeChatType = route.params?.type || "SUPPORT";
+  const orderId = route.params?.orderId;
+
+  // Debug logging
+  useEffect(() => {
+    console.log("FChatScreen - Chat Type:", chatType);
+    console.log("FChatScreen - Messages:", messages);
+    console.log("FChatScreen - Current Session:", currentSession);
+    console.log("FChatScreen - Room ID:", roomId);
+  }, [chatType, messages, currentSession, roomId]);
 
   // Start chat when component mounts (for existing chat flow)
   useEffect(() => {
@@ -78,41 +92,56 @@ const FChatScreen = () => {
         {/* Icon */}
         <View className="items-center mb-6">
           <View className="bg-[#63c550] rounded-full p-4 mb-4">
-            <Ionicons name="headset" size={32} color="white" />
+            <Ionicons 
+              name={chatType === "SUPPORT" ? "headset" : "chatbubbles"} 
+              size={32} 
+              color="white" 
+            />
           </View>
           <Text className="text-2xl font-bold text-gray-800 text-center mb-2">
-            Customer Support
+            {chatType === "SUPPORT" ? "Customer Support" : "Order Chat"}
           </Text>
           <Text className="text-gray-600 text-center leading-6">
-            Need help? Our customer care team is here to assist you with any
-            questions or concerns.
+            {chatType === "SUPPORT" 
+              ? "Need help? Our customer care team is here to assist you with any questions or concerns."
+              : `Connecting to chat for your order #${orderId || ""}`
+            }
           </Text>
         </View>
 
         {/* Request Button */}
-        <TouchableOpacity
-          className={`bg-[#63c550] rounded-2xl py-4 px-6 items-center mb-4 ${
-            isRequestingSupport ? "opacity-70" : ""
-          }`}
-          onPress={handleRequestCustomerCare}
-          disabled={isRequestingSupport || !isConnected}
-        >
-          {isRequestingSupport ? (
-            <View className="flex-row items-center">
-              <ActivityIndicator size="small" color="white" />
-              <Text className="text-white font-semibold ml-2">
-                Connecting...
-              </Text>
-            </View>
-          ) : (
-            <View className="flex-row items-center">
-              <Ionicons name="chatbubbles" size={20} color="white" />
-              <Text className="text-white font-semibold ml-2">
-                Request Customer Care Chat
-              </Text>
-            </View>
-          )}
-        </TouchableOpacity>
+        {chatType === "SUPPORT" ? (
+          <TouchableOpacity
+            className={`bg-[#63c550] rounded-2xl py-4 px-6 items-center mb-4 ${
+              isRequestingSupport ? "opacity-70" : ""
+            }`}
+            onPress={handleRequestCustomerCare}
+            disabled={isRequestingSupport || !isConnected}
+          >
+            {isRequestingSupport ? (
+              <View className="flex-row items-center">
+                <ActivityIndicator size="small" color="white" />
+                <Text className="text-white font-semibold ml-2">
+                  Connecting...
+                </Text>
+              </View>
+            ) : (
+              <View className="flex-row items-center">
+                <Ionicons name="chatbubbles" size={20} color="white" />
+                <Text className="text-white font-semibold ml-2">
+                  Request Customer Care Chat
+                </Text>
+              </View>
+            )}
+          </TouchableOpacity>
+        ) : (
+          <View className="flex-row items-center justify-center mb-4">
+            <ActivityIndicator size="small" color="#63c550" style={{ marginRight: 8 }} />
+            <Text className="text-gray-600">
+              {isRequestingSupport ? "Connecting to chat..." : "Waiting for connection..."}
+            </Text>
+          </View>
+        )}
 
         {/* Connection Status */}
         <View className="flex-row items-center justify-center">
@@ -147,7 +176,7 @@ const FChatScreen = () => {
     return (
       <FFSafeAreaView>
         <FFScreenTopSection
-          title="Support Chat"
+          title={chatType === "SUPPORT" ? "Support Chat" : `Order #${truncateString(orderId || "", 5)}`}
           titlePosition="left"
           navigation={navigation}
         />
@@ -156,12 +185,32 @@ const FChatScreen = () => {
     );
   }
 
+  // Get the order ID from the current session or route params
+  const displayOrderId = currentSession?.orderId || orderId || "";
+
+  // Check if we have messages to display
+  const hasMessages = messages && messages.length > 0;
+
+  // Scroll view reference
+  const scrollViewRef = React.useRef<ScrollView>(null);
+
+  // Scroll to bottom when messages change
+  useEffect(() => {
+    if (scrollViewRef.current && hasMessages) {
+      setTimeout(() => {
+        if (scrollViewRef.current) {
+          scrollViewRef.current.scrollToEnd({ animated: true });
+        }
+      }, 300);
+    }
+  }, [messages]);
+
   return (
     <FFSafeAreaView>
       {/* Chat Header */}
       <View className="flex-row items-center p-4 border-b border-gray-200">
         <FFScreenTopSection
-          title="Support Chat"
+          title={chatType === "SUPPORT" ? "Support Chat" : `Order #${truncateString(displayOrderId, 5)}`}
           titlePosition="left"
           navigation={navigation}
         />
@@ -169,9 +218,11 @@ const FChatScreen = () => {
           <TouchableOpacity>
             <Ionicons name="call" size={24} color="#63c550" />
           </TouchableOpacity>
-          <TouchableOpacity>
-            <Ionicons name="videocam" size={24} color="#63c550" />
-          </TouchableOpacity>
+          {chatType === "SUPPORT" && (
+            <TouchableOpacity>
+              <Ionicons name="videocam" size={24} color="#63c550" />
+            </TouchableOpacity>
+          )}
           <TouchableOpacity>
             <Ionicons name="ellipsis-vertical" size={24} color="#63c550" />
           </TouchableOpacity>
@@ -185,52 +236,63 @@ const FChatScreen = () => {
         keyboardVerticalOffset={Platform.OS === "ios" ? 90 : 0}
       >
         <ScrollView
+          ref={scrollViewRef}
           className="flex-1 px-4"
           contentContainerStyle={{ paddingVertical: 20 }}
         >
-          {messages.map((msg) => (
-            <View
-              key={msg.messageId}
-              className={`flex-row ${
-                msg.from === id ? "justify-end" : "justify-start"
-              } mb-4`}
-            >
+          {!hasMessages ? (
+            <View className="flex-1 items-center justify-center py-10">
+              <Text className="text-gray-400">
+                {chatType === "SUPPORT"
+                  ? "Start a conversation with customer support"
+                  : `Start a conversation about your order #${truncateString(displayOrderId, 5)}`}
+              </Text>
+            </View>
+          ) : (
+            messages.map((msg) => (
               <View
-                className={`max-w-[80%] rounded-2xl p-3 ${
-                  msg.from === id
-                    ? "bg-[#63c550] rounded-tr-none"
-                    : "bg-gray-200 rounded-tl-none"
-                }`}
+                key={msg.messageId || `${msg.from}-${msg.timestamp}`}
+                className={`flex-row ${
+                  msg.from === id ? "justify-end" : "justify-start"
+                } mb-4`}
               >
-                {msg.type === "IMAGE" ? (
-                  <Image
-                    source={{ uri: msg.content }}
-                    style={{
-                      width: 120,
-                      height: 120,
-                      borderRadius: 10,
-                    }}
-                    resizeMode="cover"
-                  />
-                ) : (
-                  <Text
-                    className={`${
-                      msg.from === user_id ? "text-white" : "text-black"
-                    } text-base`}
-                  >
-                    {msg.content}
-                  </Text>
-                )}
-                <Text
-                  className={`text-xs mt-1 ${
-                    msg.from === user_id ? "text-gray-200" : "text-gray-500"
+                <View
+                  className={`max-w-[80%] rounded-2xl p-3 ${
+                    msg.from === id
+                      ? "bg-[#63c550] rounded-tr-none"
+                      : "bg-gray-200 rounded-tl-none"
                   }`}
                 >
-                  {new Date(msg.timestamp).toLocaleTimeString()}
-                </Text>
+                  {msg.type === "IMAGE" ? (
+                    <Image
+                      source={{ uri: msg.content }}
+                      style={{
+                        width: 120,
+                        height: 120,
+                        borderRadius: 10,
+                      }}
+                      resizeMode="cover"
+                    />
+                  ) : (
+                    <Text
+                      className={`${
+                        msg.from === id ? "text-white" : "text-black"
+                      } text-base`}
+                    >
+                      {msg.content}
+                    </Text>
+                  )}
+                  <Text
+                    className={`text-xs mt-1 ${
+                      msg.from === id ? "text-gray-200" : "text-gray-500"
+                    }`}
+                  >
+                    {new Date(msg.timestamp).toLocaleTimeString()}
+                  </Text>
+                </View>
               </View>
-            </View>
-          ))}
+            ))
+          )}
         </ScrollView>
 
         {/* Message Input */}

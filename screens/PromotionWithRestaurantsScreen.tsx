@@ -248,9 +248,7 @@ const PromotionWithRestaurantsScreen = () => {
         onClose={() => setModalVisible(false)}
       >
         <View style={{ padding: spacing.md }}>
-          <FFText style={{ fontSize: 18, fontWeight: "600", marginBottom: spacing.md }}>
-            Restaurant Address
-          </FFText>
+       
           <FFText style={{ fontSize: 16, lineHeight: 24 }}>
             {selectedAddress}
           </FFText>

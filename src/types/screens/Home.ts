@@ -77,12 +77,13 @@ export interface FavoriteRestaurant {
 
 export interface AvailablePromotionWithRestaurants {
   id: string;
-  title: string;
+  name: string;
   description: string;
   code: string;
   discount_type: string;
   discount_value: number;
   min_order_value: number;
+  avatar?: Avatar;
   max_discount_amount: number;
   usage_limit: number;
   usage_count: number;

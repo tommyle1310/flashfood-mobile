@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { io, Socket } from "socket.io-client";
 import { useSelector, useDispatch } from "@/src/store/types";
 import { RootState } from "@/src/store/store";
@@ -46,24 +46,77 @@ interface ChatMessage {
 export const useFChatSocket = () => {
   const [socket, setSocket] = useState<Socket | null>(null);
   const dispatch = useDispatch();
+  const [chatType, setChatType] = useState<"SUPPORT" | "ORDER">("SUPPORT");
 
   // Get state from Redux
   const { accessToken } = useSelector((state: RootState) => state.auth);
   const {
+    currentSupportSession,
+    currentOrderSession,
     currentSession,
+    supportMessages,
+    orderMessages,
     messages,
     isRequestingSupport,
     requestError,
     isConnected,
   } = useSelector((state: RootState) => state.chat);
 
-  // Get roomId from current session
-  const roomId = currentSession?.dbRoomId || null;
+  // Get the appropriate session based on chat type
+  const activeSession = chatType === "SUPPORT" 
+    ? currentSupportSession 
+    : currentOrderSession;
+  
+  // Get the appropriate messages based on chat type
+  const getActiveMessages = useCallback(() => {
+    if (chatType === "SUPPORT") {
+      return supportMessages;
+    } else if (chatType === "ORDER") {
+      // For ORDER chats, check if we have messages for this order
+      const orderId = activeSession?.orderId;
+      if (orderId && orderMessages[orderId]) {
+        return orderMessages[orderId];
+      }
+      
+      // If we don't have specific messages for this order but we have a room ID,
+      // return the legacy messages as they might contain our messages
+      if (activeSession?.dbRoomId) {
+        const relevantMessages = messages.filter(msg => msg.roomId === activeSession.dbRoomId);
+        if (relevantMessages.length > 0) {
+          return relevantMessages;
+        }
+      }
+    }
+    
+    // Fallback to empty array if no messages found
+    return [];
+  }, [chatType, activeSession, supportMessages, orderMessages, messages]);
+
+  // Get active messages
+  const activeMessages = getActiveMessages();
+
+  // Get roomId from active session
+  const roomId = activeSession?.dbRoomId || null;
+
+  // Debug logging
+  useEffect(() => {
+    console.log("Chat type:", chatType);
+    console.log("Active session:", activeSession);
+    console.log("Active messages:", activeMessages);
+    console.log("Room ID:", roomId);
+  }, [chatType, activeSession, activeMessages, roomId]);
 
   // Load chat data on mount
   useEffect(() => {
     dispatch(loadChatDataFromStorage());
   }, [dispatch]);
+
+  // Save current session to storage whenever it changes
+  useEffect(() => {
+    if (activeSession) {
+      dispatch(saveChatSessionToStorage(activeSession));
+    }
+  }, [activeSession, dispatch]);
 
   useEffect(() => {
     if (!accessToken) {
@@ -116,10 +169,20 @@ export const useFChatSocket = () => {
         senderType: message.senderType,
       };
 
+      // Add message to the store
       dispatch(addMessage(formattedMessage));
-      // Save messages to storage
-      dispatch(saveMessagesToStorage([...messages, formattedMessage]));
+      
+      // Save messages to storage with the correct type and orderId
+      if (activeSession) {
+        const updatedMessages = [...activeMessages, formattedMessage];
+        dispatch(saveMessagesToStorage({
+          messages: updatedMessages,
+          type: activeSession.type,
+          orderId: activeSession.orderId
+        }));
+      }
     });
+    
     socketInstance.on(
       "chatHistory",
       (data: { chatId: string; messages: any[]; id: string }) => {
@@ -137,8 +200,22 @@ export const useFChatSocket = () => {
             senderDetails: msg.senderDetails,
             senderType: msg.senderType,
           }));
-          dispatch(setMessages(formattedMessages));
-          dispatch(saveMessagesToStorage(formattedMessages));
+          
+          // Set messages with the correct type and orderId
+          if (activeSession) {
+            dispatch(setMessages({
+              messages: formattedMessages,
+              type: activeSession.type,
+              orderId: activeSession.orderId
+            }));
+            
+            // Also save to storage
+            dispatch(saveMessagesToStorage({
+              messages: formattedMessages,
+              type: activeSession.type,
+              orderId: activeSession.orderId
+            }));
+          }
         } else {
           console.log("Unexpected message format:", data);
         }
@@ -157,6 +234,9 @@ export const useFChatSocket = () => {
       }) => {
         console.log("Chat started:", data);
 
+        // Update the current chat type
+        setChatType(data.type);
+
         // Create and save chat session with serializable dates
         const session = {
           chatId: data.chatId,
@@ -169,6 +249,7 @@ export const useFChatSocket = () => {
           lastMessageAt: new Date().toISOString(), // Convert to ISO string
         };
 
+        // Dispatch actions in order - first set the chat session, then mark request as success
         dispatch(setChatSession(session));
         dispatch(saveChatSessionToStorage(session));
         dispatch(supportRequestSuccess());
@@ -183,30 +264,54 @@ export const useFChatSocket = () => {
   }, [accessToken]);
 
   // Request customer care chat
-  const requestCustomerCare = () => {
+  const requestCustomerCare = useCallback(() => {
     if (!socket) {
       console.log("Socket is not initialized");
       dispatch(supportRequestError("Connection not available"));
       return;
     }
 
+    // Set the chat type to SUPPORT
+    setChatType("SUPPORT");
+    
     dispatch(startSupportRequest());
-    socket.emit("requestCustomerCare");
-  };
+    socket.emit("requestCustomerCare", {type: "SUPPORT"});
+  }, [socket, dispatch]);
 
-  const startChat = (
+  // Generic method to start any type of chat
+  const startChat = useCallback((
     withUserId: string,
     type: "SUPPORT" | "ORDER",
     orderId?: string
   ) => {
     if (!socket) {
       console.log("Socket is not initialized");
+      dispatch(supportRequestError("Connection not available"));
       return;
     }
-    socket.emit("startChat", { withUserId, type, orderId });
-  };
 
-  const sendMessage = (
+    // Update the current chat type
+    setChatType(type);
+    
+    // For all chat types, we need to start a request
+    dispatch(startSupportRequest());
+    
+    // Emit the appropriate event based on chat type
+    if (type === "SUPPORT") {
+      // For support chats, we might need special handling
+      socket.emit("startChat", { withUserId, type, orderId });
+    } else if (type === "ORDER") {
+      // For order chats, ensure we include the orderId
+      if (!orderId) {
+        console.log("Order ID is required for ORDER type chats");
+        dispatch(supportRequestError("Order ID is required"));
+        return;
+      }
+      socket.emit("startChat", { withUserId, type, orderId });
+    }
+  }, [socket, dispatch]);
+
+  const sendMessage = useCallback((
     content: string,
     type: "TEXT" | "IMAGE" | "VIDEO" | "ORDER_INFO" = "TEXT"
   ) => {
@@ -220,29 +325,29 @@ export const useFChatSocket = () => {
       content,
       type,
     });
-  };
+  }, [socket, roomId]);
 
-  const getChatHistory = () => {
+  const getChatHistory = useCallback(() => {
     if (!socket || !roomId) {
       console.log("Socket or roomId is not available for getting chat history");
       return;
     }
     dispatch(setLoadingHistory(true));
     socket.emit("getChatHistory", { roomId });
-  };
+  }, [socket, roomId, dispatch]);
 
   // Auto-load chat history when roomId changes
   useEffect(() => {
     if (socket && roomId) {
       getChatHistory();
     }
-  }, [socket, roomId]);
+  }, [socket, roomId, getChatHistory]);
 
   return {
     socket,
-    messages,
+    messages: activeMessages, // Return the active messages based on chat type
     roomId,
-    currentSession,
+    currentSession: activeSession, // Return the active session based on chat type
     isRequestingSupport,
     requestError,
     isConnected,
@@ -250,5 +355,6 @@ export const useFChatSocket = () => {
     startChat,
     sendMessage,
     getChatHistory,
+    chatType,
   };
 };
