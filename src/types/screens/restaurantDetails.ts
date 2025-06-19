@@ -1,5 +1,10 @@
 import { Avatar } from "../common";
 
+type WeekDay = 'mon' | 'tue' | 'wed' | 'thu' | 'fri' | 'sat' | 'sun';
+type OpeningHours = {
+  [key in WeekDay]: { from: number; to: number };
+};
+
 export interface Props_RestaurantDetails {
   address_id: string;
   address: {
@@ -21,12 +26,51 @@ export interface Props_RestaurantDetails {
     discount_value: number;
     end_date: number;
     start_date: number;
-    food_category: string[];
+    food_category_ids: string[];
     name: string;
-  };
+    description: string;
+    promotion_cost_price: string;
+    minimum_order_value: string;
+    avatar: Avatar | null;
+    status: string;
+    bogo_details: any | null;
+    created_at: string;
+    updated_at: string;
+  }[];
   restaurant_name: string;
   ratings: null | { average_rating: number; review_count: number };
-  specialize_in: { id: string; description: string; name: string }[];
+  specialize_in: { id: string; description: string; name: string; avatar?: Avatar }[];
+  status: {
+    is_open: boolean;
+    is_active: boolean;
+    is_accepted_orders: boolean;
+  };
+  opening_hours: OpeningHours;
+  rating_stats: {
+    avg_rating: number;
+    avg_food_rating: number;
+    avg_delivery_rating: number;
+    total_reviews: number;
+    reviews: {
+      id: string;
+      reviewer_type: string;
+      reviewer: {
+        id: string;
+        name: string;
+        avatar: Avatar | null;
+      };
+      food_rating: number;
+      delivery_rating: number;
+      food_review: string;
+      delivery_review: string;
+      images: Array<{
+        key: string;
+        url: string;
+      }>;
+      created_at: number;
+      order_id: string;
+    }[];
+  };
 }
 
 export interface Props_MenuItem {
@@ -58,7 +102,7 @@ export interface MenuItemVariant {
   id: string;
   availability: boolean;
   created_at: number;
-  default_restaurant_notes: string[]; // You can adjust this type if you need specific structure for notes
+  default_restaurant_notes: string[];
   menu_id: string;
   price: number;
   price_after_applied_promotion: number;
@@ -71,15 +115,15 @@ export interface MenuItem {
   id: string;
   availability: boolean;
   avatar: Avatar;
-  category: string[]; // Category IDs for this menu item
+  category: string[];
   created_at: number;
   name: string;
   price: number;
   purchase_count: number;
   restaurant_id: string;
-  suggest_notes: string[]; // Notes for the menu item (adjust as needed)
+  suggest_notes: string[];
   updated_at: number;
-  variants: string[]; // List of variant IDs
+  variants: string[];
 }
 
 export interface MenuItemProps {

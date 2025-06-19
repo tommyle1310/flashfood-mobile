@@ -42,8 +42,6 @@ const HomeScreen = () => {
     loading,
   } = useHomeScreen();
   // Log loading state and available data
-  console.log("HomeScreen - Loading state:", loading);
-  console.log("HomeScreen - Restaurants available:", !!listRestaurants);
   
   const renderedRestaurants =
     filteredRestaurants && filteredRestaurants.length > 0 ? filteredRestaurants : listRestaurants;

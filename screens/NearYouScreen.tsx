@@ -28,7 +28,6 @@ const NearYouScreen = () => {
   const navigation = useNavigation<NearYouSreenNavigationProp>();
   const route = useRoute<RestaurantDetailRouteProp>();
   const restaurantList = route.params;
-  console.log("chec k res list", restaurantList);
 
   const renderRestaurantItem = ({
     item,
@@ -72,11 +71,11 @@ const NearYouScreen = () => {
       >
         <View>
           <FFText style={{ fontWeight: "600", fontSize: 16 }}>
-            {item?.restaurant_name}
+            {item?.restaurant_name} 
           </FFText>
           <FFText colorDark="#888" colorLight="#aaa" style={{ fontSize: 12 }}>
             {item?.specialize_in?.[0]?.name}
-            {item?.address?.street}
+            {/* {item?.address?.street} */}
           </FFText>
         </View>
         <TouchableOpacity>

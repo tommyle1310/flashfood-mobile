@@ -96,10 +96,6 @@ export const loadFavoriteRestaurantsFromAsyncStorage = createAsyncThunk(
 export const saveCartItemsToAsyncStorage = createAsyncThunk(
   "userPreference/saveCartItems",
   async (cart_items: CartItem[]) => {
-    console.log(
-      "Saving cart_items to AsyncStorage:",
-      JSON.stringify(cart_items, null, 2)
-    );
     await AsyncStorage.setItem("cart_items", JSON.stringify(cart_items));
     return cart_items;
   }

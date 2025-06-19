@@ -141,7 +141,6 @@ export const loadOrderTrackingFromAsyncStorage = createAsyncThunk(
         },
         {}
       );
-      console.log("📊 Order status breakdown:", statusBreakdown);
 
       return allOrders;
     } catch (error) {
@@ -184,10 +183,7 @@ const orderTrackingRealtimeSlice = createSlice({
   extraReducers: (builder) => {
     builder
       .addCase(loadOrderTrackingFromAsyncStorage.fulfilled, (state, action) => {
-        console.log(
-          "📥 Loading orders from AsyncStorage:",
-          action.payload.length
-        );
+
 
         // CRITICAL FIX: Don't overwrite existing realtime orders with empty persisted data
         // Merge persisted data with existing state to preserve realtime updates
@@ -238,14 +234,10 @@ const orderTrackingRealtimeSlice = createSlice({
         mergedOrders.sort((a, b) => b.updated_at - a.updated_at);
 
         state.orders = mergedOrders;
-        console.log("📊 Final merged orders count:", mergedOrders.length);
       })
       .addCase(updateAndSaveOrderTracking.fulfilled, (state, action) => {
         if (action.payload) {
-          console.log(
-            "💾 Updating state with saved orders:",
-            action.payload.length
-          );
+         
           state.orders = action.payload;
           // The async thunk already handles saving, no need to save again here
         }

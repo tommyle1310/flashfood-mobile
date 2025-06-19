@@ -160,7 +160,6 @@ const ProfileScreen = () => {
     }
   }, [id]);
 
-  console.log('check what here', userRedux)
 
   useEffect(() => {
     const { id, address, avatar, first_name, last_name, user, user_Id } =

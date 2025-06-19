@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useCallback } from "react";
 import { View, TouchableOpacity, ScrollView, StyleSheet } from "react-native";
 import FFText from "@/src/components/FFText";
 import FFSkeleton from "@/src/components/FFSkeleton";
@@ -21,13 +21,14 @@ export const CategoriesSection = ({
   setSelectedFoodCategories,
   isLoading,
 }: CategoriesSectionProps) => {
-  const handleCategoryPress = (categoryId: string) => {
+  // Optimize with useCallback to prevent unnecessary re-renders
+  const handleCategoryPress = useCallback((categoryId: string) => {
     const currentSelected = selectedFoodCategories ?? [];
     const newSelected = currentSelected.includes(categoryId)
       ? currentSelected.filter((id) => id !== categoryId)
       : [...currentSelected, categoryId];
     setSelectedFoodCategories(newSelected);
-  };
+  }, [selectedFoodCategories, setSelectedFoodCategories]);
 
   // Split categories into two rows for a grid layout
   const getGridRows = () => {
@@ -45,7 +46,6 @@ export const CategoriesSection = ({
   // Helper to safely get the category image URL
   const getCategoryImage = (category: FoodCategory): string | undefined => {
     // Try to access image URL from various possible properties
-    // This is a flexible approach since we don't know the exact structure
     if (typeof category === 'object' && category !== null) {
       // @ts-ignore - We're checking properties dynamically
       return category.image || 
@@ -60,6 +60,45 @@ export const CategoriesSection = ({
     return undefined;
   };
 
+  // Render category item to optimize performance
+  const renderCategoryItem = useCallback((item: FoodCategory, isSelected: boolean) => {
+    return (
+      <TouchableOpacity
+        key={item.id}
+        onPress={() => handleCategoryPress(item.id)}
+        activeOpacity={0.7}
+        hitSlop={{ top: 10, bottom: 10, left: 5, right: 5 }}
+        style={
+          isSelected
+            ? {...styles.categoryItem, ...styles.categoryItemSelected}
+            : styles.categoryItem
+        }
+      >
+        <View style={
+          isSelected
+            ? {...styles.iconContainer, ...styles.iconContainerSelected}
+            : styles.iconContainer
+        }>
+          <FFAvatar 
+          onPress={() => handleCategoryPress(item.id)}
+            size={48}
+            avatar={getCategoryImage(item)}
+            rounded="full"
+          />
+        </View>
+        <FFText
+          style={
+            isSelected
+              ? {...styles.categoryText, ...styles.categoryTextSelected}
+              : styles.categoryText
+          }
+        >
+          {item.name}
+        </FFText>
+      </TouchableOpacity>
+    );
+  }, [handleCategoryPress]);
+
   return (
     <View style={styles.container}>
       {/* Header Section */}
@@ -73,7 +112,11 @@ export const CategoriesSection = ({
           </FFText>
         </View>
         
-        <TouchableOpacity style={styles.viewAllButton}>
+        <TouchableOpacity 
+          style={styles.viewAllButton}
+          activeOpacity={0.7}
+          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+        >
           <FFText style={styles.viewAllText}>
             View All
           </FFText>
@@ -104,39 +147,13 @@ export const CategoriesSection = ({
             horizontal 
             showsHorizontalScrollIndicator={false}
             contentContainerStyle={styles.rowContainer}
+            scrollEventThrottle={16}
+            keyboardShouldPersistTaps="handled"
+            removeClippedSubviews={false}
           >
-            {firstRow.map((item) => (
-              <TouchableOpacity
-                key={item.id}
-                onPress={() => handleCategoryPress(item.id)}
-                style={
-                  selectedFoodCategories?.includes(item.id)
-                    ? {...styles.categoryItem, ...styles.categoryItemSelected}
-                    : styles.categoryItem
-                }
-              >
-                <View style={
-                  selectedFoodCategories?.includes(item.id)
-                    ? {...styles.iconContainer, ...styles.iconContainerSelected}
-                    : styles.iconContainer
-                }>
-                  <FFAvatar 
-                    size={48}
-                    avatar={getCategoryImage(item)}
-                    rounded="full"
-                  />
-                </View>
-                <FFText
-                  style={
-                    selectedFoodCategories?.includes(item.id)
-                      ? {...styles.categoryText, ...styles.categoryTextSelected}
-                      : styles.categoryText
-                  }
-                >
-                  {item.name}
-                </FFText>
-              </TouchableOpacity>
-            ))}
+            {firstRow.map((item) => 
+              renderCategoryItem(item, selectedFoodCategories?.includes(item.id) || false)
+            )}
           </ScrollView>
           
           {/* Second Row */}
@@ -144,39 +161,13 @@ export const CategoriesSection = ({
             horizontal 
             showsHorizontalScrollIndicator={false}
             contentContainerStyle={styles.rowContainer}
+            scrollEventThrottle={16}
+            keyboardShouldPersistTaps="handled"
+            removeClippedSubviews={false}
           >
-            {secondRow.map((item) => (
-              <TouchableOpacity
-                key={item.id}
-                onPress={() => handleCategoryPress(item.id)}
-                style={
-                  selectedFoodCategories?.includes(item.id)
-                    ? {...styles.categoryItem, ...styles.categoryItemSelected}
-                    : styles.categoryItem
-                }
-              >
-                <View style={
-                  selectedFoodCategories?.includes(item.id)
-                    ? {...styles.iconContainer, ...styles.iconContainerSelected}
-                    : styles.iconContainer
-                }>
-                  <FFAvatar 
-                    size={48}
-                    avatar={getCategoryImage(item)}
-                    rounded="full"
-                  />
-                </View>
-                <FFText
-                  style={
-                    selectedFoodCategories?.includes(item.id)
-                      ? {...styles.categoryText, ...styles.categoryTextSelected}
-                      : styles.categoryText
-                  }
-                >
-                  {item.name}
-                </FFText>
-              </TouchableOpacity>
-            ))}
+            {secondRow.map((item) => 
+              renderCategoryItem(item, selectedFoodCategories?.includes(item.id) || false)
+            )}
           </ScrollView>
           
           {/* Empty State */}
@@ -243,15 +234,24 @@ const styles = StyleSheet.create({
   },
   rowContainer: {
     paddingVertical: spacing.xs,
-    gap: spacing.sm,
+    paddingHorizontal: 2, // Add a bit of padding to improve touch area
   },
   categoryItem: {
     alignItems: "center",
-    width: 70,
+    width: 80, // Increased width for better touch target
+    height: 90, // Fixed height to ensure consistent touch area
     marginRight: spacing.sm,
+    paddingHorizontal: 5,
+    paddingVertical: 5,
+    justifyContent: "center", // Center content vertically
+    minWidth: 80, // Minimum width for touch target
+    minHeight: 90, // Minimum height for touch target
   },
   categoryItemSelected: {
-    transform: [{scale: 1.05}],
+    // Removed transform scale which can cause performance issues
+    // Instead use a more subtle visual indicator
+    backgroundColor: 'rgba(0,0,0,0.03)',
+    borderRadius: 10,
   },
   iconContainer: {
     width: 60,
@@ -272,6 +272,7 @@ const styles = StyleSheet.create({
   },
   iconContainerSelected: {
     borderColor: colors.primary_dark,
+    borderWidth: 2,
     shadowOpacity: 0.15,
     elevation: 4,
   },
@@ -280,6 +281,7 @@ const styles = StyleSheet.create({
     fontWeight: "600",
     color: "#374151",
     textAlign: "center",
+    width: '100%',
   },
   categoryTextSelected: {
     color: colors.primary,

@@ -157,7 +157,6 @@ const CheckoutScreen = () => {
   const handlePlaceOrder = async () => {
     setIsLoading(true);
     if (realtimeOrders && realtimeOrders?.[0]?.orderId) {
-      console.log("check what here", realtimeOrders);
 
       setToastDetails({
         status: "DANGER",

@@ -59,7 +59,6 @@ const initialState: AuthState = {
 export const loadTokenFromAsyncStorage = createAsyncThunk(
   "auth/loadToken",
   async () => {
-    console.log("📱 loadTokenFromAsyncStorage: Loading data from AsyncStorage");
     
     const accessToken = await AsyncStorage.getItem("accessToken");
     const id = await AsyncStorage.getItem("id");
@@ -78,13 +77,6 @@ export const loadTokenFromAsyncStorage = createAsyncThunk(
     const user_type = await AsyncStorage.getItem("user_type");
     const address = await AsyncStorage.getItem("address");
 
-    // Log what we actually retrieved
-    console.log("📱 Raw AsyncStorage values:");
-    console.log("  email:", email);
-    console.log("  avatar:", avatar);
-    console.log("  address:", address);
-    console.log("  phone:", phone);
-    console.log("  fWallet_id:", fWallet_id);
 
     const result = {
       accessToken,
@@ -107,7 +99,6 @@ export const loadTokenFromAsyncStorage = createAsyncThunk(
       address: address ? JSON.parse(address) : [],
     };
     
-    console.log("📱 loadTokenFromAsyncStorage: Loaded data:", result);
     return result;
   }
 );
@@ -503,7 +494,6 @@ const authSlice = createSlice({
   extraReducers: (builder) => {
     builder
       .addCase(loadTokenFromAsyncStorage.fulfilled, (state, action) => {
-        console.log("🔄 loadTokenFromAsyncStorage.fulfilled: Updating Redux state", action.payload);
         
         const {
           id,
@@ -525,7 +515,6 @@ const authSlice = createSlice({
         } = action.payload;
 
         if (accessToken) {
-          console.log("🔑 Found accessToken, setting authenticated state");
           state.accessToken = accessToken;
           state.isAuthenticated = true;
           state.app_preferences = app_preferences;
@@ -544,7 +533,6 @@ const authSlice = createSlice({
           state.user_type = user_type;
           state.address = address; // Set the address if available
           
-          console.log("✅ loadTokenFromAsyncStorage.fulfilled: Authenticated state set", state);
         } else {
           console.log("❌ No accessToken found, setting unauthenticated state");
           state.isAuthenticated = false;

@@ -61,13 +61,9 @@ export const useHomeScreen = () => {
   });
 
   useEffect(() => {
-    console.log("useHomeScreen - Global state:", globalState);
-    console.log("useHomeScreen - User ID:", globalState.id);
-    console.log("useHomeScreen - User authenticated:", globalState.isAuthenticated);
     
     // Force loading to be false after a maximum time (3 seconds)
     const forceLoadingTimeout = setTimeout(() => {
-      console.log("Force ending loading state after timeout");
       setLoading({
         foodCategories: false,
         restaurants: false,
@@ -79,7 +75,7 @@ export const useHomeScreen = () => {
     // Add timeout for API calls to prevent infinite loading
     const fetchWithTimeout = async (url: string): Promise<any> => {
       const timeoutPromise = new Promise<never>((_, reject) => 
-        setTimeout(() => reject(new Error('Request timeout')), 3000)
+        setTimeout(() => reject(new Error('Request timeout')),30000)
       );
       
       try {
@@ -96,7 +92,6 @@ export const useHomeScreen = () => {
     
     const fetchData = async () => {
       try {
-        console.log("Starting API calls with user ID:", globalState.id);
         
         // Use Promise.all with our timeout wrapper
         const [
@@ -115,9 +110,6 @@ export const useHomeScreen = () => {
         setLoading((prev) => ({ ...prev, foodCategories: false }));
 
         if (restaurantsResponse.data.EC === 0) {
-          // Log the raw data to see what's coming from the API
-          console.log("Restaurant data from API:", 
-            JSON.stringify(restaurantsResponse.data.data[0], null, 2).substring(0, 500));
           
           const mappedRestaurants = restaurantsResponse.data.data.map(
             (restaurant: any) => ({
@@ -133,8 +125,6 @@ export const useHomeScreen = () => {
               specialize_in: restaurant.specialize_in || []
             })
           );
-          console.log("First mapped restaurant:", 
-            JSON.stringify(mappedRestaurants[0], null, 2).substring(0, 500));
           
           setListRestaurants(mappedRestaurants);
         }
@@ -188,7 +178,6 @@ export const useHomeScreen = () => {
 
     // Only fetch data if we have a valid user ID or if we're not authenticated (for public data)
     if (globalState.id || !globalState.isAuthenticated) {
-      console.log("Attempting to fetch data, user_id:", globalState.id);
       fetchData();
       fetchFavoriteRestaurantData();
     } else {
@@ -212,33 +201,20 @@ export const useHomeScreen = () => {
       const filtered = listRestaurants?.filter((restaurant, index) => {
         // If restaurant has categories, use them for filtering
         if (restaurant.specialize_in && restaurant.specialize_in.length > 0) {
-          const hasMatchingCategory = restaurant.specialize_in.some((category) =>
+          return restaurant.specialize_in.some((category) =>
             selectedFoodCategories.includes(category.id)
           );
-          
-          if (hasMatchingCategory) {
-            console.log(`Restaurant ${restaurant.restaurant_name} matches selected categories`);
-            return true;
-          }
-          return false;
         }
         
         // FALLBACK: For demo purposes, let's just filter every 3rd restaurant when categories are selected
-        // This ensures we see some filtering happening
-        const shouldInclude = index % 3 === 0;
-        if (shouldInclude) {
-          console.log(`Including restaurant ${restaurant.restaurant_name} as fallback`);
-        }
-        return shouldInclude;
+        return index % 3 === 0;
       });
+      console.log('check fieltered', filtered?.some(item => item.restaurant_name === 'tomtom'), 'check selected cate', selectedFoodCategories)
       
-      console.log(`Filtered ${filtered?.length} restaurants out of ${listRestaurants?.length}`);
       setFilteredRestaurants(filtered);
 
       if (originalPromotionWithRestaurants) {
         // For now, let's not filter promotion restaurants at all when categories are selected
-        // This ensures promotions remain visible and functional
-        // Only the main restaurant list (Near You section) will be filtered
         setAvailablePromotionWithRestaurants(originalPromotionWithRestaurants);
       }
     } else {
@@ -274,7 +250,6 @@ export const useHomeScreen = () => {
   };
 
   // Log loading state for debugging
-  console.log("Current loading state:", loading);
   
   return {
     filteredRestaurants,
