@@ -68,6 +68,9 @@ interface OrderTrackingSocket {
   distance?: number | string;
   total_restaurant_earn?: number | string;
   promotions_applied?: any[];
+  // Add customer_note to the socket interface
+  customer_note?: string;
+  restaurant_note?: string;
 }
 
 interface OrderTrackingState {
@@ -329,6 +332,9 @@ export const useActiveOrderTrackingSocket = () => {
           serviceFee: (data as any).service_fee,
           distance: (data as any).distance,
           allIncomingFields: Object.keys(data),
+          // Add customer_note debugging
+          customerNote: data.customer_note,
+          hasCustomerNote: data.customer_note !== undefined,
         });
 
         console.log("📊 MERGE INFO:", {
@@ -349,6 +355,10 @@ export const useActiveOrderTrackingSocket = () => {
           existingOrderItemsCount: existingOrder?.order_items?.length || 0,
           hasMenuItemVariant:
             data.order_items?.some((item) => !!item.menu_item_variant) || false,
+          // Add customer_note debugging
+          incomingCustomerNote: data.customer_note,
+          existingCustomerNote: existingOrder?.customer_note,
+          willPreserveExistingCustomerNote: data.customer_note === undefined && !!existingOrder?.customer_note,
         });
 
         // Create merged data - preserve existing data and only update fields present in the incoming data
@@ -414,7 +424,10 @@ export const useActiveOrderTrackingSocket = () => {
             last_name: "",
           },
           customer_location: existingOrder?.customer_location || "",
-          customer_note: existingOrder?.customer_note || "",
+          // CRITICAL FIX: Check for customer_note in incoming data first
+          customer_note: data.customer_note !== undefined 
+              ? data.customer_note 
+              : existingOrder?.customer_note || "",
           delivery_time: existingOrder?.delivery_time || "0",
           // CRITICAL FIX: Update distance if incoming has it, otherwise preserve existing
           distance:
@@ -440,7 +453,10 @@ export const useActiveOrderTrackingSocket = () => {
             avatar: data.restaurant_avatar,
           },
           restaurant_location: existingOrder?.restaurant_location || "",
-          restaurant_note: existingOrder?.restaurant_note || "",
+          // CRITICAL FIX: Check for restaurant_note in incoming data first
+          restaurant_note: data.restaurant_note !== undefined
+              ? data.restaurant_note
+              : existingOrder?.restaurant_note || "",
           // CRITICAL FIX: Update total_amount if incoming has it, otherwise preserve existing
           total_amount:
             (data as any).total_amount !== undefined
@@ -459,6 +475,8 @@ export const useActiveOrderTrackingSocket = () => {
           distance: mergedData.distance,
           customerFullAddress: mergedData.customerFullAddress,
           restaurantFullAddress: mergedData.restaurantFullAddress,
+          // Add customer_note to the log for debugging
+          customerNote: mergedData.customer_note,
           hasMenuItemVariantData: mergedData.order_items.some(
             (item) => !!item.menu_item_variant
           ),

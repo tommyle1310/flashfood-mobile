@@ -6,7 +6,11 @@ import { debounce } from "lodash";
 import { OrderTracking as OrderTrackingType } from "@/src/types/screens/Order";
 
 // src/store/orderTrackingRealtimeSlice.ts
-export type OrderTracking = OrderTrackingType;
+export type OrderTracking = OrderTrackingType & {
+  // Explicitly define customer_note to ensure it's preserved
+  customer_note?: string;
+  restaurant_note?: string;
+};
 
 export interface OrderTrackingRealtimeState {
   orders: OrderTracking[];
@@ -23,6 +27,8 @@ const mapOrderToLog = (order: OrderTracking) => ({
   id: order.orderId || order.id,
   status: order.status,
   tracking: order.tracking_info,
+  // Add customer_note to the log
+  customerNote: order.customer_note || "(empty)",
 });
 
 // Debounced function to save to AsyncStorage
@@ -33,6 +39,8 @@ const debouncedSaveToStorage = debounce(async (orders: OrderTracking[]) => {
       count: orders.length,
       orderIds: orders.map((o) => o.orderId || o.id),
       statuses: orders.map((o) => o.status),
+      // Log customer notes to verify they're being saved
+      customerNotes: orders.map((o) => o.customer_note || "(empty)"),
     });
   } catch (error) {
     console.error("❌ Error saving to AsyncStorage:", error);
@@ -47,6 +55,8 @@ const saveToStorageNonBlocking = (orders: OrderTracking[]) => {
         count: orders.length,
         orderIds: orders.map((o) => o.orderId || o.id),
         statuses: orders.map((o) => o.status),
+        // Log customer notes to verify they're being saved
+        customerNotes: orders.map((o) => o.customer_note || "(empty)"),
       });
     })
     .catch((error) => {
@@ -77,12 +87,32 @@ export const updateAndSaveOrderTracking = createAsyncThunk(
     let updatedOrders: OrderTracking[];
     if (existingIndex !== -1) {
       // Update existing order
+      const existingOrder = currentOrders[existingIndex];
+      
+      // CRITICAL FIX: Preserve customer_note if the incoming order doesn't have one
+      const preservedCustomerNote = order.customer_note === undefined && existingOrder.customer_note 
+        ? existingOrder.customer_note 
+        : order.customer_note;
+      
+      // CRITICAL FIX: Preserve restaurant_note if the incoming order doesn't have one
+      const preservedRestaurantNote = order.restaurant_note === undefined && existingOrder.restaurant_note
+        ? existingOrder.restaurant_note
+        : order.restaurant_note;
+      
       updatedOrders = [...currentOrders];
-      updatedOrders[existingIndex] = order;
+      updatedOrders[existingIndex] = {
+        ...order,
+        customer_note: preservedCustomerNote,
+        restaurant_note: preservedRestaurantNote
+      };
+      
       console.log("Updated existing order:", {
         orderId: order.orderId,
         oldStatus: currentOrders[existingIndex].status,
         newStatus: order.status,
+        oldCustomerNote: currentOrders[existingIndex].customer_note || "(empty)",
+        newCustomerNote: preservedCustomerNote || "(empty)",
+        finalCustomerNote: updatedOrders[existingIndex].customer_note || "(empty)",
       });
     } else {
       // Add new order
@@ -90,6 +120,7 @@ export const updateAndSaveOrderTracking = createAsyncThunk(
       console.log("Added new order:", {
         orderId: order.orderId,
         status: order.status,
+        customerNote: order.customer_note || "(empty)",
       });
     }
 

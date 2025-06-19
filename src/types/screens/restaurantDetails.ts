@@ -11,6 +11,9 @@ export interface Props_RestaurantDetails {
     id: string;
     postal_code: number;
     street: string;
+    city?: string;
+    nationality?: string;
+    state?: string;
     title: string;
     location: { lat: number; lng: number };
   };

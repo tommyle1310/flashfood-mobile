@@ -15,12 +15,41 @@ const createMockRestaurants = () => Array(10).fill(0).map((_, index) => ({
   restaurant_name: `Restaurant ${index + 1}`,
   avatar: { url: "https://via.placeholder.com/150", key: "mock-key" },
   address: {
+    id: `mock-address-${index}`,
     street: "123 Main St",
     city: "City",
     nationality: "Country",
-    location: { lat: 0, lng: 0 }
+    is_default: false,
+    created_at: Date.now(),
+    updated_at: Date.now(),
+    postal_code: 10000,
+    location: { lat: 0, lng: 0 },
+    title: "Main Address"
   },
-  specialize_in: [{ id: "cat1", name: "Category 1" }]
+  specialize_in: [{ id: "cat1", name: "Category 1" }],
+  distance: Math.random() * 5 + 1,
+  estimated_time: Math.floor(Math.random() * 20) + 10,
+  avg_rating: Math.random() * 5
+}));
+
+// Create mock promotions for fallback
+const createMockPromotions = () => Array(2).fill(0).map((_, index) => ({
+  id: `mock-promo-${index}`,
+  title: `Promotion ${index + 1}`,
+  description: `This is a mock promotion ${index + 1}`,
+  code: `CODE${index}`,
+  discount_type: index % 2 === 0 ? "PERCENTAGE" : "FIXED",
+  discount_value: index % 2 === 0 ? 20 : 50,
+  min_order_value: 100,
+  max_discount_amount: 200,
+  usage_limit: 10,
+  usage_count: 0,
+  start_date: "2023-01-01",
+  end_date: "2025-12-31",
+  is_active: true,
+  created_at: "2023-01-01",
+  updated_at: "2023-01-01",
+  restaurants: createMockRestaurants().slice(0, 3)
 }));
 
 export const useHomeScreen = () => {
@@ -29,6 +58,7 @@ export const useHomeScreen = () => {
 
   // Initialize with fallback data right away
   const mockRestaurants = createMockRestaurants();
+  const mockPromotions = createMockPromotions();
   
   const [filteredRestaurants, setFilteredRestaurants] = useState<Restaurant[] | null>(
     null
@@ -45,11 +75,11 @@ export const useHomeScreen = () => {
   const [
     availablePromotionWithRestaurants,
     setAvailablePromotionWithRestaurants,
-  ] = useState<AvailablePromotionWithRestaurants[] | null>([]);
+  ] = useState<AvailablePromotionWithRestaurants[] | null>(mockPromotions);
   const [
     originalPromotionWithRestaurants,
     setOriginalPromotionWithRestaurants,
-  ] = useState<AvailablePromotionWithRestaurants[] | null>([]);
+  ] = useState<AvailablePromotionWithRestaurants[] | null>(mockPromotions);
   const [favoriteRestaurants, setFavoriteRestaurants] = useState<
     FavoriteRestaurant[]
   >([]);
@@ -118,11 +148,15 @@ export const useHomeScreen = () => {
                 ...restaurant.address,
                 location: {
                   lat: restaurant?.address?.location?.lat,
-                  lng: restaurant?.address?.location?.lon,
+                  lng: restaurant?.address?.location?.lon || restaurant?.address?.location?.lng,
                 },
               },
               // Ensure specialize_in is properly initialized
-              specialize_in: restaurant.specialize_in || []
+              specialize_in: restaurant.specialize_in || [],
+              // Ensure new fields are properly typed
+              distance: typeof restaurant.distance === 'number' ? restaurant.distance : parseFloat(restaurant.distance || '0'),
+              estimated_time: typeof restaurant.estimated_time === 'number' ? restaurant.estimated_time : parseInt(restaurant.estimated_time || '0', 10),
+              avg_rating: typeof restaurant.avg_rating === 'number' ? restaurant.avg_rating : parseFloat(restaurant.avg_rating || '0')
             })
           );
           
@@ -131,12 +165,32 @@ export const useHomeScreen = () => {
         setLoading((prev) => ({ ...prev, restaurants: false }));
 
         if (promotionsWithRestaurantsResponse.data.EC === 0) {
-          setOriginalPromotionWithRestaurants(
-            promotionsWithRestaurantsResponse.data.data
+          // Process the promotions data to ensure restaurants have the required fields
+          const processedPromotions = promotionsWithRestaurantsResponse.data.data.map(
+            (promotion: any) => ({
+              ...promotion,
+              // Ensure restaurants in promotions have the same structure as standalone restaurants
+              restaurants: promotion.restaurants.map((restaurant: any) => ({
+                ...restaurant,
+                address: restaurant.address ? {
+                  ...restaurant.address,
+                  location: {
+                    lat: restaurant?.address?.location?.lat,
+                    lng: restaurant?.address?.location?.lon || restaurant?.address?.location?.lng,
+                  },
+                } : null,
+                // Ensure specialize_in is properly initialized
+                specialize_in: restaurant.specialize_in || [],
+                // Ensure new fields are properly typed
+                distance: typeof restaurant.distance === 'number' ? restaurant.distance : parseFloat(restaurant.distance || '0'),
+                estimated_time: typeof restaurant.estimated_time === 'number' ? restaurant.estimated_time : parseInt(restaurant.estimated_time || '0', 10),
+                avg_rating: typeof restaurant.avg_rating === 'number' ? restaurant.avg_rating : parseFloat(restaurant.avg_rating || '0')
+              }))
+            })
           );
-          setAvailablePromotionWithRestaurants(
-            promotionsWithRestaurantsResponse.data.data
-          );
+          
+          setOriginalPromotionWithRestaurants(processedPromotions);
+          setAvailablePromotionWithRestaurants(processedPromotions);
         }
         setLoading((prev) => ({ ...prev, promotions: false }));
       } catch (error) {
@@ -248,8 +302,6 @@ export const useHomeScreen = () => {
       console.error("Error toggling favorite:", error);
     }
   };
-
-  // Log loading state for debugging
   
   return {
     filteredRestaurants,

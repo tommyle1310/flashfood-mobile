@@ -27,8 +27,7 @@ import {
 import { borderRadius, spacing, typography } from "@/src/theme";
 
 const { width } = Dimensions.get("window");
-const CARD_WIDTH = width * 0.5;
-const CARD_HEIGHT = 180;
+const CARD_WIDTH = width * 0.8;
 
 type HomeRestaurantSreenNavigationProp = StackNavigationProp<
   MainStackParamList,
@@ -42,6 +41,23 @@ interface PromotionsSectionProps {
   isLoading: boolean;
   onTap?: (id: string) => void;
 }
+
+// Helper function to get rating badge color
+const getRatingBadgeColor = (rating: number | undefined) => {
+  if (!rating) return "rgba(107, 114, 128, 0.6)"; // Gray for no rating
+  if (rating >= 4.5) return "rgba(22, 163, 74, 0.6)"; // Green for excellent
+  if (rating >= 4.0) return "rgba(234, 179, 8, 0.6)"; // Yellow for good
+  if (rating >= 3.0) return "rgba(249, 115, 22, 0.6)"; // Orange for average
+  return "rgba(220, 38, 38, 0.6)"; // Red for poor
+};
+
+// Helper function to format distance
+const formatDistance = (distance: number | undefined) => {
+  if (distance === undefined || distance === null) {
+    return "Nearby";
+  }
+  return `${distance.toFixed(1)} km`;
+};
 
 export const PromotionsSection = ({
   promotions,
@@ -66,30 +82,46 @@ export const PromotionsSection = ({
 
   return (
     <View style={styles.container}>
+      {/* Section Header */}
+      <View style={styles.sectionHeader}>
+        <FFText style={styles.sectionTitle} fontSize="lg">
+          🔥 Hot Promotions
+        </FFText>
+        <TouchableOpacity
+          style={styles.viewAllHeaderButton}
+        >
+          <FFText style={styles.viewAllHeaderText}>View All</FFText>
+        </TouchableOpacity>
+      </View>
+
       {isLoading ? (
         <View style={styles.loadingContainer}>
-          <FFSkeleton width={CARD_WIDTH} height={CARD_HEIGHT} style={styles.skeleton} />
-          <FFSkeleton width={CARD_WIDTH * 0.9} height={CARD_HEIGHT * 0.9} style={[styles.skeleton, { marginTop: -40, marginLeft: 30 }]} />
+          <FFSkeleton width={CARD_WIDTH} height={180} style={styles.skeleton} />
         </View>
       ) : (
         <ScrollView
-          showsVerticalScrollIndicator={false}
+          horizontal
+          showsHorizontalScrollIndicator={false}
           contentContainerStyle={styles.scrollContent}
+          decelerationRate="fast"
+          snapToInterval={CARD_WIDTH + spacing.md}
+          snapToAlignment="center"
         >
           {promotions?.map((promotion, i) => {
             const colors = getPromotionColors(i);
             
             return (
-              <View key={promotion.id} style={styles.promotionContainer}>
-                {/* Modern Header with Animated Feel */}
+              <TouchableOpacity 
+                key={promotion.id} 
+                style={styles.promotionCard}
+                onPress={() => onTap && onTap(promotion.id)}
+              >
+                {/* Promotion Banner */}
                 <View style={[
-                  styles.headerContainer, 
-                  {
-                    backgroundColor: `${colors.primary}10`,
-                    borderColor: `${colors.primary}30`,
-                  }
+                  styles.promotionBanner,
+                  {backgroundColor: `${colors.primary}15`}
                 ]}>
-                  <View style={styles.headerLeft}>
+                  <View style={styles.promotionInfo}>
                     <View style={[
                       styles.iconBadge,
                       {backgroundColor: colors.primary}
@@ -101,157 +133,118 @@ export const PromotionsSection = ({
                       {i % 5 === 4 && <IconFeather name="award" size={16} color="#fff" />}
                     </View>
                     <View>
-                      <FFText
-                        style={{
-                          ...styles.promotionName,
-                          color: colors.text
-                        }}
-                      >
-                        {promotion.restaurants.length === 0 ? null : promotion.name}
+                      <FFText style={styles.promotionName}>
+                        {promotion.title}
                       </FFText>
-                      <FFText style={styles.promotionSubtitle}>
-                        {promotion.discount_type === "PERCENTAGE"
-                          ? `Save ${Number(promotion.discount_value).toFixed(0)}% on your order`
-                          : `Save $${Number(promotion.discount_value)} on your order`}
-                      </FFText>
+                      <View style={styles.discountContainer}>
+                        <FFText 
+                          style={{
+                            ...styles.discountText,
+                            color: colors.primary
+                          }}
+                        >
+                          {promotion.discount_type === "PERCENTAGE"
+                            ? `${Number(promotion.discount_value).toFixed(0)}% OFF`
+                            : `$${Number(promotion.discount_value)} OFF`}
+                        </FFText>
+                      </View>
                     </View>
                   </View>
-
-                  {promotion.restaurants.length > 0 && (
-                    <TouchableOpacity
-                      onPress={() => onTap && onTap(promotion.id)}
-                      style={[
-                        styles.viewAllButton,
-                        {backgroundColor: colors.primary}
-                      ]}
-                    >
-                      <FFText style={styles.viewAllText}>
-                        View All
-                      </FFText>
-                      <IconFeather name="chevron-right" size={14} color="#fff" />
-                    </TouchableOpacity>
-                  )}
                 </View>
 
-                {/* Staggered Restaurant Cards */}
+                {/* Restaurant Cards */}
                 {promotion.restaurants.length > 0 ? (
-                  <ScrollView
-                    horizontal
-                    showsHorizontalScrollIndicator={false}
-                    contentContainerStyle={styles.cardsContainer}
-                    decelerationRate="fast"
-                    snapToInterval={CARD_WIDTH - 40}
-                    snapToAlignment="start"
-                  >
-                    {promotion.restaurants.slice(0, 5).map((item, index) => (
+                  <View style={styles.restaurantsContainer}>
+                    {promotion.restaurants.slice(0, Math.min(3, promotion.restaurants.length)).map((item, index) => (
                       <FFView
+                        key={item.id}
+                        style={{
+                          ...styles.restaurantItem,
+                          ...(index === promotion.restaurants.length - 1 ? { borderBottomWidth: 0 } : {})
+                        }}
                         onPress={() =>
                           navigation.navigate("RestaurantDetail", {
                             restaurantId: item.id,
                           })
                         }
-                        key={item.id}
-                        style={{
-                          ...styles.card,                          
-                            marginLeft: index === 0 ? 0 : -20,
-                            zIndex: 5 - index,
-                            width: CARD_WIDTH - (index * 5),
-                          }
-                        }
                       >
-                        {/* Glassmorphic Image Container */}
-                        <View style={styles.imageContainer}>
+                        {/* Restaurant Image */}
+                        <View style={styles.restaurantImageContainer}>
                           <ImageBackground
                             source={{
                               uri: item?.avatar?.url ?? IMAGE_LINKS.DEFAULT_AVATAR_FOOD,
                             }}
-                            style={styles.imageBackground}
-                            imageStyle={styles.image}
-                          >
-                            {/* Gradient Overlay */}
-                            <View style={[
-                              styles.imageOverlay,
-                              {backgroundColor: `${colors.primary}15`}
-                            ]} />
-                            
-                            {/* Discount Badge */}
-                            <View style={[
-                              styles.discountBadge,
-                              {backgroundColor: colors.primary}
-                            ]}>
-                              <Text style={styles.discountText}>
-                                {promotion.discount_type === "PERCENTAGE"
-                                  ? `${Number(promotion.discount_value).toFixed(0)}%`
-                                  : `$${Number(promotion.discount_value)}`}
-                              </Text>
-                            </View>
-
-                            {/* Favorite Button */}
-                            <Pressable
-                              onPress={() => handleToggleFavorite(item.id)}
-                              style={styles.favoriteButton}
-                            >
-                              <IconAntDesign
-                                name={
-                                  favoriteRestaurants?.some((fav) => fav.id === item.id)
-                                    ? "heart"
-                                    : "hearto"
-                                }
-                                size={16}
-                                color={
-                                  favoriteRestaurants?.some((fav) => fav.id === item.id)
-                                    ? "#ef4444"
-                                    : "#ffffff"
-                                }
-                              />
-                            </Pressable>
-                          </ImageBackground>
+                            style={styles.restaurantImage}
+                            imageStyle={styles.restaurantImageStyle}
+                          />
+                          <View style={[
+                            styles.ratingBadge,
+                            {backgroundColor: getRatingBadgeColor(item.avg_rating)}
+                          ]}>
+                            <IconAntDesign 
+                              name={item.avg_rating && item.avg_rating >= 3 ? "star" : "frown"} 
+                              size={10} 
+                              color={item.avg_rating && item.avg_rating >= 3 ? "#fbbf24" : "#ffffff"} 
+                            />
+                            <Text style={styles.ratingText}>
+                              {item.avg_rating ? item.avg_rating.toFixed(1) : "New"}
+                            </Text>
+                          </View>
                         </View>
 
-                        {/* Content Section */}
-                        <View style={styles.contentContainer}>
-                          {/* Restaurant Name */}
-                          <Text
-                            style={styles.restaurantName}
-                            numberOfLines={1}
-                          >
+                        {/* Restaurant Info */}
+                        <View style={styles.restaurantInfo}>
+                          <Text style={styles.restaurantName} numberOfLines={1}>
                             {item.restaurant_name}
                           </Text>
-
-                          {/* Location with truncation */}
-                          <Text
-                            style={styles.locationText}
-                            numberOfLines={1}
-                          >
-                            {item?.address?.street
-                              ? `${item?.address?.street}, ${item?.address?.city}`
-                              : "Location not available"}
-                          </Text>
-
-                          {/* Stats Row */}
-                          <View style={styles.statsContainer}>
-                            {/* Rating */}
-                            <View style={styles.statItem}>
-                              <IconAntDesign name="star" size={12} color={colors.primary} />
-                              <Text style={styles.statText}>4.8</Text>
+                          
+                          <View style={styles.restaurantMeta}>
+                            <View style={styles.metaItem}>
+                              <IconFeather name="map-pin" size={10} color="#9ca3af" />
+                              <Text style={styles.metaText} numberOfLines={1}>
+                                {item?.address?.street || "Location not available"}
+                              </Text>
                             </View>
-
-                            {/* Delivery Time */}
-                            <View style={styles.statItem}>
-                              <IconFeather name="clock" size={12} color={colors.primary} />
-                              <Text style={styles.statText}>20-30m</Text>
-                            </View>
-
-                            {/* Distance */}
-                            <View style={styles.statItem}>
-                              <IconFeather name="map-pin" size={12} color={colors.primary} />
-                              <Text style={styles.statText}>1.2 km</Text>
+                            
+                            <View style={styles.deliveryInfo}>
+                              <Text style={styles.deliveryText}>
+                                {formatDistance(item.distance)}
+                              </Text>
+                              <View style={styles.dot} />
+                              <Text style={styles.deliveryText}>
+                                {item.estimated_time ? `${item.estimated_time} min` : "20-30 min"}
+                              </Text>
                             </View>
                           </View>
                         </View>
+
+                        {/* Discount Badge */}
+                        <View style={[
+                          styles.restaurantDiscountBadge,
+                          {backgroundColor: colors.primary}
+                        ]}>
+                          <Text style={styles.restaurantDiscountText}>
+                            {promotion.discount_type === "PERCENTAGE"
+                              ? `${Number(promotion.discount_value).toFixed(0)}%`
+                              : `$${Number(promotion.discount_value)}`}
+                          </Text>
+                        </View>
                       </FFView>
                     ))}
-                  </ScrollView>
+                    
+                    {/* View More Button */}
+                    {promotion.restaurants.length > 3 && (
+                      <TouchableOpacity 
+                        style={styles.viewMoreButton}
+                        onPress={() => onTap && onTap(promotion.id)}
+                      >
+                        <FFText style={styles.viewMoreText}>
+                          View {promotion.restaurants.length - 3} more restaurants
+                        </FFText>
+                        <IconFeather name="chevron-right" size={16} color={colors.primary} />
+                      </TouchableOpacity>
+                    )}
+                  </View>
                 ) : (
                   <View style={styles.emptyContainer}>
                     <IconFeather name="coffee" size={24} color="#9ca3af" />
@@ -260,7 +253,7 @@ export const PromotionsSection = ({
                     </FFText>
                   </View>
                 )}
-              </View>
+              </TouchableOpacity>
             );
           })}
         </ScrollView>
@@ -273,42 +266,66 @@ const styles = StyleSheet.create({
   container: {
     marginBottom: spacing.lg,
   },
-  loadingContainer: {
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.lg,
-  },
-  skeleton: {
-    borderRadius: 24,
-  },
-  scrollContent: {
-    paddingBottom: spacing.md,
-  },
-  promotionContainer: {
-    marginBottom: spacing.lg
-  },
-  headerContainer: {
+  sectionHeader: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    marginBottom: spacing.md,
     paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
-    marginHorizontal: spacing.sm,
-    borderRadius: spacing.md,
-    borderWidth: 1,
-    // ...Platform.select({
-    //   ios: {
-    //     shadowColor: "#000",
-    //     shadowOffset: { width: 0, height: 2 },
-    //     shadowOpacity: 0.1,
-    //     shadowRadius: 4,
-    //   },
-    //   android: {
-    //     elevation: 3,
-    //   },
-    // }),
+    marginBottom: spacing.md,
   },
-  headerLeft: {
+  sectionTitle: {
+    fontWeight: "700",
+    color: "#1f2937",
+  },
+  viewAllHeaderButton: {
+    backgroundColor: "#f0fdf4",
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.xs,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: "#bbf7d0",
+  },
+  viewAllHeaderText: {
+    color: "#16a34a",
+    fontWeight: "600",
+    fontSize: 13,
+  },
+  loadingContainer: {
+    paddingHorizontal: spacing.md,
+    alignItems: "center",
+  },
+  skeleton: {
+    borderRadius: 16,
+    marginBottom: spacing.md,
+  },
+  scrollContent: {
+    paddingHorizontal: spacing.md,
+    paddingBottom: spacing.md,
+    gap: spacing.md,
+  },
+  promotionCard: {
+    width: CARD_WIDTH,
+    backgroundColor: "#ffffff",
+    borderRadius: 16,
+    overflow: "hidden",
+    ...Platform.select({
+      ios: {
+        shadowColor: "#000",
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.1,
+        shadowRadius: 8,
+      },
+      android: {
+        elevation: 4,
+      },
+    }),
+  },
+  promotionBanner: {
+    padding: spacing.md,
+    borderBottomWidth: 1,
+    borderBottomColor: "#f3f4f6",
+  },
+  promotionInfo: {
     flexDirection: "row",
     alignItems: "center",
   },
@@ -321,173 +338,130 @@ const styles = StyleSheet.create({
     marginRight: spacing.sm,
   },
   promotionName: {
-    fontSize: spacing.md,
+    fontSize: 16,
     fontWeight: "700",
+    color: "#1f2937",
+    marginBottom: 2,
   },
-  promotionSubtitle: {
-    fontSize: 12,
-    color: "#6b7280",
-    marginTop: 2,
-  },
-  viewAllButton: {
+  discountContainer: {
     flexDirection: "row",
     alignItems: "center",
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.xs,
-    borderRadius: 20,
-    ...Platform.select({
-      ios: {
-        shadowColor: "#000",
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.1,
-        shadowRadius: 4,
-      },
-      android: {
-        elevation: 2,
-      },
-    }),
-  },
-  viewAllText: {
-    color: "#ffffff",
-    fontWeight: "600",
-    fontSize: 12,
-    marginRight: spacing.xs,
-  },
-  cardsContainer: {
-    paddingLeft: spacing.sm,
-    paddingRight: spacing.xl,
-    paddingBottom: spacing.sm,
-  },
-  card: {
-    backgroundColor: "#ffffff",
-    borderRadius: borderRadius.card,
-    height: CARD_HEIGHT,
-    overflow: "hidden",
-    ...Platform.select({
-      ios: {
-        shadowColor: "#000",
-        shadowOffset: { width: 0, height: 8 },
-        shadowOpacity: 0.12,
-        shadowRadius: spacing.md,
-      },
-      android: {
-        elevation: 8,
-      },
-    }),
-  },
-  imageContainer: {
-    height: CARD_HEIGHT * 0.6,
-    overflow: "hidden",
-  },
-  imageBackground: {
-    height: "100%",
-    backgroundColor: "#f3f4f6",
-  },
-  image: {
-    backgroundColor: "#f3f4f6",
-    borderTopLeftRadius: borderRadius.card,
-    borderTopRightRadius: borderRadius.card,
-  },
-  imageOverlay: {
-    position: "absolute",
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-  },
-  discountBadge: {
-    position: "absolute",
-    top: spacing.sm,
-    left: spacing.sm,
-    paddingHorizontal: spacing.sm,
-    paddingVertical: spacing.xs,
-    borderRadius: borderRadius.badge,
-    ...Platform.select({
-      ios: {
-        shadowColor: "#000",
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.15,
-        shadowRadius: 4,
-      },
-      android: {
-        elevation: 3,
-      },
-    }),
   },
   discountText: {
-    color: "white",
-    fontWeight: "700",
     fontSize: 14,
+    fontWeight: "700",
   },
-  favoriteButton: {
+  restaurantsContainer: {
+    backgroundColor: "#ffffff",
+  },
+  restaurantItem: {
+    flexDirection: "row",
+    padding: spacing.sm,
+    borderBottomWidth: 1,
+    borderBottomColor: "#f3f4f6",
+    position: "relative",
+  },
+  restaurantImageContainer: {
+    width: 60,
+    height: 60,
+    borderRadius: 12,
+    overflow: "hidden",
+    marginRight: spacing.sm,
+    position: "relative",
+  },
+  restaurantImage: {
+    width: "100%",
+    height: "100%",
+  },
+  restaurantImageStyle: {
+    borderRadius: 12,
+  },
+  ratingBadge: {
+    position: "absolute",
+    bottom: 4,
+    left: 4,
+    backgroundColor: "rgba(0, 0, 0, 0.6)",
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 8,
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  ratingText: {
+    color: "#ffffff",
+    fontSize: 10,
+    fontWeight: "700",
+    marginLeft: 2,
+  },
+  restaurantInfo: {
+    flex: 1,
+    justifyContent: "center",
+  },
+  restaurantName: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: "#1f2937",
+    marginBottom: 4,
+  },
+  restaurantMeta: {
+    gap: 4,
+  },
+  metaItem: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+  },
+  metaText: {
+    fontSize: 12,
+    color: "#6b7280",
+    flex: 1,
+  },
+  deliveryInfo: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  deliveryText: {
+    fontSize: 12,
+    color: "#6b7280",
+  },
+  dot: {
+    width: 3,
+    height: 3,
+    borderRadius: 1.5,
+    backgroundColor: "#d1d5db",
+    marginHorizontal: 4,
+  },
+  restaurantDiscountBadge: {
     position: "absolute",
     top: spacing.sm,
     right: spacing.sm,
-    backgroundColor: "rgba(0, 0, 0, 0.3)",
-    padding: spacing.sm,
-    borderRadius: spacing.md,
-    ...Platform.select({
-      ios: {
-        shadowColor: "#000",
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.1,
-        shadowRadius: 4,
-      },
-      android: {
-        elevation: 3,
-      },
-    }),
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 8,
   },
-  contentContainer: {
-    padding: spacing.sm,
-    flex: 1,
-    justifyContent: "space-between",
-  },
-  restaurantName: {
+  restaurantDiscountText: {
+    color: "#ffffff",
+    fontSize: 10,
     fontWeight: "700",
-    fontSize: spacing.md,
-    color: "#1f2937",
-    // marginBottom: spacing.xs,
   },
-  locationText: {
-    color: "#6b7280",
-    fontSize: 12,
-    // marginBottom: spacing.sm,
-  },
-  statsContainer: {
+  viewMoreButton: {
     flexDirection: "row",
     alignItems: "center",
-    justifyContent: "flex-start",
-    gap: spacing.sm,
+    justifyContent: "center",
+    padding: spacing.sm,
+    borderTopWidth: 1,
+    borderTopColor: "#f3f4f6",
   },
-  statItem: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.xs,
-  },
-  statText: {
+  viewMoreText: {
+    fontSize: 14,
+    fontWeight: "600",
     color: "#4b5563",
-    fontSize: typography.fontSize.xs,
-    fontWeight: "500",
+    marginRight: spacing.xs,
   },
   emptyContainer: {
-    backgroundColor: "#ffffff",
-    borderRadius: spacing.md,
     padding: spacing.xl,
     alignItems: "center",
     justifyContent: "center",
-    marginHorizontal: spacing.md,
-    ...Platform.select({
-      ios: {
-        shadowColor: "#000",
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.08,
-        shadowRadius: 12,
-      },
-      android: {
-        elevation: 4,
-      },
-    }),
   },
   emptyText: {
     color: "#9ca3af",

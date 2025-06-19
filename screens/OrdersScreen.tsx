@@ -146,16 +146,31 @@ const mergeOrdersWithRealtimeData = (
           ...(realtimeOrder.order_items && {
             order_items: realtimeOrder.order_items,
           }),
+          // CRITICAL FIX: Preserve customer_note from realtime data if it exists
+          ...(realtimeOrder.customer_note && {
+            customer_note: realtimeOrder.customer_note,
+          }),
+          // CRITICAL FIX: Preserve restaurant_note from realtime data if it exists
+          ...(realtimeOrder.restaurant_note && {
+            restaurant_note: realtimeOrder.restaurant_note,
+          }),
         };
         console.log(
-          `🔄 Updated order ${realtimeOrder.orderId} with realtime data`
+          `🔄 Updated order ${realtimeOrder.orderId} with realtime data`,
+          {
+            customerNote: realtimeOrder.customer_note || "none in realtime",
+            apiCustomerNote: apiOrder.customer_note || "none in API",
+            finalCustomerNote: mergedOrders[apiOrderIndex].customer_note || "none in final",
+          }
         );
       }
     } else {
       // Order doesn't exist in API data - add it from realtime data
       const convertedOrder = convertRealtimeToOrderTracking([realtimeOrder])[0];
       mergedOrders.push(convertedOrder);
-      console.log(`➕ Added order ${realtimeOrder.orderId} from realtime data`);
+      console.log(`➕ Added order ${realtimeOrder.orderId} from realtime data`, {
+        customerNote: convertedOrder.customer_note || "none",
+      });
     }
   });
 

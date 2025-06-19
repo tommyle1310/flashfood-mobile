@@ -451,6 +451,20 @@ const RestaurantDetail = () => {
                 </FFText>
               </View>
               
+              {/* Address */}
+              <View className="flex-row items-start gap-2 mt-1">
+                <IconFeather name="map-pin" size={20} color={"#777"} style={{ marginTop: 2 }} />
+                <FFText fontWeight="400" colorLight="#777" style={{ flex: 1 }}>
+                  {restaurantDetails?.address ? (
+                    <>
+                      {restaurantDetails.address.street || ''}
+                      {restaurantDetails.address.city ? `, ${restaurantDetails.address.city}` : ''}
+                      {restaurantDetails.address.nationality ? `, ${restaurantDetails.address.nationality}` : ''}
+                    </>
+                  ) : "Address not available"}
+                </FFText>
+              </View>
+              
               {/* Specialties */}
               {restaurantDetails?.specialize_in && restaurantDetails.specialize_in.length > 0 && (
                 <View className="flex-row flex-wrap gap-2 mt-2">
