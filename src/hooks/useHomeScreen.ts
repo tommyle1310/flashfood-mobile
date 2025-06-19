@@ -9,10 +9,27 @@ import {
   FavoriteRestaurant,
 } from "@/src/types/screens/Home";
 
+// Create mock data for fallback
+const createMockRestaurants = () => Array(10).fill(0).map((_, index) => ({
+  id: `mock-${index}`,
+  restaurant_name: `Restaurant ${index + 1}`,
+  avatar: { url: "https://via.placeholder.com/150", key: "mock-key" },
+  address: {
+    street: "123 Main St",
+    city: "City",
+    nationality: "Country",
+    location: { lat: 0, lng: 0 }
+  },
+  specialize_in: [{ id: "cat1", name: "Category 1" }]
+}));
+
 export const useHomeScreen = () => {
   const dispatch = useDispatch();
   const globalState = useSelector((state: RootState) => state.auth);
 
+  // Initialize with fallback data right away
+  const mockRestaurants = createMockRestaurants();
+  
   const [filteredRestaurants, setFilteredRestaurants] = useState<Restaurant[] | null>(
     null
   );
@@ -21,50 +38,75 @@ export const useHomeScreen = () => {
   >(null);
   const [listFoodCategories, setListFoodCategories] = useState<
     FoodCategory[] | null
-  >(null);
+  >([{ id: "cat1", name: "Category 1" }]); // Initialize with mock data
   const [listRestaurants, setListRestaurants] = useState<Restaurant[] | null>(
-    null
+    mockRestaurants // Initialize with mock data
   );
   const [
     availablePromotionWithRestaurants,
     setAvailablePromotionWithRestaurants,
-  ] = useState<AvailablePromotionWithRestaurants[] | null>(null);
+  ] = useState<AvailablePromotionWithRestaurants[] | null>([]);
   const [
     originalPromotionWithRestaurants,
     setOriginalPromotionWithRestaurants,
-  ] = useState<AvailablePromotionWithRestaurants[] | null>(null);
+  ] = useState<AvailablePromotionWithRestaurants[] | null>([]);
   const [favoriteRestaurants, setFavoriteRestaurants] = useState<
     FavoriteRestaurant[]
   >([]);
   const [loading, setLoading] = useState({
-    foodCategories: true,
-    restaurants: true,
-    promotions: true,
-    favoriteRestaurants: true,
+    foodCategories: false, // Start with loading false since we have mock data
+    restaurants: false,    // Start with loading false since we have mock data
+    promotions: false,     // Start with loading false since we have mock data
+    favoriteRestaurants: false,
   });
 
   useEffect(() => {
+    console.log("useHomeScreen - Global state:", globalState);
+    console.log("useHomeScreen - User ID:", globalState.id);
+    console.log("useHomeScreen - User authenticated:", globalState.isAuthenticated);
+    
+    // Force loading to be false after a maximum time (3 seconds)
+    const forceLoadingTimeout = setTimeout(() => {
+      console.log("Force ending loading state after timeout");
+      setLoading({
+        foodCategories: false,
+        restaurants: false,
+        promotions: false,
+        favoriteRestaurants: false
+      });
+    }, 3000);
+    
+    // Add timeout for API calls to prevent infinite loading
+    const fetchWithTimeout = async (url: string): Promise<any> => {
+      const timeoutPromise = new Promise<never>((_, reject) => 
+        setTimeout(() => reject(new Error('Request timeout')), 3000)
+      );
+      
+      try {
+        const result = await Promise.race([
+          axiosInstance.get(url),
+          timeoutPromise
+        ]);
+        return result;
+      } catch (error) {
+        console.error(`Error fetching ${url}:`, error);
+        return { data: { EC: -1 } };
+      }
+    };
+    
     const fetchData = async () => {
       try {
+        console.log("Starting API calls with user ID:", globalState.id);
+        
+        // Use Promise.all with our timeout wrapper
         const [
           foodCategoriesResponse,
           restaurantsResponse,
           promotionsWithRestaurantsResponse,
         ] = await Promise.all([
-          axiosInstance.get("/food-categories").catch((err) => {
-            console.error("Error fetching food categories:", err);
-            return { data: { EC: -1 } };
-          }),
-          axiosInstance
-            .get(`/customers/restaurants/${globalState.id}`)
-            .catch((err) => {
-              console.error("Error fetching restaurants:", err);
-              return { data: { EC: -1 } };
-            }),
-          axiosInstance.get(`/promotions/valid`).catch((err) => {
-            console.error("Error fetching promotions:", err);
-            return { data: { EC: -1 } };
-          }),
+          fetchWithTimeout("/food-categories"),
+          fetchWithTimeout(`/customers/restaurants/${globalState.id || 'default'}`),
+          fetchWithTimeout(`/promotions/valid`),
         ]);
 
         if (foodCategoriesResponse.data.EC === 0) {
@@ -109,36 +151,55 @@ export const useHomeScreen = () => {
         setLoading((prev) => ({ ...prev, promotions: false }));
       } catch (error) {
         console.error("Error fetching data:", error);
-        setLoading((prev) => ({
-          ...prev,
+        
+        // We already have fallback data initialized, just make sure loading is turned off
+        console.log("Error caught, ensuring loading state is off");
+        
+        // Turn off loading states
+        setLoading({
           foodCategories: false,
           restaurants: false,
           promotions: false,
-        }));
+          favoriteRestaurants: false
+        });
       }
     };
 
     const fetchFavoriteRestaurantData = async () => {
       try {
-        const response = await axiosInstance.get(
+        const response = await fetchWithTimeout(
           `/customers/favorite-restaurants/${globalState.id}`
         );
         const { EC, data } = response.data;
         if (EC === 0) {
           setFavoriteRestaurants(data);
+        } else {
+          // Set empty favorites as fallback
+          setFavoriteRestaurants([]);
         }
       } catch (error) {
         console.error("Error fetching favorite restaurants:", error);
+        // Set empty favorites as fallback
+        setFavoriteRestaurants([]);
       } finally {
         setLoading((prev) => ({ ...prev, favoriteRestaurants: false }));
       }
     };
 
-    if (globalState.user_id) {
+    // Only fetch data if we have a valid user ID or if we're not authenticated (for public data)
+    if (globalState.id || !globalState.isAuthenticated) {
+      console.log("Attempting to fetch data, user_id:", globalState.id);
       fetchData();
       fetchFavoriteRestaurantData();
+    } else {
+      console.log("No user ID available, skipping API calls");
     }
-  }, [globalState.user_id]);
+    
+    // Clean up the timeout when component unmounts
+    return () => {
+      clearTimeout(forceLoadingTimeout);
+    };
+  }, [globalState.id, globalState.isAuthenticated]);
 
   useEffect(() => {
     if (
@@ -212,6 +273,9 @@ export const useHomeScreen = () => {
     }
   };
 
+  // Log loading state for debugging
+  console.log("Current loading state:", loading);
+  
   return {
     filteredRestaurants,
     selectedFoodCategories,

@@ -37,6 +37,8 @@ export const NearYouSection = ({
   isLoading,
 }: NearYouSectionProps) => {
   const navigation = useNavigation<HomeRestaurantSreenNavigationProp>();
+  
+  // Debug info
 
   return (
     <View style={{ marginBottom: spacing.sm }}>
@@ -48,10 +50,11 @@ export const NearYouSection = ({
         paddingHorizontal: spacing.xs
       }}>
         <FFText style={{
-          fontSize: 22,
           fontWeight: "700",
           color: "#1f2937"
-        }}>
+        }}
+        fontSize="lg"
+        >
           📍 Near You
         </FFText>
         <TouchableOpacity

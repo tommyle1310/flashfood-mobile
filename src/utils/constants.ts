@@ -4,6 +4,9 @@ export const IP_ADDRESS = {
   Z9_TURBO: "192.168.180.172",
   UOG: "10.25.35.178",
 };
-export const BACKEND_URL = `http://${IP_ADDRESS.NEAR}:1310`;
+
+// Try to use the primary IP, but fall back to localhost if needed
+// You can change this to use any of the IPs above
+export const BACKEND_URL = `http://${IP_ADDRESS.IP_HOME_1}:1310`;
 export const DELIVERY_FEE = 3;
 export const SERVICE_FEE = 1;

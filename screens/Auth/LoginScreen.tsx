@@ -60,34 +60,45 @@ const Login = () => {
         const userData = decodeJWT(data.access_token); // Decode JWT to get user data
 
         // Dispatch the action to save the user data to AsyncStorage and Redux store
-        console.log("cehck user data addess", userData.address);
-        dispatch(
-          saveTokenToAsyncStorage({
-            accessToken: data.access_token, // Saving the actual access token
-            app_preferences: userData.app_preferences || {}, // Fallback to empty object if not present
-            email: userData.email || "", // Default to empty string if email is missing
-            first_name: userData.first_name || "", // Default to empty string if email is missing
-            last_name: userData.last_name || "", // Default to empty string if email is missing
-            preferred_category: userData.preferred_category || [], // Ensure this is an array
-            favorite_items: userData.favorite_items || [], // Ensure this is an array
-            avatar: userData.avatar || null, // Use null if no avatar data is available
-            support_tickets: userData.support_tickets || [], // Ensure this is an array
-            user_id: userData.user_id || "", // Default to empty string if not present
-            user_type: userData.user_type || [], // Ensure this is an array
-            address: userData.address || [],
-            id: userData.id || "",
-            fWallet_id: userData.fWallet_id || "",
-            fWallet_balance: userData.fWallet_balance || 0,
-            // cart_items: userData.cart_items || [],
-          })
-        );
-        dispatch(saveFavoriteRestaurantsToAsyncStorage());
-        dispatch(saveCartItemsToAsyncStorage(userData.cart_items));
+        console.log("🔐 Login success - saving user data:", userData);
+        
+        try {
+          // Wait for the save operations to complete before navigating
+          await dispatch(
+            saveTokenToAsyncStorage({
+              accessToken: data.access_token, // Saving the actual access token
+              app_preferences: userData.app_preferences || {}, // Fallback to empty object if not present
+              email: userData.email || "", // Default to empty string if email is missing
+              first_name: userData.first_name || "", // Default to empty string if email is missing
+              last_name: userData.last_name || "", // Default to empty string if email is missing
+              phone: userData.phone || "", // Add the missing phone property
+              preferred_category: userData.preferred_category || [], // Ensure this is an array
+              favorite_items: userData.favorite_items || [], // Ensure this is an array
+              avatar: userData.avatar || null, // Use null if no avatar data is available
+              support_tickets: userData.support_tickets || [], // Ensure this is an array
+              user_id: userData.user_id || "", // Default to empty string if not present
+              user_type: userData.user_type || [], // Ensure this is an array
+              address: userData.address || [],
+              id: userData.id || "",
+              fWallet_id: userData.fWallet_id || "",
+              fWallet_balance: parseFloat(userData.fWallet_balance) || 0,
+              // cart_items: userData.cart_items || [],
+            })
+          );
+          
+          await dispatch(saveFavoriteRestaurantsToAsyncStorage());
+          await dispatch(saveCartItemsToAsyncStorage(userData.cart_items));
 
-        navigation.reset({
-          index: 0,
-          routes: [{ name: "MainStack" }],
-        });
+          console.log("💾 All user data saved successfully, navigating...");
+          
+          navigation.reset({
+            index: 0,
+            routes: [{ name: "MainStack" }],
+          });
+        } catch (error) {
+          console.error("❌ Error saving user data:", error);
+        }
+        
         setIsLoading(false);
       } else {
         setIsLoading(false);

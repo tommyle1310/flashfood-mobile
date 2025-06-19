@@ -16,6 +16,7 @@ import FFSkeleton from "@/src/components/FFSkeleton";
 import FFText from "@/src/components/FFText";
 import colors from "@/src/theme/colors";
 import { spacing } from "@/src/theme";
+import { truncateString } from "@/src/utils/functions";
 
 // Định nghĩa type cho favorite_restaurants từ API
 interface Address {
@@ -83,6 +84,7 @@ const ProfileScreen = () => {
     desc: string;
   }>({ status: "HIDDEN", title: "", desc: "" });
   const { id } = useSelector((state: RootState) => state.auth);
+  const userRedux = useSelector((state: RootState) => state.auth);
   const { favorite_restaurants } = useSelector(
     (state: RootState) => state.userPreference
   );
@@ -111,6 +113,7 @@ const ProfileScreen = () => {
     const fetchProfileData = async () => {
       setIsLoading(true);
       try {
+        console.log('check id' , id)
         const response = await axiosInstance.get(`/customers/${id}`);
         const { EC, EM, data } = response.data;
         console.log('check resposne here', response.data)
@@ -150,10 +153,14 @@ const ProfileScreen = () => {
         setIsLoading(false);
       }
     };
-
-    fetchProfileData();
-    fetchFavoriteRestaurantData();
+    console.log('check id', id)
+    if (id) {
+      fetchProfileData();
+      fetchFavoriteRestaurantData();
+    }
   }, [id]);
+
+  console.log('check what here', userRedux)
 
   useEffect(() => {
     const { id, address, avatar, first_name, last_name, user, user_Id } =
@@ -179,37 +186,44 @@ const ProfileScreen = () => {
   }, [profileData]);
 
   // Render item cho FlatList
-  const renderRestaurantItem = ({ item }: { item: FavoriteRestaurant }) => (
-    <FFView
-      style={{
-        flexDirection: "row",
-        gap: 12,
-        borderRadius: 12,
-        marginVertical: 8,
-        marginHorizontal: spacing.sm,
-        elevation: 3,
-        padding: spacing.md,
-      }}
-      onPress={() =>
-        navigation.navigate("RestaurantDetail", { restaurantId: item.id })
-      }
-    >
-      <FFAvatar rounded="sm" avatar={item?.avatar?.url} />
-      <View>
-        <FFText className="text-lg font-semibold">
-          {item.restaurant_name}
-        </FFText>
-        <FFText
-          fontSize="sm"
-          style={{ color: colors.grey }}
-        >{!item?.address?.street ? "N/A" : `${item?.address?.street}, ${item?.address?.city}, ${item?.address?.nationality}`}</FFText>
-        <FFText fontSize="sm" style={{ color: colors.grey }}>
-          Specialties:{" "}
-          {item.specialize_in.map((cat) => cat.name).join(", ") || "N/A"}
-        </FFText>
-      </View>
-    </FFView>
-  );
+  const renderRestaurantItem = ({ item }: { item: FavoriteRestaurant }) => {
+    const address = !item?.address?.street ? "N/A" : `${item?.address?.street}, ${item?.address?.city}, ${item?.address?.nationality}`
+    const truncatedAddress = truncateString(address, 30)
+    const spcializeIn = !item?.specialize_in ? "N/A" : `${item?.specialize_in?.map((cat) => cat.name).join(", ")}`
+    const truncatedSpcializeIn = truncateString(spcializeIn, 25)
+    return     (
+     <FFView
+       style={{
+         flexDirection: "row",
+         gap: 12,
+         borderRadius: 12,
+         marginVertical: 8,
+         marginHorizontal: spacing.sm,
+         elevation: 3,
+         padding: spacing.sm,
+       }}
+       onPress={() =>
+         navigation.navigate("RestaurantDetail", { restaurantId: item.id })
+       }
+     >
+       <FFAvatar rounded="sm" avatar={item?.avatar?.url} />
+       <View>
+         <FFText className="text-lg font-semibold">
+           {item.restaurant_name}
+         </FFText>
+         <FFText
+           fontSize="sm"
+           style={{ color: colors.grey }}
+         >{truncatedAddress}</FFText>
+         <FFText fontSize="sm" style={{ color: colors.grey }}>
+           Specialties:{" "}
+           {truncatedSpcializeIn}
+         </FFText>
+       </View>
+     </FFView>
+   );
+
+  }
 
   return (
     <FFSafeAreaView>

@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { View, Pressable, ScrollView } from "react-native";
 import FFSafeAreaView from "@/src/components/FFSafeAreaView";
 import FFText from "@/src/components/FFText";
@@ -13,6 +13,9 @@ import { MainStackParamList } from "@/src/navigation/AppNavigator";
 import { borderRadius, colors, spacing } from "../theme";
 import CoralTourCarousel from "../components/CoralTourCarousel";
 import FFSkeleton from "@/src/components/FFSkeleton";
+import { useSelector, useDispatch } from "../store/types";
+import { RootState } from "../store/store";
+import { loadTokenFromAsyncStorage } from "../store/authSlice";
 
 type HomeRestaurantSreenNavigationProp = StackNavigationProp<
   MainStackParamList,
@@ -21,9 +24,12 @@ type HomeRestaurantSreenNavigationProp = StackNavigationProp<
 
 const HomeScreen = () => {
   const navigation = useNavigation<HomeRestaurantSreenNavigationProp>();
+  const dispatch = useDispatch();
   const [selectedPromotionId, setSelectedPromotionId] = useState<string | null>(
     null
   );
+  
+
   const {
     filteredRestaurants,
     selectedFoodCategories,
@@ -35,6 +41,10 @@ const HomeScreen = () => {
     favoriteRestaurants,
     loading,
   } = useHomeScreen();
+  // Log loading state and available data
+  console.log("HomeScreen - Loading state:", loading);
+  console.log("HomeScreen - Restaurants available:", !!listRestaurants);
+  
   const renderedRestaurants =
     filteredRestaurants && filteredRestaurants.length > 0 ? filteredRestaurants : listRestaurants;
 
@@ -93,10 +103,11 @@ const HomeScreen = () => {
                   paddingHorizontal: spacing.xs
                 }}>
                   <FFText style={{
-                    fontSize: 22,
                     fontWeight: "700",
                     color: "#1f2937"
-                  }}>
+                  }}
+                  fontSize="lg"
+                  >
                     🔥 Hot Deals
                   </FFText>
                 </View>

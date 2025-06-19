@@ -18,20 +18,22 @@ type HomeRestaurantSreenNavigationProp = StackNavigationProp<
 
 export const HeaderSection = () => {
   const navigation = useNavigation<HomeRestaurantSreenNavigationProp>();
-  const globalState = useSelector((state: RootState) => state.auth);
+    // Note: Token loading is handled in RootLayout.tsx, no need to load again here
+  
+    const userRedux = useSelector((state: RootState) => state.auth);
 
   return (
     <View style={{ paddingHorizontal: spacing.sm}} className="flex-row justify-between items-center ">
       <View className="flex-row items-center gap-2">
         <FFAvatar
           onPress={() => navigation.navigate("Profile")}
-          avatar={globalState?.avatar?.url ?? ""}
+          avatar={userRedux?.avatar?.url ?? ""}
           size={50}
         />
         <View>
-          <FFText>{globalState?.email}</FFText>
+          <FFText>{userRedux?.email}</FFText>
           <FFText style={{ fontWeight: "400", fontSize: 12, color: "#bbb" }}>
-            {globalState?.address?.find((item) => item.is_default)?.title}
+            {userRedux?.address?.find((item) => item.is_default)?.title}
           </FFText>
         </View>
       </View>

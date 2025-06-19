@@ -16,6 +16,10 @@ const AppContent = () => {
   useEffect(() => {
     const loadInitialData = async () => {
       console.log("🔄 RootLayout: Loading initial data...");
+      
+      // Add a small delay to ensure any previous saves are complete
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
       await dispatch(loadTokenFromAsyncStorage());
       await dispatch(loadOrderTrackingFromAsyncStorage());
       await dispatch(loadChatDataFromStorage());

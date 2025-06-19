@@ -59,6 +59,8 @@ const initialState: AuthState = {
 export const loadTokenFromAsyncStorage = createAsyncThunk(
   "auth/loadToken",
   async () => {
+    console.log("📱 loadTokenFromAsyncStorage: Loading data from AsyncStorage");
+    
     const accessToken = await AsyncStorage.getItem("accessToken");
     const id = await AsyncStorage.getItem("id");
     const fWallet_balance = await AsyncStorage.getItem("fWallet_balance");
@@ -76,7 +78,15 @@ export const loadTokenFromAsyncStorage = createAsyncThunk(
     const user_type = await AsyncStorage.getItem("user_type");
     const address = await AsyncStorage.getItem("address");
 
-    return {
+    // Log what we actually retrieved
+    console.log("📱 Raw AsyncStorage values:");
+    console.log("  email:", email);
+    console.log("  avatar:", avatar);
+    console.log("  address:", address);
+    console.log("  phone:", phone);
+    console.log("  fWallet_id:", fWallet_id);
+
+    const result = {
       accessToken,
       id,
       fWallet_balance,
@@ -96,6 +106,9 @@ export const loadTokenFromAsyncStorage = createAsyncThunk(
       user_type: user_type ? JSON.parse(user_type) : [],
       address: address ? JSON.parse(address) : [],
     };
+    
+    console.log("📱 loadTokenFromAsyncStorage: Loaded data:", result);
+    return result;
   }
 );
 
@@ -131,6 +144,10 @@ export const saveTokenToAsyncStorage = createAsyncThunk(
       title: string;
     }> | null;
   }) => {
+    console.log("💾 saveTokenToAsyncStorage: Saving data to AsyncStorage", data);
+    
+    // Save each item and log what we're saving
+    console.log("📧 Saving email:", data.email);
     await AsyncStorage.setItem("accessToken", data.accessToken);
     await AsyncStorage.setItem("id", data.id);
     await AsyncStorage.setItem("first_name", data.first_name);
@@ -151,6 +168,8 @@ export const saveTokenToAsyncStorage = createAsyncThunk(
       "favorite_items",
       JSON.stringify(data.favorite_items)
     );
+    
+    console.log("👤 Saving avatar:", data.avatar);
     await AsyncStorage.setItem("avatar", JSON.stringify(data.avatar));
     await AsyncStorage.setItem(
       "support_tickets",
@@ -158,8 +177,21 @@ export const saveTokenToAsyncStorage = createAsyncThunk(
     );
     await AsyncStorage.setItem("user_id", data.user_id);
     await AsyncStorage.setItem("user_type", JSON.stringify(data.user_type));
+    
+    console.log("🏠 Saving address:", data.address);
     await AsyncStorage.setItem("address", JSON.stringify(data.address)); // Save address to AsyncStorage
 
+    console.log("✅ saveTokenToAsyncStorage: Data saved successfully");
+    
+    // Immediately verify what was saved by reading it back
+    const testEmail = await AsyncStorage.getItem("email");
+    const testAvatar = await AsyncStorage.getItem("avatar");
+    const testAddress = await AsyncStorage.getItem("address");
+    console.log("🧪 Verification - what was actually saved:");
+    console.log("  email:", testEmail);
+    console.log("  avatar:", testAvatar);
+    console.log("  address:", testAddress);
+    
     return data;
   }
 );
@@ -471,6 +503,8 @@ const authSlice = createSlice({
   extraReducers: (builder) => {
     builder
       .addCase(loadTokenFromAsyncStorage.fulfilled, (state, action) => {
+        console.log("🔄 loadTokenFromAsyncStorage.fulfilled: Updating Redux state", action.payload);
+        
         const {
           id,
           fWallet_id,
@@ -491,6 +525,7 @@ const authSlice = createSlice({
         } = action.payload;
 
         if (accessToken) {
+          console.log("🔑 Found accessToken, setting authenticated state");
           state.accessToken = accessToken;
           state.isAuthenticated = true;
           state.app_preferences = app_preferences;
@@ -508,11 +543,16 @@ const authSlice = createSlice({
           state.user_id = user_id;
           state.user_type = user_type;
           state.address = address; // Set the address if available
+          
+          console.log("✅ loadTokenFromAsyncStorage.fulfilled: Authenticated state set", state);
         } else {
+          console.log("❌ No accessToken found, setting unauthenticated state");
           state.isAuthenticated = false;
         }
       })
       .addCase(saveTokenToAsyncStorage.fulfilled, (state, action) => {
+        console.log("🔄 saveTokenToAsyncStorage.fulfilled: Updating Redux state", action.payload);
+        
         const {
           id,
           first_name,
@@ -549,6 +589,8 @@ const authSlice = createSlice({
         state.user_id = user_id;
         state.user_type = user_type;
         state.address = address; // Set the address in the state
+        
+        console.log("✅ saveTokenToAsyncStorage.fulfilled: Redux state updated", state);
       })
       .addCase(logout.fulfilled, (state) => {
         state.accessToken = null;
