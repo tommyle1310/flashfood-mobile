@@ -301,7 +301,7 @@ const RestaurantDetail = () => {
     return `${hours}:${minutes === 0 ? '00' : minutes}`;
   };
 
-  if (isLoading && !restaurantDetails) {
+  if (isLoading || !restaurantDetails) {
     return <Spinner isVisible={true} />;
   }
 
