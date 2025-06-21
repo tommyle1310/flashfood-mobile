@@ -33,7 +33,9 @@ export const OrderCard: React.FC<OrderCardProps> = ({
     >
       <View className="flex-row justify-between gap-2 items-center">
         <FFText fontSize="sm">
-          {order?.restaurant?.specialize_in?.[0] ?? "Japanese"}
+          {
+          type === "CANCELLED" &&
+          (order?.restaurant?.specialize_in?.[0] ?? "Japanese")}
         </FFText>
         <FFText
           style={{

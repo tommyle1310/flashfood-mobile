@@ -199,6 +199,7 @@ const OrdersScreen: React.FC = () => {
     ],
     []
   );
+  console.log("realtimeOrders", realtimeOrders?.[0]?.order_items);
 
   // Clear all order-related data from AsyncStorage
   const clearAllOrderData = useCallback(async () => {

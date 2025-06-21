@@ -275,7 +275,7 @@ export const useActiveOrderTrackingSocket = () => {
           (order) => order.orderId === data.orderId
         );
 
-        // SMART ORDER_ITEMS MERGE: Preserve menu_item_variant data when it exists
+        // ENHANCED ORDER_ITEMS MERGE: Preserve menu_item_variant data and avatar when it exists
         const mergeOrderItems = (
           incomingItems: OrderItem[] | null | undefined,
           existingItems: OrderItem[] | undefined
@@ -290,7 +290,7 @@ export const useActiveOrderTrackingSocket = () => {
             return incomingItems;
           }
 
-          // Merge items intelligently - preserve menu_item_variant when it exists
+          // Merge items intelligently - preserve menu_item_variant and avatar when they exist
           return incomingItems.map((incomingItem) => {
             const existingItem = existingItems.find(
               (existing) =>
@@ -302,14 +302,45 @@ export const useActiveOrderTrackingSocket = () => {
               return incomingItem;
             }
 
-            // Merge the items, preserving menu_item_variant if it exists in either
+            // Log avatar preservation for debugging
+            const hasIncomingAvatar = !!(incomingItem.avatar && incomingItem.avatar.url);
+            const hasExistingAvatar = !!(existingItem.avatar && existingItem.avatar.url);
+            const hasIncomingMenuItemAvatar = !!(incomingItem.menu_item && incomingItem.menu_item.avatar && incomingItem.menu_item.avatar.url);
+            const hasExistingMenuItemAvatar = !!(existingItem.menu_item && existingItem.menu_item.avatar && existingItem.menu_item.avatar.url);
+            
+            console.log(`Avatar preservation for item ${incomingItem.name}:`, {
+              hasIncomingAvatar,
+              hasExistingAvatar,
+              hasIncomingMenuItemAvatar,
+              hasExistingMenuItemAvatar,
+              willPreserveAvatar: !hasIncomingAvatar && hasExistingAvatar,
+              willPreserveMenuItemAvatar: !hasIncomingMenuItemAvatar && hasExistingMenuItemAvatar
+            });
+
+            // Merge the items, preserving important data
             return {
               ...incomingItem,
-              // CRITICAL: Only overwrite menu_item_variant if incoming has a truthy value
-              // Otherwise preserve existing menu_item_variant
-              menu_item_variant:
-                incomingItem.menu_item_variant ||
-                existingItem.menu_item_variant,
+              // Preserve avatar if the incoming item doesn't have one
+              avatar: (incomingItem.avatar && incomingItem.avatar.url) 
+                ? incomingItem.avatar 
+                : existingItem.avatar,
+              
+              // Preserve menu_item with its avatar if the incoming doesn't have one
+              menu_item: incomingItem.menu_item 
+                ? {
+                    ...incomingItem.menu_item,
+                    // If incoming menu_item exists but doesn't have avatar, use existing avatar
+                    avatar: (incomingItem.menu_item.avatar && incomingItem.menu_item.avatar.url)
+                      ? incomingItem.menu_item.avatar
+                      : existingItem.menu_item?.avatar || null
+                  }
+                : existingItem.menu_item,
+              
+              // Preserve menu_item_variant if the incoming item doesn't have one
+              menu_item_variant: incomingItem.menu_item_variant || existingItem.menu_item_variant,
+              
+              // Preserve variant_name if needed
+              variant_name: incomingItem.variant_name || existingItem.variant_name
             };
           });
         };
@@ -326,6 +357,9 @@ export const useActiveOrderTrackingSocket = () => {
             price_at_time_of_order: item.price_at_time_of_order,
             hasMenuItemVariant: !!item.menu_item_variant,
             menuItemVariant: item.menu_item_variant,
+            // Log avatar info for debugging
+            hasAvatar: !!(item.avatar && item.avatar.url),
+            hasMenuItemAvatar: !!(item.menu_item && item.menu_item.avatar && item.menu_item.avatar.url)
           })),
           totalAmount: (data as any).total_amount,
           deliveryFee: (data as any).delivery_fee,
@@ -355,6 +389,11 @@ export const useActiveOrderTrackingSocket = () => {
           existingOrderItemsCount: existingOrder?.order_items?.length || 0,
           hasMenuItemVariant:
             data.order_items?.some((item) => !!item.menu_item_variant) || false,
+          // Add avatar debugging
+          hasAvatarInIncomingItems: data.order_items?.some(item => item.avatar && item.avatar.url) || false,
+          hasAvatarInExistingItems: existingOrder?.order_items?.some(item => item.avatar && item.avatar.url) || false,
+          hasMenuItemAvatarInIncomingItems: data.order_items?.some(item => item.menu_item && item.menu_item.avatar && item.menu_item.avatar.url) || false,
+          hasMenuItemAvatarInExistingItems: existingOrder?.order_items?.some(item => item.menu_item && item.menu_item.avatar && item.menu_item.avatar.url) || false,
           // Add customer_note debugging
           incomingCustomerNote: data.customer_note,
           existingCustomerNote: existingOrder?.customer_note,
@@ -480,6 +519,13 @@ export const useActiveOrderTrackingSocket = () => {
           hasMenuItemVariantData: mergedData.order_items.some(
             (item) => !!item.menu_item_variant
           ),
+          // Add avatar preservation logging
+          orderItemsWithAvatars: mergedData.order_items.filter(
+            (item) => item.avatar && item.avatar.url
+          ).length,
+          orderItemsWithMenuItemAvatars: mergedData.order_items.filter(
+            (item) => item.menu_item && item.menu_item.avatar && item.menu_item.avatar.url
+          ).length,
           menuItemVariantItems: mergedData.order_items
             .filter((item) => !!item.menu_item_variant)
             .map((item) => ({
@@ -491,6 +537,8 @@ export const useActiveOrderTrackingSocket = () => {
             name: item.name,
             quantity: item.quantity,
             hasMenuItemVariant: !!item.menu_item_variant,
+            hasAvatar: !!(item.avatar && item.avatar.url),
+            hasMenuItemAvatar: !!(item.menu_item && item.menu_item.avatar && item.menu_item.avatar.url)
           })),
         });
 

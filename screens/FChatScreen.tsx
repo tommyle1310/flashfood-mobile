@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
   View,
   Text,
@@ -28,6 +28,7 @@ const FChatScreen = () => {
   const navigation = useNavigation<FChatNavigationProp>();
   const route = useRoute<FChatRouteProp>();
   const [message, setMessage] = useState("");
+  const scrollViewRef = useRef<ScrollView>(null);
 
   const {
     socket,
@@ -54,6 +55,12 @@ const FChatScreen = () => {
   // Get the chat type from route params or default to SUPPORT
   const routeChatType = route.params?.type || "SUPPORT";
   const orderId = route.params?.orderId;
+  
+  // Get the order ID from the current session or route params
+  const displayOrderId = currentSession?.orderId || orderId || "";
+
+  // Check if we have messages to display
+  const hasMessages = messages && messages.length > 0;
 
   // Debug logging
   useEffect(() => {
@@ -73,6 +80,17 @@ const FChatScreen = () => {
       );
     }
   }, [socket, route.params]);
+
+  // Scroll to bottom when messages change
+  useEffect(() => {
+    if (scrollViewRef.current && hasMessages) {
+      setTimeout(() => {
+        if (scrollViewRef.current) {
+          scrollViewRef.current.scrollToEnd({ animated: true });
+        }
+      }, 300);
+    }
+  }, [messages, hasMessages]);
 
   const handleSendMessage = () => {
     if (message.trim()) {
@@ -184,26 +202,6 @@ const FChatScreen = () => {
       </FFSafeAreaView>
     );
   }
-
-  // Get the order ID from the current session or route params
-  const displayOrderId = currentSession?.orderId || orderId || "";
-
-  // Check if we have messages to display
-  const hasMessages = messages && messages.length > 0;
-
-  // Scroll view reference
-  const scrollViewRef = React.useRef<ScrollView>(null);
-
-  // Scroll to bottom when messages change
-  useEffect(() => {
-    if (scrollViewRef.current && hasMessages) {
-      setTimeout(() => {
-        if (scrollViewRef.current) {
-          scrollViewRef.current.scrollToEnd({ animated: true });
-        }
-      }, 300);
-    }
-  }, [messages]);
 
   return (
     <FFSafeAreaView>

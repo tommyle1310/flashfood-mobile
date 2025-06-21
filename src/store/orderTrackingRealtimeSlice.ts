@@ -99,11 +99,34 @@ export const updateAndSaveOrderTracking = createAsyncThunk(
         ? existingOrder.restaurant_note
         : order.restaurant_note;
       
+      // CRITICAL FIX: Preserve order_items with their avatars and menu_item_variant data
+      const mergedOrderItems = order.order_items?.map(newItem => {
+        // Find matching item in existing order
+        const existingItem = existingOrder.order_items?.find(
+          item => item.item_id === newItem.item_id && item.variant_id === newItem.variant_id
+        );
+        
+        if (existingItem) {
+          return {
+            ...newItem,
+            // Preserve avatar if the incoming item doesn't have one
+            avatar: newItem.avatar || existingItem.avatar,
+            // Preserve menu_item if the incoming item doesn't have one
+            menu_item: newItem.menu_item || existingItem.menu_item,
+            // Preserve menu_item_variant if the incoming item doesn't have one
+            menu_item_variant: newItem.menu_item_variant || existingItem.menu_item_variant
+          };
+        }
+        
+        return newItem;
+      }) || [];
+      
       updatedOrders = [...currentOrders];
       updatedOrders[existingIndex] = {
         ...order,
         customer_note: preservedCustomerNote,
-        restaurant_note: preservedRestaurantNote
+        restaurant_note: preservedRestaurantNote,
+        order_items: mergedOrderItems
       };
       
       console.log("Updated existing order:", {
@@ -113,6 +136,8 @@ export const updateAndSaveOrderTracking = createAsyncThunk(
         oldCustomerNote: currentOrders[existingIndex].customer_note || "(empty)",
         newCustomerNote: preservedCustomerNote || "(empty)",
         finalCustomerNote: updatedOrders[existingIndex].customer_note || "(empty)",
+        // Log avatar preservation
+        orderItemsWithAvatars: mergedOrderItems.filter(item => item.avatar || (item.menu_item && item.menu_item.avatar)).length
       });
     } else {
       // Add new order

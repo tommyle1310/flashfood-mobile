@@ -259,7 +259,7 @@ export const DetailedOrder: React.FC<DetailedOrderProps> = ({
                   rounded="sm"
                   size={40}
                   avatar={
-                    item.menu_item?.avatar?.url ??
+                    item.menu_item?.avatar?.url ?? item?.avatar?.url ??
                     IMAGE_LINKS.DEFAULT_AVATAR_FOOD
                   }
                 />

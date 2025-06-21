@@ -1,3 +1,5 @@
+import { Avatar } from "./common";
+
 // Define the enum for Payment Methods
 export enum Enum_PaymentMethod {
   COD = "COD",
@@ -42,6 +44,7 @@ export enum Enum_OrderStatus {
 export type OrderItem = {
   item_id?: string | null;
   name?: string | null;
+  avatar?: Avatar;
   quantity?: number | null;
   variant_name?: string;
   menu_item?: any;

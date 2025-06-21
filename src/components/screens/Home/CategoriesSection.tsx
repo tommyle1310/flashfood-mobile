@@ -230,7 +230,7 @@ const styles = StyleSheet.create({
     marginRight: spacing.xs,
   },
   gridContainer: {
-    gap: spacing.sm,
+    // gap: spacing.xs,
   },
   rowContainer: {
     paddingVertical: spacing.xs,
@@ -240,7 +240,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     width: 80, // Increased width for better touch target
     height: 90, // Fixed height to ensure consistent touch area
-    marginRight: spacing.sm,
+    marginRight: spacing.xs,
     paddingHorizontal: 5,
     paddingVertical: 5,
     justifyContent: "center", // Center content vertically
