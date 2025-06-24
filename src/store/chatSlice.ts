@@ -1,14 +1,14 @@
-import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
+import { createSlice, createAsyncThunk, PayloadAction } from "@reduxjs/toolkit";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
-interface ChatMessage {
+export interface ChatMessage {
   messageId: string;
   id?: string;
   senderId?: string;
   from: string;
   content: string;
-  type: "TEXT" | "IMAGE" | "VIDEO" | "ORDER_INFO";
-  messageType?: "TEXT" | "IMAGE" | "VIDEO" | "ORDER_INFO";
+  type: "TEXT" | "IMAGE" | "VIDEO" | "ORDER_INFO" | "OPTIONS";
+  messageType?: "TEXT" | "IMAGE" | "VIDEO" | "ORDER_INFO" | "OPTIONS";
   timestamp: Date | string; // Allow both for compatibility
   roomId: string;
   // Additional fields from server response
@@ -25,13 +25,35 @@ interface ChatMessage {
     | "CUSTOMER_CARE_REPRESENTATIVE"
     | "RESTAURANT"
     | "DRIVER";
+  metadata?: Record<string, any>;
+}
+
+interface ChatRoom {
+  id: string;
+  participants: string[];
+  lastMessage?: ChatMessage;
+  unreadCount: number;
+  type: 'SUPPORT' | 'ORDER' | 'CHATBOT';
+  orderId?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface SupportSession {
+  sessionId: string;
+  chatMode: string;
+  status: string;
+  priority: 'low' | 'medium' | 'high' | 'urgent';
+  category?: string;
+  slaDeadline?: string;
+  timestamp: string;
 }
 
 interface ChatSession {
   chatId: string;
   dbRoomId: string;
   withUser: string;
-  type: "SUPPORT" | "ORDER";
+  type: "SUPPORT" | "ORDER" | "CHATBOT";
   orderId?: string;
   isActive: boolean;
   createdAt: string; // ISO string for serialization
@@ -39,23 +61,23 @@ interface ChatSession {
 }
 
 interface ChatState {
-  // Current active chat sessions by type
+  // New structure from restaurant project
+  rooms: ChatRoom[];
+  activeRoomId: string | null;
+  messages: Record<string, ChatMessage[]>;
+  isLoading: boolean;
+  error: string | null;
+  supportSession: SupportSession | null;
+  
+  // Legacy structure for backward compatibility
   currentSupportSession: ChatSession | null;
   currentOrderSession: ChatSession | null;
-  
-  // Legacy field for backward compatibility
   currentSession: ChatSession | null;
-
-  // All chat sessions (for history)
   sessions: ChatSession[];
-
-  // Messages for current sessions by type
   supportMessages: ChatMessage[];
   orderMessages: Record<string, ChatMessage[]>; // Keyed by orderId
-
-  // Legacy field for backward compatibility
-  messages: ChatMessage[];
-
+  legacyMessages: ChatMessage[];
+  
   // Chat request state
   isRequestingSupport: boolean;
   requestError: string | null;
@@ -69,13 +91,22 @@ interface ChatState {
 }
 
 const initialState: ChatState = {
+  // New structure
+  rooms: [],
+  activeRoomId: null,
+  messages: {},
+  isLoading: false,
+  error: null,
+  supportSession: null,
+  
+  // Legacy structure
   currentSupportSession: null,
   currentOrderSession: null,
   currentSession: null,
   sessions: [],
   supportMessages: [],
   orderMessages: {},
-  messages: [],
+  legacyMessages: [],
   isRequestingSupport: false,
   requestError: null,
   isConnected: false,
@@ -89,84 +120,101 @@ const CHAT_SUPPORT_MESSAGES_KEY = "@chat_support_messages";
 const CHAT_ORDER_MESSAGES_KEY = "@chat_order_messages";
 const CURRENT_SUPPORT_SESSION_KEY = "@current_support_chat_session";
 const CURRENT_ORDER_SESSION_KEY = "@current_order_chat_session";
+const CHAT_ROOMS_KEY = "@chat_rooms";
+const CHAT_MESSAGES_KEY = "@chat_messages";
+const SUPPORT_SESSION_KEY = "@support_session";
+const ACTIVE_ROOM_KEY = "@active_room";
 
 // Legacy keys
-const CHAT_MESSAGES_KEY = "@chat_messages";
 const CURRENT_SESSION_KEY = "@current_chat_session";
 
-// Async thunks for persistence
-export const loadChatDataFromStorage = createAsyncThunk(
-  "chat/loadChatDataFromStorage",
+// Load chat data from AsyncStorage
+export const loadChatFromStorage = createAsyncThunk(
+  'chat/loadFromStorage',
   async () => {
     try {
       const [
+        roomsData,
+        messagesData,
+        supportSessionData,
+        activeRoomData,
+        // Legacy data
         sessionsData, 
         supportMessagesData, 
         orderMessagesData, 
         currentSupportSessionData,
         currentOrderSessionData,
-        // Legacy data
-        messagesData,
+        legacyMessagesData,
         currentSessionData
       ] = await Promise.all([
+        AsyncStorage.getItem(CHAT_ROOMS_KEY),
+        AsyncStorage.getItem(CHAT_MESSAGES_KEY),
+        AsyncStorage.getItem(SUPPORT_SESSION_KEY),
+        AsyncStorage.getItem(ACTIVE_ROOM_KEY),
+        // Legacy data
         AsyncStorage.getItem(CHAT_SESSIONS_KEY),
         AsyncStorage.getItem(CHAT_SUPPORT_MESSAGES_KEY),
         AsyncStorage.getItem(CHAT_ORDER_MESSAGES_KEY),
         AsyncStorage.getItem(CURRENT_SUPPORT_SESSION_KEY),
         AsyncStorage.getItem(CURRENT_ORDER_SESSION_KEY),
-        // Legacy data
-        AsyncStorage.getItem(CHAT_MESSAGES_KEY),
+        AsyncStorage.getItem("@chat_messages"),
         AsyncStorage.getItem(CURRENT_SESSION_KEY),
       ]);
-
+      
+      // Parse new structure data
+      const rooms = roomsData ? JSON.parse(roomsData) : [];
+      const messages = messagesData ? JSON.parse(messagesData) : {};
+      const supportSession = supportSessionData ? JSON.parse(supportSessionData) : null;
+      const activeRoomId = activeRoomData || null;
+      
+      // Parse legacy data
       const sessions = sessionsData ? JSON.parse(sessionsData) : [];
       const supportMessages = supportMessagesData ? JSON.parse(supportMessagesData) : [];
       const orderMessages = orderMessagesData ? JSON.parse(orderMessagesData) : {};
-      let currentSupportSession = currentSupportSessionData ? JSON.parse(currentSupportSessionData) : null;
-      let currentOrderSession = currentOrderSessionData ? JSON.parse(currentOrderSessionData) : null;
-      
-      // Legacy data
-      const messages = messagesData ? JSON.parse(messagesData) : [];
+      const currentSupportSession = currentSupportSessionData ? JSON.parse(currentSupportSessionData) : null;
+      const currentOrderSession = currentOrderSessionData ? JSON.parse(currentOrderSessionData) : null;
+      const legacyMessages = legacyMessagesData ? JSON.parse(legacyMessagesData) : [];
       const currentSession = currentSessionData ? JSON.parse(currentSessionData) : null;
-
+      
       // If we have legacy data but no new data, migrate it
-      if (!currentSupportSession && !currentOrderSession && currentSession) {
-        if (currentSession.type === "SUPPORT") {
-          currentSupportSession = currentSession;
-        } else if (currentSession.type === "ORDER") {
-          currentOrderSession = currentSession;
-        }
-      }
-
-      // Determine which session to use as the current session for backward compatibility
-      const finalCurrentSession = currentSupportSession || currentOrderSession || null;
-
+      let finalCurrentSession = currentSupportSession || currentOrderSession || currentSession || null;
+      
       return {
+        rooms,
+        messages,
+        supportSession,
+        activeRoomId,
+        // Legacy data
         sessions,
         supportMessages,
         orderMessages,
         currentSupportSession,
         currentOrderSession,
-        // Legacy data
-        messages,
         currentSession: finalCurrentSession,
+        legacyMessages,
       };
     } catch (error) {
       console.error("Error loading chat data from storage:", error);
-      return {
-        sessions: [],
-        supportMessages: [],
-        orderMessages: {},
-        currentSupportSession: null,
-        currentOrderSession: null,
-        // Legacy data
-        messages: [],
-        currentSession: null,
-      };
+      return initialState;
     }
   }
 );
 
+// Save chat data to AsyncStorage
+const saveChatToStorage = async (state: ChatState) => {
+  try {
+    await Promise.all([
+      AsyncStorage.setItem(CHAT_ROOMS_KEY, JSON.stringify(state.rooms)),
+      AsyncStorage.setItem(CHAT_MESSAGES_KEY, JSON.stringify(state.messages)),
+      AsyncStorage.setItem(SUPPORT_SESSION_KEY, JSON.stringify(state.supportSession)),
+      state.activeRoomId ? AsyncStorage.setItem(ACTIVE_ROOM_KEY, state.activeRoomId) : null,
+    ]);
+  } catch (error) {
+    console.error('Failed to save chat data to storage:', error);
+  }
+};
+
+// Legacy: Save chat session to storage
 export const saveChatSessionToStorage = createAsyncThunk(
   "chat/saveChatSessionToStorage",
   async (session: ChatSession) => {
@@ -284,12 +332,201 @@ const chatSlice = createSlice({
   name: "chat",
   initialState,
   reducers: {
-    // Connection state
+    // New actions from restaurant project
+    setActiveRoom: (state, action: PayloadAction<string>) => {
+      state.activeRoomId = action.payload;
+      
+      // Reset unread count when room becomes active
+      const room = state.rooms.find(r => r.id === action.payload);
+      if (room) {
+        room.unreadCount = 0;
+      }
+      
+      saveChatToStorage(state);
+    },
+    
+    addMessage: (state, action: PayloadAction<ChatMessage>) => {
+      const { roomId } = action.payload;
+      
+      // Ensure timestamp is a string for serialization
+      const message = {
+        ...action.payload,
+        timestamp: action.payload.timestamp instanceof Date 
+          ? action.payload.timestamp.toISOString() 
+          : action.payload.timestamp
+      };
+      
+      // Initialize messages array for the room if it doesn't exist
+      if (!state.messages[roomId]) {
+        state.messages[roomId] = [];
+      }
+      
+      // Add message to the room
+      state.messages[roomId].push(message);
+      
+      // Update room's last message
+      const roomIndex = state.rooms.findIndex(r => r.id === roomId);
+      if (roomIndex >= 0) {
+        state.rooms[roomIndex].lastMessage = message;
+        state.rooms[roomIndex].updatedAt = new Date().toISOString();
+        
+        // Increment unread count if this isn't the active room
+        if (state.activeRoomId !== roomId) {
+          state.rooms[roomIndex].unreadCount += 1;
+        }
+      }
+      
+      // Legacy: Update legacy structures
+      if (state.currentSupportSession && state.currentSupportSession.dbRoomId === roomId) {
+        state.supportMessages.push(message);
+        state.currentSupportSession.lastMessageAt = new Date().toISOString();
+        state.legacyMessages.push(message);
+      } else if (state.currentOrderSession && state.currentOrderSession.dbRoomId === roomId) {
+        const orderId = state.currentOrderSession.orderId;
+        if (orderId) {
+          if (!state.orderMessages[orderId]) {
+            state.orderMessages[orderId] = [];
+          }
+          state.orderMessages[orderId].push(message);
+          state.currentOrderSession.lastMessageAt = new Date().toISOString();
+          state.legacyMessages.push(message);
+        }
+      }
+      
+      saveChatToStorage(state);
+    },
+    
+    setMessages: (state, action: PayloadAction<{ roomId: string, messages: ChatMessage[] }>) => {
+      const { roomId, messages } = action.payload;
+      
+      // Ensure all timestamps are strings for serialization
+      const serializedMessages = messages.map(msg => ({
+        ...msg,
+        timestamp: msg.timestamp instanceof Date ? msg.timestamp.toISOString() : msg.timestamp
+      }));
+      
+      state.messages[roomId] = serializedMessages;
+      
+      // Update room's last message if there are messages
+      if (serializedMessages.length > 0) {
+        const roomIndex = state.rooms.findIndex(r => r.id === roomId);
+        if (roomIndex >= 0) {
+          state.rooms[roomIndex].lastMessage = serializedMessages[serializedMessages.length - 1];
+        }
+      }
+      
+      // Legacy: Update legacy structures
+      if (state.currentSupportSession && state.currentSupportSession.dbRoomId === roomId) {
+        state.supportMessages = serializedMessages;
+        state.legacyMessages = serializedMessages;
+      } else if (state.currentOrderSession && state.currentOrderSession.dbRoomId === roomId) {
+        const orderId = state.currentOrderSession.orderId;
+        if (orderId) {
+          state.orderMessages[orderId] = serializedMessages;
+          state.legacyMessages = serializedMessages;
+        }
+      }
+      
+      saveChatToStorage(state);
+    },
+    
+    addRoom: (state, action: PayloadAction<Omit<ChatRoom, 'createdAt' | 'updatedAt'> & { 
+      createdAt?: Date | string, 
+      updatedAt?: Date | string 
+    }>) => {
+      // Convert dates to ISO strings for serialization
+      const room: ChatRoom = {
+        ...action.payload,
+        createdAt: action.payload.createdAt instanceof Date 
+          ? action.payload.createdAt.toISOString() 
+          : (action.payload.createdAt || new Date().toISOString()),
+        updatedAt: action.payload.updatedAt instanceof Date 
+          ? action.payload.updatedAt.toISOString() 
+          : (action.payload.updatedAt || new Date().toISOString())
+      };
+      
+      // Check if room already exists
+      const existingRoomIndex = state.rooms.findIndex(r => r.id === room.id);
+      
+      if (existingRoomIndex >= 0) {
+        // Update existing room
+        state.rooms[existingRoomIndex] = {
+          ...state.rooms[existingRoomIndex],
+          ...room,
+        };
+      } else {
+        // Add new room
+        state.rooms.push(room);
+      }
+      
+      // Initialize messages array for the room
+      if (!state.messages[room.id]) {
+        state.messages[room.id] = [];
+      }
+      
+      // Legacy: Update legacy structures if this is a new room
+      if (existingRoomIndex < 0) {
+        if (room.type === "SUPPORT") {
+          if (!state.currentSupportSession) {
+            state.currentSupportSession = {
+              chatId: room.id,
+              dbRoomId: room.id,
+              withUser: room.participants[0] || "",
+              type: "SUPPORT",
+              isActive: true,
+              createdAt: room.createdAt,
+              lastMessageAt: room.updatedAt,
+            };
+            state.currentSession = state.currentSupportSession;
+          }
+        } else if (room.type === "ORDER" && room.orderId) {
+          if (!state.currentOrderSession) {
+            state.currentOrderSession = {
+              chatId: room.id,
+              dbRoomId: room.id,
+              withUser: room.participants[0] || "",
+              type: "ORDER",
+              orderId: room.orderId,
+              isActive: true,
+              createdAt: room.createdAt,
+              lastMessageAt: room.updatedAt,
+            };
+            if (!state.currentSession) {
+              state.currentSession = state.currentOrderSession;
+            }
+          }
+        }
+      }
+      
+      saveChatToStorage(state);
+    },
+    
+    clearUnreadCount: (state, action: PayloadAction<string>) => {
+      const roomId = action.payload;
+      const roomIndex = state.rooms.findIndex(r => r.id === roomId);
+      
+      if (roomIndex >= 0) {
+        state.rooms[roomIndex].unreadCount = 0;
+      }
+      
+      saveChatToStorage(state);
+    },
+
+    setSupportSession: (state, action: PayloadAction<SupportSession>) => {
+      state.supportSession = action.payload;
+      saveChatToStorage(state);
+    },
+
+    clearSupportSession: (state) => {
+      state.supportSession = null;
+      saveChatToStorage(state);
+    },
+    
+    // Legacy actions for backward compatibility
     setConnectionState: (state, action) => {
       state.isConnected = action.payload;
     },
 
-    // Support request state
     startSupportRequest: (state) => {
       state.isRequestingSupport = true;
       state.requestError = null;
@@ -305,7 +542,6 @@ const chatSlice = createSlice({
       state.requestError = action.payload;
     },
 
-    // Chat session management
     setChatSession: (state, action) => {
       // Accept either a full session object or individual properties
       let session: ChatSession;
@@ -337,6 +573,23 @@ const chatSlice = createSlice({
       
       // Also update legacy field for backward compatibility
       state.currentSession = session;
+      
+      // Create a room for this session if it doesn't exist
+      const roomExists = state.rooms.some(room => room.id === session.dbRoomId);
+      if (!roomExists) {
+        state.rooms.push({
+          id: session.dbRoomId,
+          participants: [session.withUser],
+          unreadCount: 0,
+          type: session.type,
+          orderId: session.orderId,
+          createdAt: session.createdAt,
+          updatedAt: session.lastMessageAt || session.createdAt,
+        });
+      }
+      
+      // Set this room as active
+      state.activeRoomId = session.dbRoomId;
     },
 
     endChatSession: (state, action) => {
@@ -360,77 +613,6 @@ const chatSlice = createSlice({
       }
     },
 
-    // Message management
-    addMessage: (state, action) => {
-      const message = action.payload;
-      
-      // Determine which message array to update based on current session type
-      if (state.currentSupportSession && state.currentSupportSession.dbRoomId === message.roomId) {
-        state.supportMessages.push(message);
-        
-        // Update last message time
-        state.currentSupportSession.lastMessageAt = new Date().toISOString();
-        
-        // Update legacy fields
-        state.messages.push(message);
-        if (state.currentSession && state.currentSession.type === "SUPPORT") {
-          state.currentSession.lastMessageAt = new Date().toISOString();
-        }
-      } else if (state.currentOrderSession && state.currentOrderSession.dbRoomId === message.roomId) {
-        const orderId = state.currentOrderSession.orderId;
-        if (orderId) {
-          if (!state.orderMessages[orderId]) {
-            state.orderMessages[orderId] = [];
-          }
-          state.orderMessages[orderId].push(message);
-          
-          // Update last message time
-          state.currentOrderSession.lastMessageAt = new Date().toISOString();
-          
-          // Update legacy fields
-          state.messages.push(message);
-          if (state.currentSession && state.currentSession.type === "ORDER") {
-            state.currentSession.lastMessageAt = new Date().toISOString();
-          }
-        } else {
-          // If no orderId but we have a roomId match, still add to legacy messages
-          state.messages.push(message);
-        }
-      } else {
-        // If we can't determine where to put it, just add to legacy messages
-        state.messages.push(message);
-        
-        // Try to match by roomId to any existing session
-        if (state.currentSupportSession && message.roomId === state.currentSupportSession.dbRoomId) {
-          state.supportMessages.push(message);
-        } else if (state.currentOrderSession && message.roomId === state.currentOrderSession.dbRoomId) {
-          const orderId = state.currentOrderSession.orderId;
-          if (orderId) {
-            if (!state.orderMessages[orderId]) {
-              state.orderMessages[orderId] = [];
-            }
-            state.orderMessages[orderId].push(message);
-          }
-        }
-      }
-    },
-
-    setMessages: (state, action) => {
-      const { messages, type, orderId } = action.payload;
-      
-      if (type === "SUPPORT") {
-        state.supportMessages = messages;
-      } else if (type === "ORDER" && orderId) {
-        state.orderMessages[orderId] = messages;
-      } else if (type === "ORDER" && !orderId && state.currentOrderSession?.orderId) {
-        // If no orderId provided but we have one in the current session, use that
-        state.orderMessages[state.currentOrderSession.orderId] = messages;
-      }
-      
-      // Update legacy field
-      state.messages = messages;
-    },
-
     clearMessages: (state, action) => {
       const type = action.payload?.type || "ALL";
       const orderId = action.payload?.orderId;
@@ -449,11 +631,10 @@ const chatSlice = createSlice({
       
       // Update legacy field
       if (type === "ALL") {
-        state.messages = [];
+        state.legacyMessages = [];
       }
     },
 
-    // Loading states
     setLoadingHistory: (state, action) => {
       state.isLoadingHistory = action.payload;
     },
@@ -465,27 +646,32 @@ const chatSlice = createSlice({
 
   extraReducers: (builder) => {
     builder
-      .addCase(loadChatDataFromStorage.fulfilled, (state, action) => {
-        const { 
-          sessions, 
-          supportMessages, 
-          orderMessages, 
-          currentSupportSession, 
-          currentOrderSession,
-          // Legacy data
-          messages,
-          currentSession
-        } = action.payload;
+      .addCase(loadChatFromStorage.pending, (state) => {
+        state.isLoading = true;
+      })
+      .addCase(loadChatFromStorage.fulfilled, (state, action) => {
+        state.isLoading = false;
         
-        state.sessions = sessions;
-        state.supportMessages = supportMessages;
-        state.orderMessages = orderMessages;
-        state.currentSupportSession = currentSupportSession;
-        state.currentOrderSession = currentOrderSession;
-        
-        // Legacy fields
-        state.messages = messages;
-        state.currentSession = currentSession;
+        if (action.payload) {
+          // New structure
+          state.rooms = action.payload.rooms || [];
+          state.messages = action.payload.messages || {};
+          state.supportSession = action.payload.supportSession;
+          state.activeRoomId = action.payload.activeRoomId;
+          
+          // Legacy structure
+          state.sessions = action.payload.sessions || [];
+          state.supportMessages = action.payload.supportMessages || [];
+          state.orderMessages = action.payload.orderMessages || {};
+          state.currentSupportSession = action.payload.currentSupportSession;
+          state.currentOrderSession = action.payload.currentOrderSession;
+          state.currentSession = action.payload.currentSession;
+          state.legacyMessages = action.payload.legacyMessages || [];
+        }
+      })
+      .addCase(loadChatFromStorage.rejected, (state, action) => {
+        state.isLoading = false;
+        state.error = action.error.message || 'Failed to load chat data';
       })
       .addCase(saveChatSessionToStorage.fulfilled, (state, action) => {
         // Update sessions list in state
@@ -519,21 +705,29 @@ const chatSlice = createSlice({
         
         if (type === "ALL") {
           state.currentSession = null;
-          state.messages = [];
+          state.messages = {};
         }
       });
   },
 });
 
 export const {
+  // New actions
+  setActiveRoom,
+  addMessage,
+  setMessages,
+  addRoom,
+  clearUnreadCount,
+  setSupportSession,
+  clearSupportSession,
+  
+  // Legacy actions
   setConnectionState,
   startSupportRequest,
   supportRequestSuccess,
   supportRequestError,
   setChatSession,
   endChatSession,
-  addMessage,
-  setMessages,
   clearMessages,
   setLoadingHistory,
   setLoadingSessions,

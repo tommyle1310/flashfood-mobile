@@ -24,7 +24,13 @@ import { useSelector } from "@/src/store/types";
 import { RootState } from "@/src/store/store";
 
 type SupportCenterNavigationProp = StackNavigationProp<
-  MainStackParamList,
+  MainStackParamList & {
+    FChat: {
+      withUserId?: string;
+      type?: "SUPPORT" | "ORDER" | "CHATBOT";
+      orderId?: string;
+    };
+  },
   "BottomTabs"
 >;
 
@@ -121,6 +127,11 @@ const SupportCenterScreen = () => {
 
   const contactOptions = [
     {
+      title: "Chat with AI Assistant",
+      icon: "chatbubbles-outline",
+      onPress: () => navigation.navigate("FChat", { type: "CHATBOT" }),
+    },
+    {
       title: "Chat with customer care representative",
       icon: "headset",
       onPress: () => navigation.navigate("FChat", { type: "SUPPORT" }),
@@ -163,13 +174,14 @@ const SupportCenterScreen = () => {
                     fontSize="sm"
                     style={{ marginTop: spacing.sm }}
                   >
-                    {item.answer[0].value.replace(/\[(.*?)\]\((.*?)\)/g, "$1")}
-                    {item.answer[0].value.includes("http") && (
+                    {typeof item.answer[0].value === 'string' && item.answer[0].value.replace(/\[(.*?)\]\((.*?)\)/g, "$1")}
+                    {typeof item.answer[0].value === 'string' && item.answer[0].value.includes("http") && (
                       <Text
                         className="text-blue-500 underline"
                         onPress={() => {
-                          const url =
-                            item.answer[0].value.match(/\((.*?)\)/)?.[1];
+                          const value = item.answer[0].value as string;
+                          const match = value.match(/\((.*?)\)/);
+                          const url = match?.[1];
                           if (url) Linking.openURL(url);
                         }}
                       >

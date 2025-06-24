@@ -5,7 +5,7 @@ import userPreferenceReducer from "./userPreferenceSlice"; // Replace with the c
 import orderTrackingRealtimeReducer from "./orderTrackingRealtimeSlice";
 import chatReducer from "./chatSlice";
 
-const store = configureStore({
+export const store = configureStore({
   reducer: {
     auth: authReducer,
     userPreference: userPreferenceReducer,

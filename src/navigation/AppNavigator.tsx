@@ -49,7 +49,7 @@ export type RootStackParamList = {
 };
 
 export type MainStackParamList = {
-  FChat: { withUserId?: string; type?: "SUPPORT" | "ORDER"; orderId?: string };
+  FChat: { withUserId?: string; type?: "SUPPORT" | "ORDER" | "CHATBOT"; orderId?: string; title?: string };
   RestaurantDetail: { restaurantId: string };
   Rating: {
     driver: {
