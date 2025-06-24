@@ -61,7 +61,14 @@ const Login = () => {
 
         // Dispatch the action to save the user data to AsyncStorage and Redux store
         console.log("🔐 Login success - saving user data:", userData);
-        
+        const responseCartItem =     await axiosInstance.get(
+          `/customers/cart-items/${userData.id}`,
+         
+          {
+            // This will ensure axios does NOT reject on non-2xx status codes
+            validateStatus: () => true, // Always return true so axios doesn't throw on errors
+          }
+        );
         try {
           // Wait for the save operations to complete before navigating
           await dispatch(
@@ -87,7 +94,7 @@ const Login = () => {
           );
           
           await dispatch(saveFavoriteRestaurantsToAsyncStorage());
-          await dispatch(saveCartItemsToAsyncStorage(userData.cart_items));
+          await dispatch(saveCartItemsToAsyncStorage(responseCartItem.data.data));
 
           console.log("💾 All user data saved successfully, navigating...");
           

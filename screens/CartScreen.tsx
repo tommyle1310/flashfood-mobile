@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useMemo } from "react";
 import { FlatList, Image, Pressable, View } from "react-native";
 import FFSafeAreaView from "@/src/components/FFSafeAreaView";
 import FFText from "@/src/components/FFText";
@@ -67,7 +67,44 @@ const CartScreen = () => {
   const cartList = useSelector(
     (state: RootState) => state.userPreference.cart_items
   );
-
+  console.log('check cart list', cartList?.[0]);
+  
+  // Normalize cart data to handle different structures from LoginScreen vs RestaurantDetailScreen
+  const normalizedCartList = useMemo(() => {
+    const normalizeCartData = (cartItems: any[]): CartItem[] => {
+      return cartItems.map(item => {
+        // Handle different structures
+        const normalizedItem = {
+          ...item,
+          // Ensure proper restaurantDetails structure
+          item: {
+            ...item.item,
+            restaurantDetails: item.item?.restaurantDetails || item.restaurant || item.restaurantDetails || {
+              id: item.restaurant_id || item.item?.restaurant_id,
+              restaurant_name: item.restaurant?.restaurant_name || item.item?.restaurant?.restaurant_name || "Unknown Restaurant",
+              avatar: item.restaurant?.avatar || item.item?.restaurant?.avatar || { url: "", key: "" },
+              address_id: item.restaurant?.address_id || item.item?.restaurant?.address_id || ""
+            }
+          },
+          // Normalize variants structure
+          variants: item.variants?.map((variant: any) => ({
+            variant_id: variant.variant_id,
+            variant_name: variant.variant_name || variant.variant || "Unknown",
+            quantity: variant.quantity || 1,
+            variant_price_at_time_of_addition: variant.variant_price_at_time_of_addition || 
+              variant.price_after_applied_promotion || 
+              variant.price || 
+              parseFloat(item.item?.price) || 0
+          })) || []
+        };
+        
+        return normalizedItem;
+      });
+    };
+    
+    return normalizeCartData(cartList);
+  }, [cartList]);
+  
   useEffect(() => {
     dispatch(loadCartItemsFromAsyncStorage());
   }, [dispatch]);
@@ -84,9 +121,9 @@ const CartScreen = () => {
         return grouped;
       }, {} as GroupedCartList);
     };
-    const grouped = groupByRestaurant(cartList);
+    const grouped = groupByRestaurant(normalizedCartList);
     setGroupedCartList(grouped);
-  }, [cartList]);
+  }, [normalizedCartList]);
 
   useEffect(() => {
     if (selectedRestaurant?.id || selectedVariants.length > 0) {
@@ -174,7 +211,7 @@ const CartScreen = () => {
 
   const handleSubmitCheckout = () => {
     const updatedSelectedVariants = selectedVariants.map((selectedVariant) => {
-      const cartItem = cartList.find((item) => item.id === selectedVariant.id);
+      const cartItem = normalizedCartList.find((item) => item.id === selectedVariant.id);
       if (!cartItem) return selectedVariant;
 
       const currentVariant = cartItem.variants.find(
@@ -242,12 +279,12 @@ const CartScreen = () => {
 
     // Check if restaurant should be reset
     const restaurantId = cartItem.item.restaurantDetails?.id;
-    const remainingItems = cartList.filter(
+    const remainingItems = normalizedCartList.filter(
       (item) =>
         item.item.restaurantDetails?.id === restaurantId &&
         item.id !== cartItem.id
     );
-    const remainingVariants = cartList.find(
+    const remainingVariants = normalizedCartList.find(
       (item) => item.id === cartItem.id
     )?.variants;
 
@@ -369,7 +406,7 @@ const CartScreen = () => {
   return (
     <FFSafeAreaView>
       <View className="flex-1 gap-4 pb-24">
-        {cartList.length === 0 ? (
+        {normalizedCartList.length === 0 ? (
           <View className="w-full justify-center flex-1 pb-12 p-4">
             <Image
               source={{ uri: IMAGE_LINKS.EMPTY_CART }}

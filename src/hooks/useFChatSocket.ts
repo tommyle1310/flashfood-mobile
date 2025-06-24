@@ -172,23 +172,27 @@ export const useFChatSocket = () => {
       }
     }
     
-    // First try to get messages from the new structure
-    if (activeRoomId && messages[activeRoomId] && !activeRoomId.includes("fallback")) {
+    // First try to get messages from the new structure (this is the primary source)
+    if (activeRoomId && messages[activeRoomId]) {
+      console.log("Returning messages from activeRoomId:", activeRoomId, "count:", messages[activeRoomId].length);
       return messages[activeRoomId];
     }
     
     // If not found, try to get from legacy structure
     if (chatType === "SUPPORT") {
+      console.log("Returning legacy support messages, count:", supportMessages.length);
       return supportMessages;
     } else if (chatType === "ORDER") {
       // For ORDER chats, check if we have messages for this order
       const orderId = currentSession?.orderId || currentOrderSession?.orderId;
       if (orderId && orderMessages[orderId]) {
+        console.log("Returning legacy order messages for order:", orderId, "count:", orderMessages[orderId].length);
         return orderMessages[orderId];
       }
     }
     
     // Fallback to empty array if no messages found
+    console.log("No messages found, returning empty array");
     return [];
   }, [activeRoomId, messages, chatType, currentSession, currentOrderSession, supportMessages, orderMessages]);
 
@@ -281,11 +285,17 @@ export const useFChatSocket = () => {
       console.log("New message received:", message);
       
       // Check if this is a message we already sent locally
+      // Only skip if it's from the same user AND we have it in our tracking set
       if (message.senderId === userId && sentMessagesRef.current.has(message.content)) {
         console.log("Skipping duplicate message that we already added locally:", message.content);
         // Remove from tracking set as we've now processed it
         sentMessagesRef.current.delete(message.content);
         return;
+      }
+      
+      // If it's from a different user, always process it (even if content is the same)
+      if (message.senderId !== userId) {
+        console.log("Processing message from other user:", message.senderId, "content:", message.content);
       }
       
       // Format message to match our interface
@@ -877,7 +887,23 @@ export const useFChatSocket = () => {
     if (chatType === "ORDER" && roomId) {
       console.log("Sending order message to room:", roomId, content, type);
       
-      // Add message to tracking set to avoid duplicates
+      // Create a local message to show immediately in UI
+      const userMessage: ChatMessage = {
+        messageId: `user_${Date.now()}`,
+        from: userId || "user",
+        senderId: userId || "user",
+        content: content,
+        type: type,
+        messageType: type,
+        timestamp: new Date().toISOString(),
+        roomId: roomId,
+        metadata: {},
+      };
+      
+      // Add the user message immediately to show in UI
+      dispatch(addMessage(userMessage));
+      
+      // Add message to tracking set to avoid duplicates from server echo
       sentMessagesRef.current.add(content);
       
       socket.emit("sendMessage", {
