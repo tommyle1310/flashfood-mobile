@@ -71,6 +71,9 @@ interface OrderTrackingSocket {
   // Add customer_note to the socket interface
   customer_note?: string;
   restaurant_note?: string;
+  // Add the new fields
+  sub_total?: number | string;
+  discount_amount?: number | string;
 }
 
 interface OrderTrackingState {
@@ -351,6 +354,9 @@ export const useActiveOrderTrackingSocket = () => {
           tracking_info: data.tracking_info,
           hasOrderItems: !!data.order_items,
           orderItemsCount: data.order_items?.length || 0,
+          // Add sub_total and discount_amount to logging
+          sub_total: data.sub_total,
+          discount_amount: data.discount_amount,
           orderItemsDetails: data.order_items?.map((item) => ({
             name: item.name,
             quantity: item.quantity,
@@ -400,9 +406,8 @@ export const useActiveOrderTrackingSocket = () => {
           willPreserveExistingCustomerNote: data.customer_note === undefined && !!existingOrder?.customer_note,
         });
 
-        // Create merged data - preserve existing data and only update fields present in the incoming data
-        const mergedData: OrderTracking = {
-          // Always update these core tracking fields
+        // Create base order with required fields
+        const baseOrder: OrderTracking = {
           id: data.orderId,
           orderId: data.orderId,
           status: orderStatus,
@@ -410,136 +415,184 @@ export const useActiveOrderTrackingSocket = () => {
           updated_at: data.updated_at,
           customer_id: data.customer_id,
           restaurant_id: data.restaurant_id,
-
-          // Conditionally update these fields only if they're present in the incoming data
-          driver_id:
-            data.driver_id !== undefined
-              ? data.driver_id || ""
-              : existingOrder?.driver_id || "",
-          restaurant_avatar:
-            data.restaurant_avatar !== undefined
-              ? data.restaurant_avatar
-              : existingOrder?.restaurant_avatar || null,
-          driver_avatar:
-            data.driver_avatar !== undefined
-              ? data.driver_avatar
-              : existingOrder?.driver_avatar || null,
-          restaurantAddress:
-            data.restaurantAddress !== undefined
-              ? convertAddress(data.restaurantAddress)
-              : existingOrder?.restaurantAddress || convertAddress(null),
-          customerAddress:
-            data.customerAddress !== undefined
-              ? convertAddress(data.customerAddress)
-              : existingOrder?.customerAddress || convertAddress(null),
-
-          // CRITICAL FIX: Only update driverDetails if it has a truthy value
-          // NEVER overwrite existing driverDetails with null/undefined - preserve existing data
-          driverDetails:
-            data.driverDetails && Object.keys(data.driverDetails).length > 0
-              ? data.driverDetails
-              : existingOrder?.driverDetails || null,
-
-          // CRITICAL FIX: Compute full addresses from address objects when available
-          restaurantFullAddress:
-            data.restaurantFullAddress !== undefined
-              ? data.restaurantFullAddress
-              : data.restaurantAddress
-              ? `${data.restaurantAddress.street}, ${data.restaurantAddress.city}, ${data.restaurantAddress.nationality}`
-              : existingOrder?.restaurantFullAddress || "",
-          customerFullAddress:
-            data.customerFullAddress !== undefined
-              ? data.customerFullAddress
-              : data.customerAddress
-              ? `${data.customerAddress.street}, ${data.customerAddress.city}, ${data.customerAddress.nationality}`
-              : existingOrder?.customerFullAddress || "",
-
-          // Preserve existing order details or use defaults for new orders
-          customer: existingOrder?.customer || {
+          customer: {
             avatar: null,
             favorite_items: null,
             first_name: "",
             id: data.customer_id,
             last_name: "",
           },
-          customer_location: existingOrder?.customer_location || "",
-          // CRITICAL FIX: Check for customer_note in incoming data first
-          customer_note: data.customer_note !== undefined 
-              ? data.customer_note 
-              : existingOrder?.customer_note || "",
-          delivery_time: existingOrder?.delivery_time || "0",
-          // CRITICAL FIX: Update distance if incoming has it, otherwise preserve existing
-          distance:
-            (data as any).distance !== undefined
-              ? String((data as any).distance)
-              : existingOrder?.distance || "0",
+          customerAddress: convertAddress(null),
+          restaurantAddress: convertAddress(null),
+          customer_location: "",
+          customer_note: "",
+          delivery_time: "0",
+          distance: "0",
+          driver: null,
+          driver_id: null,
+          order_items: [],
+          order_time: "0",
+          payment_method: "",
+          payment_status: "PENDING",
+          restaurant: {
+            id: data.restaurant_id,
+            avatar: null,
+          },
+          restaurant_location: "",
+          restaurant_note: "",
+          total_amount: "0",
+          service_fee: 0,
+          delivery_fee: 0,
+          sub_total: 0,
+          discount_amount: 0,
+          // Add missing properties
+          restaurant_avatar: null,
+          driver_avatar: null,
+          driverDetails: null,
+          restaurantFullAddress: "",
+          customerFullAddress: "",
+        };
+
+        // Create a merged base by combining existing order with base order
+        // This ensures all required fields exist
+        const mergedBase = existingOrder ? { ...baseOrder, ...existingOrder } : baseOrder;
+
+        // Now apply specific updates from the incoming data
+        const mergedData: OrderTracking = {
+          ...mergedBase,
+          
+          // Always update these core tracking fields
+          status: orderStatus,
+          tracking_info: trackingInfo,
+          updated_at: data.updated_at,
+
+          // Only update these fields if they're explicitly provided
+          driver_id: data.driver_id !== undefined ? data.driver_id : mergedBase.driver_id,
+          restaurant_avatar: data.restaurant_avatar || mergedBase.restaurant_avatar,
+          driver_avatar: data.driver_avatar || mergedBase.driver_avatar,
+          
+          // Handle address data
+          restaurantAddress: data.restaurantAddress 
+              ? convertAddress(data.restaurantAddress) 
+              : mergedBase.restaurantAddress,
+              
+          customerAddress: data.customerAddress 
+              ? convertAddress(data.customerAddress) 
+              : mergedBase.customerAddress,
+
+          // CRITICAL: Never overwrite driverDetails with null/undefined
+          driverDetails: data.driverDetails && Object.keys(data.driverDetails).length > 0
+              ? data.driverDetails
+              : mergedBase.driverDetails,
+
+          // Handle full addresses
+          restaurantFullAddress: data.restaurantFullAddress !== undefined
+              ? data.restaurantFullAddress
+              : data.restaurantAddress
+                ? `${data.restaurantAddress.street}, ${data.restaurantAddress.city}, ${data.restaurantAddress.nationality}`
+                : mergedBase.restaurantFullAddress,
+                
+          customerFullAddress: data.customerFullAddress !== undefined
+              ? data.customerFullAddress
+              : data.customerAddress
+                ? `${data.customerAddress.street}, ${data.customerAddress.city}, ${data.customerAddress.nationality}`
+                : mergedBase.customerFullAddress,
+
+          // Handle driver data
           driver: data.driver_id
-            ? {
-                id: data.driver_id,
-                avatar: data.driver_avatar,
-              }
-            : existingOrder?.driver || null,
-          // SMART MERGE: Use the intelligent order_items merge function
+              ? {
+                  id: data.driver_id,
+                  avatar: data.driver_avatar,
+                }
+              : mergedBase.driver,
+              
+          // CRITICAL: Use the intelligent order_items merge function
           order_items: mergeOrderItems(
             data.order_items,
-            existingOrder?.order_items
+            mergedBase.order_items
           ),
-          order_time: existingOrder?.order_time || "0",
-          payment_method: existingOrder?.payment_method || "",
-          payment_status: existingOrder?.payment_status || "PENDING",
-          restaurant: existingOrder?.restaurant || {
-            id: data.restaurant_id,
-            avatar: data.restaurant_avatar,
-          },
-          restaurant_location: existingOrder?.restaurant_location || "",
-          // CRITICAL FIX: Check for restaurant_note in incoming data first
+          
+          // Handle financial data
+          sub_total: data.sub_total !== undefined
+              ? typeof data.sub_total === 'string' ? parseFloat(data.sub_total) : data.sub_total
+              : mergedBase.sub_total,
+              
+          discount_amount: data.discount_amount !== undefined
+              ? typeof data.discount_amount === 'string' ? parseFloat(data.discount_amount) : data.discount_amount
+              : mergedBase.discount_amount,
+              
+          service_fee: data.service_fee !== undefined
+              ? typeof data.service_fee === 'string' ? parseFloat(data.service_fee) : data.service_fee
+              : mergedBase.service_fee,
+              
+          delivery_fee: data.delivery_fee !== undefined
+              ? typeof data.delivery_fee === 'string' ? parseFloat(data.delivery_fee) : data.delivery_fee
+              : mergedBase.delivery_fee,
+          
+          // Handle notes
+          customer_note: data.customer_note !== undefined 
+              ? data.customer_note 
+              : mergedBase.customer_note,
+              
           restaurant_note: data.restaurant_note !== undefined
               ? data.restaurant_note
-              : existingOrder?.restaurant_note || "",
-          // CRITICAL FIX: Update total_amount if incoming has it, otherwise preserve existing
-          total_amount:
-            (data as any).total_amount !== undefined
-              ? String((data as any).total_amount)
-              : existingOrder?.total_amount || "0",
+              : mergedBase.restaurant_note,
+          
+          // Handle total amount
+          total_amount: data.total_amount !== undefined
+              ? String(data.total_amount)
+              : mergedBase.total_amount,
+          
+          // Handle distance
+          distance: data.distance !== undefined
+              ? String(data.distance)
+              : mergedBase.distance,
         };
 
         console.log("🚀 FINAL MERGED DATA:", {
           orderId: mergedData.orderId,
           status: mergedData.status,
           tracking_info: mergedData.tracking_info,
+          // Log all critical fields to verify preservation
           driverDetailsPreserved: !!mergedData.driverDetails,
           wasExistingOrder: !!existingOrder,
-          orderItemsCount: mergedData.order_items.length,
+          // Financial data
           totalAmount: mergedData.total_amount,
+          subTotal: mergedData.sub_total,
+          discountAmount: mergedData.discount_amount,
+          serviceFee: mergedData.service_fee,
+          deliveryFee: mergedData.delivery_fee,
+          // Address data
           distance: mergedData.distance,
           customerFullAddress: mergedData.customerFullAddress,
           restaurantFullAddress: mergedData.restaurantFullAddress,
-          // Add customer_note to the log for debugging
+          // Notes
           customerNote: mergedData.customer_note,
-          hasMenuItemVariantData: mergedData.order_items.some(
+          restaurantNote: mergedData.restaurant_note,
+          // Critical data preservation
+          hasDriverDetails: !!mergedData.driverDetails,
+          hasMenuItemVariantData: mergedData.order_items?.some(
             (item) => !!item.menu_item_variant
-          ),
-          // Add avatar preservation logging
-          orderItemsWithAvatars: mergedData.order_items.filter(
+          ) || false,
+          // Avatar preservation
+          orderItemsCount: mergedData.order_items?.length || 0,
+          orderItemsWithAvatars: mergedData.order_items?.filter(
             (item) => item.avatar && item.avatar.url
-          ).length,
-          orderItemsWithMenuItemAvatars: mergedData.order_items.filter(
+          ).length || 0,
+          orderItemsWithMenuItemAvatars: mergedData.order_items?.filter(
             (item) => item.menu_item && item.menu_item.avatar && item.menu_item.avatar.url
-          ).length,
+          ).length || 0,
+          // Menu item variant data
           menuItemVariantItems: mergedData.order_items
-            .filter((item) => !!item.menu_item_variant)
+            ?.filter((item) => !!item.menu_item_variant)
             .map((item) => ({
               name: item.name,
               variant: item.menu_item_variant?.variant,
               price: item.menu_item_variant?.price,
-            })),
-          orderItemsDetails: mergedData.order_items.map((item) => ({
-            name: item.name,
-            quantity: item.quantity,
-            hasMenuItemVariant: !!item.menu_item_variant,
-            hasAvatar: !!(item.avatar && item.avatar.url),
-            hasMenuItemAvatar: !!(item.menu_item && item.menu_item.avatar && item.menu_item.avatar.url)
-          })),
+            })) || [],
+          // Data source
+          dataFromExisting: existingOrder ? Object.keys(existingOrder) : [],
+          dataFromIncoming: Object.keys(data),
         });
 
         dispatch(updateAndSaveOrderTracking(mergedData));

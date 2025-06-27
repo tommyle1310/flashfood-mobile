@@ -1,4 +1,4 @@
-import React, { useMemo } from "react";
+import React, { useMemo, useState } from "react";
 import { View, TouchableOpacity, Image, Text, StyleSheet } from "react-native";
 import FFText from "@/src/components/FFText";
 import FFProgressStage from "@/src/components/FFProgressStage";
@@ -29,6 +29,7 @@ import {
   spacing,
   typography,
 } from "@/src/theme";
+import FFJBRowItem from "../../FFJBRowItems";
 
 interface DetailedOrderProps {
   type: "ACTIVE" | "COMPLETED" | "CANCELLED";
@@ -79,16 +80,22 @@ export const DetailedOrder: React.FC<DetailedOrderProps> = ({
     if (type === "ACTIVE") {
       // For active orders, prioritize activeOrderDetails (which is now the computed activeOrder from OrderTabContent)
       selectedOrder = activeOrderDetails || firstActiveOrder;
+      console.log('check active order', selectedOrder)
     } else {
       // For completed/cancelled orders, use detailedOrder
       selectedOrder = detailedOrder;
     }
-
-  
+    
 
     return selectedOrder;
   }, [type, activeOrderDetails, firstActiveOrder, detailedOrder]);
-
+  const [modalReceiptDetails, setModalReceiptDetails] = useState<{
+    status: "SUCCESS" | "ERROR" | "HIDDEN" | "INFO" | "YESNO";
+    sub_total: number;
+    service_fee: number;
+    delivery_fee: number;
+    total_amount: number;
+  }>({ status: "HIDDEN", sub_total: 0, service_fee: 0, delivery_fee: 0, total_amount: 0 });
   // CLEAN HELPER FUNCTIONS: Much simpler and easier to understand
   const getOrderItems = () => {
     const items = currentOrder?.order_items ?? [];
@@ -243,8 +250,16 @@ export const DetailedOrder: React.FC<DetailedOrderProps> = ({
         >
           <View className="flex-row justify-between items-center">
             <FFText fontSize="lg">Order summary</FFText>
-            <TouchableOpacity onPress={() => {}}>
-              <FFText style={{ color: "#7dbf72" }} fontSize="sm">
+            <TouchableOpacity onPress={() => {
+              setModalReceiptDetails({
+                status: "INFO",
+                sub_total: Number(currentOrder?.sub_total ?? 0),
+                service_fee: Number(currentOrder?.service_fee ?? 0),
+                delivery_fee: Number(currentOrder?.delivery_fee ?? 0),
+                total_amount: Number(currentOrder?.total_amount ?? 0),
+              })
+            }}>
+              <FFText style={{ color: colors.primary }} fontSize="sm">
                 View Receipt
               </FFText>
             </TouchableOpacity>
@@ -440,8 +455,16 @@ export const DetailedOrder: React.FC<DetailedOrderProps> = ({
         >
           <View className="flex-row justify-between items-center">
             <FFText fontSize="lg">Order summary</FFText>
-            <TouchableOpacity onPress={() => {}}>
-              <FFText style={{ color: "#7dbf72" }} fontSize="sm">
+            <TouchableOpacity onPress={() => {
+              setModalReceiptDetails({
+                status: "INFO",
+                sub_total: Number(currentOrder?.sub_total ?? 0),
+                service_fee: Number(currentOrder?.service_fee ?? 0),
+                delivery_fee: Number(currentOrder?.delivery_fee ?? 0),
+                total_amount: Number(currentOrder?.total_amount ?? 0),
+              })
+            }}>
+              <FFText style={{ color: colors.primary }} fontSize="sm">
                 View Receipt
               </FFText>
             </TouchableOpacity>
@@ -521,6 +544,7 @@ export const DetailedOrder: React.FC<DetailedOrderProps> = ({
       </>
     );
   };
+  console.log('cehck current order', currentOrder?.sub_total)
 
   return (
     <>
@@ -723,6 +747,17 @@ export const DetailedOrder: React.FC<DetailedOrderProps> = ({
             </FFButton>
           </>
         )}
+      </FFModal>
+      <FFModal 
+      visible={modalReceiptDetails.status !== 'HIDDEN'}
+      onClose={() => setModalReceiptDetails({ status: "HIDDEN", sub_total: 0, service_fee: 0, delivery_fee: 0, total_amount: 0 })}
+      >
+        <FFText style={{ textAlign: "center" }}>Receipt</FFText>
+        <FFJBRowItem leftItem={'Sub Total'} rightItem={`${modalReceiptDetails.sub_total.toFixed(2)}`} />
+        <FFJBRowItem leftItem={'Service Fee'} rightItem={`${modalReceiptDetails.service_fee.toFixed(2)}`} />
+        <FFJBRowItem leftItem={'Delivery Fee'} rightItem={`${modalReceiptDetails.delivery_fee.toFixed(2)}`} />
+        <FFSeperator />
+        <FFJBRowItem leftItem={'Total'} rightItem={`${modalReceiptDetails.total_amount}`} />
       </FFModal>
     </>
   );

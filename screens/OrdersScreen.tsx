@@ -199,7 +199,6 @@ const OrdersScreen: React.FC = () => {
     ],
     []
   );
-  console.log("realtimeOrders", realtimeOrders?.[0]?.order_items);
 
   // Clear all order-related data from AsyncStorage
   const clearAllOrderData = useCallback(async () => {
@@ -285,11 +284,6 @@ const OrdersScreen: React.FC = () => {
       );
       setOrders(mergedOrders || []);
 
-      console.log("📊 Orders merged:", {
-        apiCount: apiOrders.length,
-        realtimeCount: realtimeOrders.length,
-        mergedCount: mergedOrders.length,
-      });
     } catch (error) {
       console.error("Error fetching orders:", error);
       // CRITICAL FIX: If API fails, still use persisted data
@@ -300,7 +294,6 @@ const OrdersScreen: React.FC = () => {
       setLoading(false);
     }
   }, [id, realtimeOrders]);
-
   // REMOVED: Duplicate loading - RootLayout already loads persisted data
   // The issue was that OrdersScreen was loading persisted data AFTER socket events
   // Now RootLayout loads it first, then socket connects, then OrdersScreen uses the data
@@ -332,9 +325,7 @@ const OrdersScreen: React.FC = () => {
     } else if (realtimeOrders.length === 0 && orders.length > 0) {
       // CRITICAL FIX: Don't clear orders when realtime becomes empty
       // This prevents the race condition where AsyncStorage load clears realtime orders
-      console.log(
-        "🚫 Preventing order clearing - realtime orders became empty but local orders exist"
-      );
+  
     }
   }, [realtimeOrders]);
 
@@ -346,10 +337,7 @@ const OrdersScreen: React.FC = () => {
     // Filter orders with additional validation
     const validOrders = orders.filter(isValidOrder);
 
-    console.log("Filtering orders:", {
-      total: validOrders.length,
-      statuses: validOrders.map((o) => o.status || o.tracking_info),
-    });
+ 
 
     const active = validOrders.filter((order) => {
       const orderStatus = order.status || order.tracking_info;
@@ -428,7 +416,7 @@ const OrdersScreen: React.FC = () => {
       orderStatusStages,
     ]
   );
-
+  console.log('check rt orders', realtimeOrders?.[0]?.service_fee)
   return (
     <FFSafeAreaView>
       <FFTab

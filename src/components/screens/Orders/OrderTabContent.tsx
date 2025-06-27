@@ -149,24 +149,10 @@ export const OrderTabContent: React.FC<OrderTabContentProps> = ({
       ),
     };
 
-    console.log("🔄 ACTIVE ORDER COMPUTATION:", {
-      type,
-      realtimeOrdersCount: realtimeOrders.length,
-      realtimeOrderId: realtimeOrder?.orderId,
-      realtimeOrderItems: realtimeOrder?.order_items?.length || 0,
-      realtimeOrderItemsDetails: realtimeOrder?.order_items?.map((item) => ({
-        name: item.name,
-        hasMenuItemVariant: !!item.menu_item_variant,
-      })),
-      fullOrderDetailsFound: !!fullOrderDetails,
-      mergedOrderItemsCount: mergedOrder.order_items.length,
-      mergedOrderTotalAmount: mergedOrder.total_amount,
-      mergedOrderDistance: mergedOrder.distance,
-    });
 
     return mergedOrder;
   }, [realtimeOrders, orders, type]);
-
+  console.log('check detailed order', detailedOrder?.sub_total)
   const handleTipToDriver = async () => {
     if (!setIsLoading) return;
     setIsLoading(true);

@@ -16,6 +16,8 @@ export interface OrderTracking extends OrderTrackingBase {
   };
   restaurantFullAddress?: string;
   customerFullAddress?: string;
+  sub_total?: number;
+  discount_amount?: number;
   customerAddress: {
     id: string;
     street: string;
@@ -73,6 +75,8 @@ export interface OrderTracking extends OrderTrackingBase {
   };
   restaurant_id: string;
   restaurant_location: string;
+  service_fee?: number;
+  delivery_fee?: number;
   restaurant_note: string;
   status: Enum_OrderStatus; // Adjust based on actual statuses
   total_amount: string; // You may want to convert this to number or decimal

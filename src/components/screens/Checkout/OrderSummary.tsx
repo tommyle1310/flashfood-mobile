@@ -130,14 +130,14 @@ const OrderSummary = ({
           </FFText>
           <FFText fontWeight="500">${subTotal.toFixed(2)}</FFText>
         </View>
-        <View className="flex-row justify-between items-center">
+        {/* <View className="flex-row justify-between items-center">
           <FFText style={{ color: "#aaa" }} fontWeight="400">
             Promotion
           </FFText>
           <FFText fontWeight="500">
             -${promotionSubtractValue.toFixed(2)}
           </FFText>
-        </View>
+        </View> */}
         <View className="flex-row justify-between items-center">
           <FFText style={{ color: "#aaa" }} fontWeight="400">
             Voucher Discount

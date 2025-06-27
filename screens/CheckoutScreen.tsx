@@ -173,7 +173,7 @@ const CheckoutScreen = () => {
       setIsLoading(false);
       return;
     }
-    console.log("cehck orderitem", orderItem);
+    console.log("cehck subttoal", subTotal);
 
     const requestData = {
       ...orderItem,
@@ -187,6 +187,7 @@ const CheckoutScreen = () => {
       )?.id,
       total_amount: totalAmountActual,
       service_fee: serviceFee,
+      sub_total: subTotal,
       delivery_fee: deliveryFee,
       order_items: orderItem.order_items.map((item) => ({
         item_id: item?.item?.id,
@@ -204,6 +205,8 @@ const CheckoutScreen = () => {
       promotion_applied: selectedPromotion,
     };
 
+    console.log('check request data', requestData)
+
     try {
       const response = await axiosInstance.post(`/orders`, requestData, {
         validateStatus: () => true,
@@ -220,7 +223,11 @@ const CheckoutScreen = () => {
         dispatch(removeCartItemFromAsyncStorage(data.order_items));
         setIsShowModalStatusCheckout(true);
         setModalContentType("SUCCESS");
-        navigation.navigate("BottomTabs", { screenIndex: 1 });
+        setTimeout(() => {
+        setIsShowModalStatusCheckout(false);
+          
+          navigation.navigate("BottomTabs", { screenIndex: 1 });
+        }, 5000);
       } else if (EC === -8) {
         setIsShowModalStatusCheckout(true);
         setModalContentType("INSUFFICIENT_BALANCE");
