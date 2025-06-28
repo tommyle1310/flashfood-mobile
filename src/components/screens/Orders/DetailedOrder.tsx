@@ -30,6 +30,8 @@ import {
   typography,
 } from "@/src/theme";
 import FFJBRowItem from "../../FFJBRowItems";
+import { useDriverLocationSocket } from "@/src/hooks/useDriverLocationSocket";
+import OrderTrackingMap from "../../Maps/OrderTrackingMap";
 
 interface DetailedOrderProps {
   type: "ACTIVE" | "COMPLETED" | "CANCELLED";
@@ -89,13 +91,35 @@ export const DetailedOrder: React.FC<DetailedOrderProps> = ({
 
     return selectedOrder;
   }, [type, activeOrderDetails, firstActiveOrder, detailedOrder]);
+
+  // Driver location tracking hook - only connect when there's a driver ID
+  const driverId = currentOrder?.driver_id || null;
+  console.log('check driver id', driverId)
+  const { eta, isConnected, driverLocation } = useDriverLocationSocket(driverId);
+  console.log('check eta', eta, driverLocation)
+
+  // Extract locations for map with defensive checks
+  const restaurantLocation = currentOrder?.restaurantAddress?.location && 
+    typeof currentOrder.restaurantAddress.location.lat === 'number' &&
+    typeof currentOrder.restaurantAddress.location.lon === 'number' ? {
+    lat: currentOrder.restaurantAddress.location.lat,
+    lon: currentOrder.restaurantAddress.location.lon,
+  } : null;
+
+  const customerLocation = currentOrder?.customerAddress?.location && 
+    typeof currentOrder.customerAddress.location.lat === 'number' &&
+    typeof currentOrder.customerAddress.location.lon === 'number' ? {
+    lat: currentOrder.customerAddress.location.lat,
+    lon: currentOrder.customerAddress.location.lon,
+  } : null;
   const [modalReceiptDetails, setModalReceiptDetails] = useState<{
     status: "SUCCESS" | "ERROR" | "HIDDEN" | "INFO" | "YESNO";
     sub_total: number;
     service_fee: number;
     delivery_fee: number;
     total_amount: number;
-  }>({ status: "HIDDEN", sub_total: 0, service_fee: 0, delivery_fee: 0, total_amount: 0 });
+    discount_amount: number;
+  }>({ status: "HIDDEN", sub_total: 0, service_fee: 0, delivery_fee: 0, total_amount: 0, discount_amount: 0 });
   // CLEAN HELPER FUNCTIONS: Much simpler and easier to understand
   const getOrderItems = () => {
     const items = currentOrder?.order_items ?? [];
@@ -257,6 +281,7 @@ export const DetailedOrder: React.FC<DetailedOrderProps> = ({
                 service_fee: Number(currentOrder?.service_fee ?? 0),
                 delivery_fee: Number(currentOrder?.delivery_fee ?? 0),
                 total_amount: Number(currentOrder?.total_amount ?? 0),
+                discount_amount: Number(currentOrder?.discount_amount ?? 0),
               })
             }}>
               <FFText style={{ color: colors.primary }} fontSize="sm">
@@ -462,6 +487,7 @@ export const DetailedOrder: React.FC<DetailedOrderProps> = ({
                 service_fee: Number(currentOrder?.service_fee ?? 0),
                 delivery_fee: Number(currentOrder?.delivery_fee ?? 0),
                 total_amount: Number(currentOrder?.total_amount ?? 0),
+                discount_amount: Number(currentOrder?.discount_amount ?? 0),
               })
             }}>
               <FFText style={{ color: colors.primary }} fontSize="sm">
@@ -565,9 +591,10 @@ export const DetailedOrder: React.FC<DetailedOrderProps> = ({
           <>
             <View style={{ paddingHorizontal: spacing.lg }} className="w-full">
               <FFProgressStage
-                stageText="Arriving at 10:15"
+                stageText={eta ? `Arriving in ${eta} minutes` : ''}
                 completedSegments={currentOrderStage}
                 totalSegments={orderStatusStages?.length ?? 0}
+                eta={eta}
               />
             </View>
             <View
@@ -602,6 +629,51 @@ export const DetailedOrder: React.FC<DetailedOrderProps> = ({
                 style={{ width: "100%", height: 200, resizeMode: "cover" }}
               />
             </View>
+            
+            {/* Real-time Order Tracking Map */}
+            {(restaurantLocation || customerLocation || driverLocation ) && currentOrder?.status === Enum_OrderStatus.EN_ROUTE && (
+              <FFView
+                style={{
+                  width: "100%",
+                  padding: spacing.md,
+                  borderRadius: 12,
+                  elevation: 3,
+                  marginVertical: spacing.sm,
+                }}
+              >
+                <View className="flex-row justify-between items-center mb-2">
+                  <FFText fontSize="lg">
+                    Live Tracking
+                  </FFText>
+                  {currentOrder?.updated_at && (
+                    <View style={{
+                      backgroundColor: colors.white,
+                      paddingHorizontal: spacing.sm,
+                      paddingVertical: spacing.xs,
+                      borderRadius: 8,
+                      elevation: 1,
+                      borderWidth: 1,
+                      borderColor: '#e0e0e0'
+                    }}>
+                      <FFText fontSize="sm" style={{ color: colors.textSecondary }}>
+                        {formatTimestampToDate2(currentOrder.updated_at)}
+                      </FFText>
+                    </View>
+                  )}
+                </View>
+            
+                  <OrderTrackingMap
+                  restaurantLocation={restaurantLocation}
+                  customerLocation={customerLocation}
+                  driverLocation={driverLocation}
+                  style={{
+                    borderRadius: 8,
+                    elevation: 2,
+                  }}
+                />
+              </FFView>
+            )}
+
             {currentOrder.driver_id && (
               <FFView
                 style={{
@@ -749,15 +821,97 @@ export const DetailedOrder: React.FC<DetailedOrderProps> = ({
         )}
       </FFModal>
       <FFModal 
-      visible={modalReceiptDetails.status !== 'HIDDEN'}
-      onClose={() => setModalReceiptDetails({ status: "HIDDEN", sub_total: 0, service_fee: 0, delivery_fee: 0, total_amount: 0 })}
+        visible={modalReceiptDetails.status !== 'HIDDEN'}
+        onClose={() => setModalReceiptDetails({ status: "HIDDEN", sub_total: 0, service_fee: 0, delivery_fee: 0, total_amount: 0, discount_amount: 0 })}
       >
-        <FFText style={{ textAlign: "center" }}>Receipt</FFText>
-        <FFJBRowItem leftItem={'Sub Total'} rightItem={`${modalReceiptDetails.sub_total.toFixed(2)}`} />
-        <FFJBRowItem leftItem={'Service Fee'} rightItem={`${modalReceiptDetails.service_fee.toFixed(2)}`} />
-        <FFJBRowItem leftItem={'Delivery Fee'} rightItem={`${modalReceiptDetails.delivery_fee.toFixed(2)}`} />
-        <FFSeperator />
-        <FFJBRowItem leftItem={'Total'} rightItem={`${modalReceiptDetails.total_amount}`} />
+        <View style={styles.receiptContainer}>
+          {/* Receipt Header */}
+          <View style={styles.receiptHeader}>
+            <FFText style={styles.receiptTitle}> ORDER RECEIPT</FFText>
+            <FFText style={styles.receiptSubtitle}>{currentOrder?.restaurant?.restaurant_name}'s Delivery</FFText>
+                         <FFSeperator />
+          </View>
+
+          {/* Order Information */}
+          <View style={styles.receiptSection}>
+            <View style={styles.receiptRow}>
+              <FFText style={styles.receiptLabel}>Order ID:</FFText>
+              <FFText style={styles.receiptValue}>#{currentOrder?.id?.slice(-8) || 'N/A'}</FFText>
+            </View>
+                         <View style={styles.receiptRow}>
+               <FFText style={styles.receiptLabel}>Date & Time:</FFText>
+               <FFText style={styles.receiptValue}>
+                 {currentOrder?.updated_at 
+                   ? formatTimestampToDate2(Number(currentOrder.updated_at))
+                   : 'N/A'
+                 }
+               </FFText>
+             </View>
+             <View style={styles.receiptRow}>
+               <FFText style={styles.receiptLabel}>Status:</FFText>
+               <FFText style={styles.receiptValueGreen}>
+                 {currentOrder?.status || 'N/A'}
+               </FFText>
+             </View>
+          </View>
+
+                     <FFSeperator />
+
+           {/* Restaurant Information */}
+           <View style={styles.receiptSection}>
+             <FFText style={styles.receiptSectionTitle}>Restaurant</FFText>
+             <FFText style={styles.receiptRestaurantName}>
+               {currentOrder?.restaurant?.restaurant_name || 'N/A'}
+             </FFText>
+             <FFText style={styles.receiptAddress}>
+               {getRestaurantAddress()}
+             </FFText>
+           </View>
+
+           <FFSeperator />
+
+           {/* Financial Breakdown */}
+           <View style={styles.receiptSection}>
+             <FFText style={styles.receiptSectionTitle}>Order Summary</FFText>
+             
+             <View style={styles.receiptRow}>
+               <FFText style={styles.receiptLabel}>Subtotal</FFText>
+               <FFText style={styles.receiptValue}>${modalReceiptDetails.sub_total.toFixed(2)}</FFText>
+             </View>
+             
+             <View style={styles.receiptRow}>
+               <FFText style={styles.receiptLabel}>Service Fee</FFText>
+               <FFText style={styles.receiptValue}>${modalReceiptDetails.service_fee.toFixed(2)}</FFText>
+             </View>
+             
+             <View style={styles.receiptRow}>
+               <FFText style={styles.receiptLabel}>Delivery Fee</FFText>
+               <FFText style={styles.receiptValue}>${modalReceiptDetails.delivery_fee.toFixed(2)}</FFText>
+             </View>
+             
+             {modalReceiptDetails.discount_amount > 0 && (
+               <View style={styles.receiptRow}>
+                 <FFText style={styles.receiptLabelGreen}>Discount</FFText>
+                 <FFText style={styles.receiptValueGreen}>-${modalReceiptDetails.discount_amount.toFixed(2)}</FFText>
+               </View>
+             )}
+           </View>
+
+
+          {/* Total */}
+          <View style={styles.receiptTotalSection}>
+            <View style={styles.receiptTotalRow}>
+              <FFText style={styles.receiptTotalLabel}>TOTAL AMOUNT</FFText>
+              <FFText style={styles.receiptTotalValue}>${modalReceiptDetails.total_amount.toFixed(2)}</FFText>
+            </View>
+          </View>
+
+          {/* Footer */}
+          <View style={styles.receiptFooter}>
+            <FFText style={styles.receiptFooterText}>Thank you for your order!</FFText>
+            <FFText style={styles.receiptFooterSubtext}>Visit us again soon</FFText>
+          </View>
+        </View>
       </FFModal>
     </>
   );
@@ -809,5 +963,102 @@ const styles = StyleSheet.create({
     borderRadius: borderRadius.sm,
     borderWidth: 1,
     borderColor: "#FED7D7",
+  },
+  receiptContainer: {
+    padding: spacing.md,
+  },
+  receiptHeader: {
+    alignItems: "center",
+  },
+  receiptTitle: {
+    fontSize: typography.fontSize.lg,
+    fontFamily: typography.fontFamily.bold,
+    color: colors.text,
+    marginBottom: spacing.sm,
+  },
+  receiptSubtitle: {
+    fontSize: typography.fontSize.sm,
+    fontFamily: typography.fontFamily.regular,
+    color: colors.textSecondary,
+  },
+  receiptSection: {
+    marginBottom: spacing.md,
+  },
+  receiptSectionTitle: {
+    fontSize: typography.fontSize.sm,
+    fontFamily: typography.fontFamily.bold,
+    color: colors.text,
+    marginBottom: spacing.sm,
+  },
+  receiptRestaurantName: {
+    fontSize: typography.fontSize.sm,
+    fontFamily: typography.fontFamily.bold,
+    color: colors.text,
+  },
+  receiptAddress: {
+    fontSize: typography.fontSize.sm,
+    fontFamily: typography.fontFamily.regular,
+    color: colors.textSecondary,
+  },
+  receiptRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    marginBottom: spacing.sm,
+  },
+  receiptLabel: {
+    fontSize: typography.fontSize.sm,
+    fontFamily: typography.fontFamily.regular,
+    color: colors.textSecondary,
+  },
+     receiptValue: {
+     fontSize: typography.fontSize.sm,
+     fontFamily: typography.fontFamily.regular,
+     color: colors.text,
+   },
+   receiptValueGreen: {
+     fontSize: typography.fontSize.sm,
+     fontFamily: typography.fontFamily.regular,
+     color: '#16a34a',
+     fontWeight: '600',
+   },
+   receiptLabelGreen: {
+     fontSize: typography.fontSize.sm,
+     fontFamily: typography.fontFamily.regular,
+     color: '#16a34a',
+   },
+  receiptTotalSection: {
+    marginTop: spacing.md,
+    borderTopWidth: 2,
+    borderTopColor: "#000",
+  },
+  receiptTotalRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    paddingTop: spacing.sm,
+  },
+  receiptTotalLabel: {
+    fontSize: typography.fontSize.sm,
+    fontFamily: typography.fontFamily.bold,
+    color: colors.textSecondary,
+  },
+  receiptTotalValue: {
+    fontSize: typography.fontSize.sm,
+    fontFamily: typography.fontFamily.bold,
+    color: colors.text,
+  },
+  receiptFooter: {
+    alignItems: "center",
+    marginTop: spacing.md,
+  },
+  receiptFooterText: {
+    fontSize: typography.fontSize.sm,
+    fontFamily: typography.fontFamily.bold,
+    color: colors.text,
+    marginBottom: spacing.xs,
+  },
+  receiptFooterSubtext: {
+    fontSize: typography.fontSize.sm,
+    fontFamily: typography.fontFamily.regular,
+    color: colors.textSecondary,
   },
 });

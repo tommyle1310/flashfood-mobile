@@ -35,7 +35,7 @@ const createMockRestaurants = () => Array(10).fill(0).map((_, index) => ({
 // Create mock promotions for fallback
 const createMockPromotions = () => Array(2).fill(0).map((_, index) => ({
   id: `mock-promo-${index}`,
-  title: `Promotion ${index + 1}`,
+  name: `Promotion ${index + 1}`,
   description: `This is a mock promotion ${index + 1}`,
   code: `CODE${index}`,
   discount_type: index % 2 === 0 ? "PERCENTAGE" : "FIXED",
@@ -58,33 +58,34 @@ export const useHomeScreen = () => {
   
   const [filteredRestaurants, setFilteredRestaurants] = useState<Restaurant[] | null>(null);
   const [selectedFoodCategories, setSelectedFoodCategories] = useState<string[] | null>(null);
-  const [listFoodCategories, setListFoodCategories] = useState<FoodCategory[] | null>(null);
-  const [listRestaurants, setListRestaurants] = useState<Restaurant[] | null>(null);
-  const [availablePromotionWithRestaurants, setAvailablePromotionWithRestaurants] = useState<AvailablePromotionWithRestaurants[] | null>(null);
-  const [originalPromotionWithRestaurants, setOriginalPromotionWithRestaurants] = useState<AvailablePromotionWithRestaurants[] | null>(null);
+  const [listFoodCategories, setListFoodCategories] = useState<FoodCategory[]>([]);
+  const [listRestaurants, setListRestaurants] = useState<Restaurant[]>([]);
+  const [availablePromotionWithRestaurants, setAvailablePromotionWithRestaurants] = useState<AvailablePromotionWithRestaurants[]>([]);
+  const [originalPromotionWithRestaurants, setOriginalPromotionWithRestaurants] = useState<AvailablePromotionWithRestaurants[]>([]);
   const [favoriteRestaurants, setFavoriteRestaurants] = useState<FavoriteRestaurant[]>([]);
   const [loading, setLoading] = useState({
-    foodCategories: true, // Start with loading true
-    restaurants: true,    // Start with loading true
-    promotions: true,     // Start with loading true
+    foodCategories: false, // Start with loading false for faster cached responses
+    restaurants: false,    // Start with loading false for faster cached responses
+    promotions: false,     // Start with loading false for faster cached responses
     favoriteRestaurants: false,
   });
 
   useEffect(() => {
-    // Force loading to be false after a maximum time (3 seconds)
+    // Only use timeout for emergency fallback, but clear it when APIs complete
     const forceLoadingTimeout = setTimeout(() => {
+      console.log("Emergency timeout: forcing loading states to false");
       setLoading({
         foodCategories: false,
         restaurants: false,
         promotions: false,
         favoriteRestaurants: false
       });
-    }, 3000);
+    }, 500);
     
     // Add timeout for API calls to prevent infinite loading
     const fetchWithTimeout = async (url: string): Promise<any> => {
       const timeoutPromise = new Promise<never>((_, reject) => 
-        setTimeout(() => reject(new Error('Request timeout')),30000)
+        setTimeout(() => reject(new Error('Request timeout')), 5000)
       );
       
       try {
@@ -101,6 +102,14 @@ export const useHomeScreen = () => {
     
     const fetchData = async () => {
       try {
+        // Set loading states to true only when we start making the actual requests
+        setLoading(prev => ({ 
+          ...prev, 
+          foodCategories: true, 
+          restaurants: true, 
+          promotions: true 
+        }));
+
         // Use Promise.all with our timeout wrapper
         const [
           foodCategoriesResponse,
@@ -112,13 +121,13 @@ export const useHomeScreen = () => {
           fetchWithTimeout(`/promotions/valid`),
         ]);
 
+        // Process all responses and update loading states immediately
         if (foodCategoriesResponse.data.EC === 0) {
           setListFoodCategories(foodCategoriesResponse.data.data);
         } else {
           // Only use fallback data when there's an error
           setListFoodCategories([{ id: "cat1", name: "Category 1" }]);
         }
-        setLoading((prev) => ({ ...prev, foodCategories: false }));
 
         if (restaurantsResponse.data.EC === 0) {
           const mappedRestaurants = restaurantsResponse.data.data.map(
@@ -145,7 +154,6 @@ export const useHomeScreen = () => {
           // Only use fallback data when there's an error
           setListRestaurants(createMockRestaurants());
         }
-        setLoading((prev) => ({ ...prev, restaurants: false }));
 
         if (promotionsWithRestaurantsResponse.data.EC === 0) {
           // Process the promotions data to ensure restaurants have the required fields
@@ -180,7 +188,17 @@ export const useHomeScreen = () => {
           setOriginalPromotionWithRestaurants(mockPromotions);
           setAvailablePromotionWithRestaurants(mockPromotions);
         }
-        setLoading((prev) => ({ ...prev, promotions: false }));
+
+        // Set all loading states to false at once after all data is processed
+        setLoading(prev => ({ 
+          ...prev, 
+          foodCategories: false, 
+          restaurants: false, 
+          promotions: false 
+        }));
+
+        // Clear the emergency timeout since we completed successfully
+        clearTimeout(forceLoadingTimeout);
       } catch (error) {
         console.error("Error fetching data:", error);
         
@@ -198,11 +216,17 @@ export const useHomeScreen = () => {
           promotions: false,
           favoriteRestaurants: false
         });
+
+        // Clear the emergency timeout since we completed (even with error)
+        clearTimeout(forceLoadingTimeout);
       }
     };
 
     const fetchFavoriteRestaurantData = async () => {
       try {
+        // Set loading to true only when we start the request
+        setLoading((prev) => ({ ...prev, favoriteRestaurants: true }));
+        
         const response = await fetchWithTimeout(
           `/customers/favorite-restaurants/${globalState.id}`
         );
@@ -228,30 +252,27 @@ export const useHomeScreen = () => {
       fetchFavoriteRestaurantData();
     } else {
       console.log("No user ID available, skipping API calls");
-      // Turn off loading if we're not making API calls
+      // Immediately turn off loading if we're not making API calls - no delay needed
       setLoading({
         foodCategories: false,
         restaurants: false,
         promotions: false,
         favoriteRestaurants: false
       });
-    }
-    
-    // Clean up the timeout when component unmounts
-    return () => {
+      // Clear the force timeout since we're not loading
       clearTimeout(forceLoadingTimeout);
-    };
+    }
   }, [globalState.id, globalState.isAuthenticated]);
 
   useEffect(() => {
     if (
-      listRestaurants &&
+      listRestaurants.length > 0 &&
       selectedFoodCategories &&
       selectedFoodCategories.length > 0
     ) {
       // Since we're seeing that no restaurants have categories, let's implement a fallback
       // For testing purposes, let's filter based on restaurant name instead
-      const filtered = listRestaurants?.filter((restaurant, index) => {
+      const filtered = listRestaurants.filter((restaurant, index) => {
         // If restaurant has categories, use them for filtering
         if (restaurant.specialize_in && restaurant.specialize_in.length > 0) {
           return restaurant.specialize_in.some((category) =>
@@ -266,7 +287,7 @@ export const useHomeScreen = () => {
       
       setFilteredRestaurants(filtered);
 
-      if (originalPromotionWithRestaurants) {
+      if (originalPromotionWithRestaurants.length > 0) {
         // For now, let's not filter promotion restaurants at all when categories are selected
         setAvailablePromotionWithRestaurants(originalPromotionWithRestaurants);
       }
@@ -274,7 +295,7 @@ export const useHomeScreen = () => {
       // When no categories selected, set filteredRestaurants to null instead of empty array
       setFilteredRestaurants(null);
       // Reset to original promotions when no categories are selected
-      if (originalPromotionWithRestaurants) {
+      if (originalPromotionWithRestaurants.length > 0) {
         setAvailablePromotionWithRestaurants(originalPromotionWithRestaurants);
       }
     }

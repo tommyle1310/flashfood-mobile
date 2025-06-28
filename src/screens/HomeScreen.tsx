@@ -47,7 +47,7 @@ const HomeScreen = () => {
     filteredRestaurants && filteredRestaurants.length > 0 ? filteredRestaurants : listRestaurants;
 
   // Format promotions for PromotionsSliderSection
-  const formattedPromotions = availablePromotionWithRestaurants?.map(promo => ({
+  const formattedPromotions = availablePromotionWithRestaurants.map(promo => ({
     avatar: { 
       url: promo.restaurants?.[0]?.avatar?.url || IMAGE_LINKS?.DEFAULT_AVATAR_FOOD, 
       key: promo.id || '' 
@@ -121,7 +121,7 @@ const HomeScreen = () => {
             <PromotionsSliderSection 
             onTap={(id) => {
               setSelectedPromotionId(id);
-              const selectedPromotion = availablePromotionWithRestaurants?.find(
+              const selectedPromotion = availablePromotionWithRestaurants.find(
                 (promo) => promo.id === id
               );
               if (selectedPromotion) {
@@ -153,7 +153,7 @@ const HomeScreen = () => {
           <PromotionsSection
             onTap={(id) => {
               setSelectedPromotionId(id);
-              const selectedPromotion = availablePromotionWithRestaurants?.find(
+              const selectedPromotion = availablePromotionWithRestaurants.find(
                 (promo) => promo.id === id
               );
               if (selectedPromotion) {
@@ -163,7 +163,7 @@ const HomeScreen = () => {
                 });
               }
             }}
-            promotions={availablePromotionWithRestaurants ? availablePromotionWithRestaurants.filter(item => item?.restaurants?.length > 0) : null}
+            promotions={availablePromotionWithRestaurants.filter(item => item?.restaurants?.length > 0)}
             favoriteRestaurants={favoriteRestaurants}
             handleToggleFavorite={handleToggleFavorite}
             isLoading={loading.promotions}

@@ -203,7 +203,7 @@ export const useActiveOrderTrackingSocket = () => {
         if (orderStatus === Enum_OrderStatus.DELIVERED) {
           const driverInfo: DriverRatingInfo = {
             id: data.driver_id || "unknown",
-            avatar: data.driver_avatar,
+            avatar: data.driverDetails?.avatar ?? data.driver_avatar ,
           };
 
           const restaurantInfo: RestaurantRatingInfo = {

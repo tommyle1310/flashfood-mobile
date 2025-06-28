@@ -18,7 +18,7 @@ import {
   subtractItemFromCart,
 } from "@/src/store/userPreferenceSlice";
 import Spinner from "@/src/components/FFSpinner";
-import { Promotion } from "@/src/types/Promotion";
+import { Promotion, Voucher } from "@/src/types/Promotion";
 import { DELIVERY_FEE } from "@/src/utils/constants";
 import FFText from "@/src/components/FFText";
 import FFButton from "@/src/components/FFButton";
@@ -63,11 +63,13 @@ const CheckoutScreen = () => {
   const { theme } = useTheme();
   const [selectedPaymentMethod, setSelectedPaymentMethod] =
     useState<string>("");
-  const [selectedPromotion, setSelectedPromotion] = useState<string>("");
+  const [selectedVoucher, setSelectedVoucher] = useState<string>("");
   const [selectedAddress, setSelectedAddress] = useState<string>("");
   const [customerNote, setCustomerNote] = useState<string>("");
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [promotionList, setPromotionList] = useState<Promotion[]>([]);
+  const [voucherList, setVoucherList] = useState<Voucher[]>([]);
+  const [voucherDiscount, setVoucherDiscount] = useState<number>(0);
   const [toastDetails, setToastDetails] = useState<{
     status: "SUCCESS" | "DANGER" | "INFO" | "WARNING" | "HIDDEN";
     title: string;
@@ -80,11 +82,12 @@ const CheckoutScreen = () => {
   const fetchData = async () => {
     setIsLoading(true);
     try {
-      const [restaurantResponse, financeRulesResponse] = await Promise.all([
+      const [restaurantResponse, financeRulesResponse, voucherResponse] = await Promise.all([
         axiosInstance.get(`/restaurants/${orderItem.restaurant_id}`),
         axiosInstance.get("/finance-rules"),
+        axiosInstance.get("/vouchers/valid-at-time"),
       ]);
-
+      console.log('check voucher response', voucherResponse.data)
       // Log API responses for debugging
 
       // Process restaurant response
@@ -97,6 +100,15 @@ const CheckoutScreen = () => {
         );
       } else {
         console.error("Restaurant API error:", restaurantData.EM);
+      }
+
+      // Process voucher response
+      const voucherData = voucherResponse.data;
+      if (voucherData.EC === 0) {
+        setVoucherList(voucherData.data || []);
+      } else {
+        console.error("Voucher API error:", voucherData.EM);
+        setVoucherList([]);
       }
 
       // Process finance rules response
@@ -114,6 +126,7 @@ const CheckoutScreen = () => {
       console.error("Error fetching data:", error);
       setFinanceRules(null);
       setDeliveryFee(0);
+      setVoucherList([]);
     } finally {
       setIsLoading(false);
     }
@@ -131,16 +144,41 @@ const CheckoutScreen = () => {
       const calculatedServiceFee = Number(
         (financeRules.app_service_fee * subTotal).toFixed(2)
       );
+      
+      // Calculate voucher discount
+      let calculatedVoucherDiscount = 0;
+      if (selectedVoucher && voucherList.length > 0) {
+        const selectedVoucherData = voucherList.find(v => v.id === selectedVoucher);
+        if (selectedVoucherData) {
+          switch (selectedVoucherData.voucher_type) {
+            case 'FIXED':
+              calculatedVoucherDiscount = parseFloat(selectedVoucherData.discount_value);
+              break;
+            case 'PERCENTAGE':
+              calculatedVoucherDiscount = (subTotal * parseFloat(selectedVoucherData.discount_value)) / 100;
+              break;
+            case 'FREESHIP':
+              calculatedVoucherDiscount = deliveryFee;
+              break;
+            default:
+              calculatedVoucherDiscount = 0;
+          }
+        }
+      }
+      
+      setVoucherDiscount(calculatedVoucherDiscount);
+      
       const calculatedTotal = Number(
-        (subTotal + calculatedServiceFee + deliveryFee).toFixed(2)
+        (subTotal + calculatedServiceFee + deliveryFee - calculatedVoucherDiscount).toFixed(2)
       );
       setServiceFee(calculatedServiceFee);
       setTotalAmountActual(calculatedTotal);
     } else {
       setServiceFee(0);
       setTotalAmountActual(0);
+      setVoucherDiscount(0);
     }
-  }, [subTotal, financeRules, deliveryFee]);
+  }, [subTotal, financeRules, deliveryFee, selectedVoucher, voucherList]);
 
   const handleSelectPaymentMethod = (option: string) => {
     setSelectedPaymentMethod(option);
@@ -150,8 +188,8 @@ const CheckoutScreen = () => {
     setSelectedAddress(option);
   };
 
-  const handleSelectPromotion = (option: string) => {
-    setSelectedPromotion(option);
+  const handleSelectVoucher = (option: string) => {
+    setSelectedVoucher(option);
   };
 
   const handlePlaceOrder = async () => {
@@ -202,7 +240,7 @@ const CheckoutScreen = () => {
       status: "PENDING",
       payment_status: "PENDING",
       delivery_time: new Date().getTime(),
-      promotion_applied: selectedPromotion,
+      vouchers_applied: selectedVoucher ? [selectedVoucher] : [],
     };
 
     console.log('check request data', requestData)
@@ -232,7 +270,16 @@ const CheckoutScreen = () => {
         setIsShowModalStatusCheckout(true);
         setModalContentType("INSUFFICIENT_BALANCE");
         // console.error("Order API error: Insufficient Balance");
-      } else {
+      }
+      else if (EC === -15) {
+        setToastDetails({
+          status: "WARNING",
+          title: "Action Denied",
+          desc: "This voucher could not be used today, please try again tomorrow",
+        });
+        setIsLoading(false);
+      }
+      else {
         setIsShowModalStatusCheckout(true);
         setModalContentType("ERROR");
         console.error("Order API error:", response.data.EM);
@@ -448,10 +495,11 @@ const CheckoutScreen = () => {
           deliveryFee={deliveryFee}
           serviceFee={serviceFee}
           setTotalAmountParent={setSubTotal}
-          selectedPromotion={selectedPromotion}
-          promotionList={promotionList}
-          handleSelectPromotion={handleSelectPromotion}
+          selectedVoucher={selectedVoucher}
+          voucherList={voucherList}
+          handleSelectVoucher={handleSelectVoucher}
           totalAmountActual={totalAmountActual}
+          voucherDiscount={voucherDiscount}
         />
       </FFModal>
 

@@ -4,7 +4,7 @@ import FFAvatar from "../../FFAvatar";
 import FFText from "../../FFText";
 import { Order } from "@/src/types/Orders";
 import IconIonicons from "react-native-vector-icons/Ionicons";
-import { Promotion } from "@/src/types/Promotion";
+import { Voucher } from "@/src/types/Promotion";
 import FFDropdown from "../../FFDropdown";
 import { spacing } from "@/src/theme";
 
@@ -13,24 +13,29 @@ const OrderSummary = ({
   setTotalAmountParent,
   serviceFee,
   deliveryFee,
-  promotionList,
-  handleSelectPromotion,
-  selectedPromotion,
+  voucherList,
+  handleSelectVoucher,
+  selectedVoucher,
   totalAmountActual,
+  voucherDiscount,
 }: {
   orderItem: Order;
   setTotalAmountParent: React.Dispatch<React.SetStateAction<number>>;
   deliveryFee: number;
   serviceFee: number;
-  selectedPromotion: string;
-  promotionList?: Promotion[];
-  handleSelectPromotion: (option: string) => void;
-  totalAmountActual: number; // Prop mới
+  selectedVoucher: string;
+  voucherList?: Voucher[];
+  handleSelectVoucher: (option: string) => void;
+  totalAmountActual: number;
+  voucherDiscount: number;
 }) => {
   const [subTotal, setSubTotal] = useState<number>(0);
-  const [promotionSubtractValue, setPromotionSubtractValue] =
-    useState<number>(0);
-  const [voucherSubtractValue, setVoucherSubtractValue] = useState<number>(0);
+
+  // Get selected voucher data
+  const getSelectedVoucherData = () => {
+    if (!selectedVoucher || !voucherList) return null;
+    return voucherList.find(v => v.id === selectedVoucher) || null;
+  };
 
   useEffect(() => {
     const calculatedSubTotal = orderItem.order_items.reduce((total, item) => {
@@ -40,8 +45,9 @@ const OrderSummary = ({
       );
     }, 0);
     setSubTotal(calculatedSubTotal);
-    setTotalAmountParent(calculatedSubTotal); // Chỉ set subTotal
+    setTotalAmountParent(calculatedSubTotal);
   }, [orderItem, setTotalAmountParent]);
+
   return (
     <View className="flex-1">
       <View
@@ -111,18 +117,18 @@ const OrderSummary = ({
         }}
       >
         <FFDropdown
-          onSelect={handleSelectPromotion}
+          onSelect={handleSelectVoucher}
           options={
-            promotionList?.map((item) => ({
+            voucherList?.map((item) => ({
               label: item.name,
               value: item.id,
               description: item.description,
-              imageUrl: item?.avatar?.url,
+              imageUrl: item?.avatar?.url || undefined,
             })) ?? []
           }
-          placeholder="Select a promotion"
-          fallbackText="No promotions available"
-          selectedOption={selectedPromotion}
+          placeholder="Select a voucher"
+          fallbackText="No vouchers available"
+          selectedOption={selectedVoucher}
         />
         <View className="flex-row justify-between items-center">
           <FFText style={{ color: "#aaa" }} fontWeight="400">
@@ -130,25 +136,19 @@ const OrderSummary = ({
           </FFText>
           <FFText fontWeight="500">${subTotal.toFixed(2)}</FFText>
         </View>
-        {/* <View className="flex-row justify-between items-center">
-          <FFText style={{ color: "#aaa" }} fontWeight="400">
-            Promotion
-          </FFText>
-          <FFText fontWeight="500">
-            -${promotionSubtractValue.toFixed(2)}
-          </FFText>
-        </View> */}
-        <View className="flex-row justify-between items-center">
-          <FFText style={{ color: "#aaa" }} fontWeight="400">
-            Voucher Discount
-          </FFText>
-          <FFText fontWeight="500">-${voucherSubtractValue.toFixed(2)}</FFText>
-        </View>
         <View className="flex-row justify-between items-center">
           <FFText style={{ color: "#aaa" }} fontWeight="400">
             Delivery Fee
           </FFText>
-          <FFText fontWeight="500">${deliveryFee.toFixed(2)}</FFText>
+          <FFText 
+            fontWeight="500"
+            style={{
+              textDecorationLine: getSelectedVoucherData()?.voucher_type === 'FREESHIP' ? 'line-through' : 'none',
+              color: getSelectedVoucherData()?.voucher_type === 'FREESHIP' ? '#aaa' : '#000'
+            }}
+          >
+            ${deliveryFee.toFixed(2)}
+          </FFText>
         </View>
         <View className="flex-row justify-between items-center">
           <FFText style={{ color: "#aaa" }} fontWeight="400">
@@ -156,6 +156,24 @@ const OrderSummary = ({
           </FFText>
           <FFText fontWeight="500">${serviceFee.toFixed(2)}</FFText>
         </View>
+        
+        {/* Display voucher discount row based on voucher type */}
+        {selectedVoucher && getSelectedVoucherData() && (
+          <View className="flex-row justify-between items-center">
+            <FFText style={{ color: "#16a34a" }} fontWeight="400">
+              {getSelectedVoucherData()?.voucher_type === 'FREESHIP' 
+                ? 'Free Delivery Discount'
+                : getSelectedVoucherData()?.voucher_type === 'PERCENTAGE'
+                ? `${getSelectedVoucherData()?.name} (${getSelectedVoucherData()?.discount_value}%)`
+                : `${getSelectedVoucherData()?.name}`
+              }
+            </FFText>
+                         <FFText fontWeight="500" style={{ color: "#16a34a" }}>
+               -${voucherDiscount.toFixed(2)}
+             </FFText>
+          </View>
+        )}
+
         <View className="flex-row justify-between items-center my-2">
           <FFText style={{ color: "#aaa" }} fontSize="lg" fontWeight="400">
             Total Amount

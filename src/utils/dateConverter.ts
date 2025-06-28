@@ -86,11 +86,15 @@ export const formatTimestampToDate2 = (timestamp: number) => {
     return "Invalid Date";
   }
 
-  const options: Intl.DateTimeFormatOptions = {
-    weekday: "long", // "Monday"
-    day: "2-digit", // "09"
-    month: "short", // "Sep" (3 chữ cái)
-    year: "numeric", // "2025"
-  };
-  return date.toLocaleDateString("en-US", options);
+  // Get time components
+  const hours = date.getHours().toString().padStart(2, '0');
+  const minutes = date.getMinutes().toString().padStart(2, '0');
+  
+  // Get date components
+  const day = date.getDate().toString().padStart(2, '0');
+  const month = (date.getMonth() + 1).toString().padStart(2, '0'); // +1 because getMonth() returns 0-11
+  const year = date.getFullYear();
+
+  // Format: "HH:MM DD/MM/YYYY"
+  return `${hours}:${minutes} ${day}/${month}/${year}`;
 };

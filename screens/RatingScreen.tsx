@@ -107,6 +107,7 @@ const RatingScreen = () => {
   if (isLoading) {
     return <Spinner isVisible isOverlay />;
   }
+  console.log('cehck driver', driver)
 
   return (
     <FFSafeAreaView>

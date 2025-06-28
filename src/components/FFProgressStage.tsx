@@ -2,13 +2,14 @@ import React from "react";
 import { View, Text, StyleSheet } from "react-native";
 import { useTheme } from "@/src/hooks/useTheme"; // Giả sử hook này đã được định nghĩa
 import FFText from "./FFText";
-import { spacing } from "../theme";
+import { colors, spacing } from "../theme";
 
 interface FFProgressStageProps {
   stageText: string; // Văn bản hiển thị, ví dụ: "Arriving at 10:15"
   completedSegments: number; // Số đoạn đã hoàn thành (x)
   totalSegments: number; // Tổng số đoạn (y)
   style?: any; // Style tùy chỉnh (object CSS)
+  eta?: number | null; // ETA in minutes from driver location socket
 }
 
 const FFProgressStage: React.FC<FFProgressStageProps> = ({
@@ -16,6 +17,7 @@ const FFProgressStage: React.FC<FFProgressStageProps> = ({
   completedSegments,
   totalSegments,
   style = {},
+  eta,
 }) => {
   const { theme } = useTheme();
 
@@ -36,10 +38,15 @@ const FFProgressStage: React.FC<FFProgressStageProps> = ({
   // Tính chiều rộng mỗi đoạn dựa trên tổng số đoạn (chia đều 100%)
   const segmentWidth = totalSegments > 0 ? 100 / totalSegments : 0;
 
+  // Format display text with ETA if available
+  const displayText = eta !== null && eta !== undefined 
+    ? `${stageText}`
+    : stageText;
+
   return (
     <View style={[styles.container, style]}>
       {/* Văn bản ở trên */}
-      <FFText fontWeight="400">{stageText}</FFText>
+      <FFText fontWeight="400" style={{color: colors.primary_dark}}>{displayText}</FFText>
       {/* Thanh tiến trình phân đoạn ở dưới */}
       <View style={styles.progressContainer}>
         {segments.map((_, index) => (

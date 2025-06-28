@@ -416,7 +416,7 @@ const OrdersScreen: React.FC = () => {
       orderStatusStages,
     ]
   );
-  console.log('check rt orders', realtimeOrders?.[0]?.service_fee)
+  console.log('check discount amount', realtimeOrders?.[0]?.discount_amount)
   return (
     <FFSafeAreaView>
       <FFTab
