@@ -85,6 +85,7 @@ const RestaurantDetail = () => {
       try {
         setIsLoading(true);
         const response = await axiosInstance.get(`/restaurants/${restaurantId}`);
+        console.log('check response asdpisad', response.data.data.restaurant_name)
         const { EC, EM, data } = response.data;
         if (EC === 0) {
           setRestaurantDetails(data);
@@ -95,6 +96,7 @@ const RestaurantDetail = () => {
         setIsLoading(false);
       }
     };
+    console.log('cehck res detail', restaurantDetails)
     
     const fetchMenu = async () => {
       try {
@@ -166,7 +168,8 @@ const RestaurantDetail = () => {
   // Get current day for opening hours
   const getCurrentDayOpeningHours = () => {
     const today = WEEK_DAYS[new Date().getDay()];
-    
+      console.log('cehk today', restaurantDetails?.restaurant_name)
+
     if (restaurantDetails?.opening_hours && restaurantDetails.opening_hours[today]) {
       const hours = restaurantDetails.opening_hours[today];
       return `${formatTime(hours.from)} - ${formatTime(hours.to)}`;
@@ -628,7 +631,7 @@ const RestaurantDetail = () => {
                   </View>
                   
                   {/* Reviews list - showing first 3 */}
-                  {restaurantDetails?.rating_stats?.reviews?.map((review) => (
+                  {restaurantDetails?.rating_stats?.reviews?.filter?.(item => item?.food_review)?.map((review) => (
                     <View 
                       key={review.id} 
                       style={{

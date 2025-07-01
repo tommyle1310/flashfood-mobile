@@ -80,7 +80,7 @@ export const useHomeScreen = () => {
         promotions: false,
         favoriteRestaurants: false
       });
-    }, 500);
+    }, 10000);
     
     // Add timeout for API calls to prevent infinite loading
     const fetchWithTimeout = async (url: string): Promise<any> => {

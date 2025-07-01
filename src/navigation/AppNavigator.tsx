@@ -75,6 +75,7 @@ export type MainStackParamList = {
   PromotionsWithRestaurant: {
     promotionTitle?: string;
     restaurants: Restaurant[];
+    foodCategoryId?: string; // Added for filtering restaurants by food category
   };
   RouteToRestaurant: { lng: number; lat: number };
   AddressList: undefined;

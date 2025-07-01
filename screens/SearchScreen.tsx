@@ -70,7 +70,7 @@ const SearchScreen = () => {
     setIsLoading(true);
     try {
       const response = await axiosInstance.get(
-        `/customers/search-restaurants?keyword=${query}&page=1&limit=10`
+        `/customers/search?keyword=${query}&page=1&limit=10`
       );
       const { EC, data } = response.data;
       if (EC === 0) {
@@ -117,11 +117,28 @@ const SearchScreen = () => {
             renderItem={({ item }) => (
               <TouchableOpacity
                 style={styles.resultItem}
-                onPress={() =>
-                  navigation.navigate("RestaurantDetail", {
-                    restaurantId: item?.id,
-                  })
-                }
+                onPress={() => {
+                  // Check item type and navigate accordingly
+                  if (item.type === 'food_category') {
+                    // Navigate to PromotionsWithRestaurant screen for food categories
+                    // Filter restaurants that specialize in this food category
+                    navigation.navigate("PromotionsWithRestaurant", {
+                      restaurants: [], // This will be populated by the API in a real implementation
+                      promotionTitle: `${item.display_name} Restaurants`,
+                      foodCategoryId: item.id // Pass the food category ID for filtering
+                    });
+                  } else if (item.type === 'menu_item' && item.restaurant_id) {
+                    // Navigate to RestaurantDetail for menu items
+                    navigation.navigate("RestaurantDetail", {
+                      restaurantId: item.restaurant_id,
+                    });
+                  } else {
+                    // Default case - navigate to RestaurantDetail with the item's own ID
+                    navigation.navigate("RestaurantDetail", {
+                      restaurantId: item?.id,
+                    });
+                  }
+                }}
               >
                 <Image
                   source={{
@@ -131,10 +148,15 @@ const SearchScreen = () => {
                 />
                 <View style={styles.resultDetails}>
                   <FFText fontSize="md" fontWeight="500">
-                    {item.restaurant_name}
+                    {item.display_name}
                   </FFText>
                   <FFText fontSize="sm" style={styles.resultDescription}>
-                    {item.address?.street}, {item.address?.city}
+                    {item.type && <>{item.type} • </>}
+                    {item.address && typeof item.address === 'string' 
+                      ? item.address 
+                      : item.address?.street 
+                        ? `${item.address?.street}, ${item.address?.city || ''}` 
+                        : ''}
                   </FFText>
                 </View>
               </TouchableOpacity>

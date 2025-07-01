@@ -5,8 +5,9 @@ import {
   TouchableOpacity,
   Pressable,
   Text,
+  ActivityIndicator,
 } from "react-native";
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import FFSafeAreaView from "@/src/components/FFSafeAreaView";
 import FFScreenTopSection from "@/src/components/FFScreenTopSection";
 import FFText from "@/src/components/FFText";
@@ -19,6 +20,9 @@ import { RouteProp, useNavigation, useRoute } from "@react-navigation/native";
 import { IMAGE_LINKS } from "@/src/assets/imageLinks";
 import { colors, spacing } from "@/src/theme";
 import FFModal from "@/src/components/FFModal";
+import axiosInstance from "@/src/utils/axiosConfig";
+import { useSelector } from "@/src/store/types";
+import { RootState } from "@/src/store/store";
 
 type PromotionWithRestaurantsSreenNavigationProp = StackNavigationProp<
   MainStackParamList,
@@ -29,6 +33,18 @@ type RestaurantDetailRouteProp = RouteProp<
   MainStackParamList,
   "PromotionsWithRestaurant"
 >;
+
+// Define the restaurant type
+type Restaurant = {
+  id: string;
+  restaurant_name: string;
+  avatar?: { url: string };
+  avg_rating?: number;
+  distance?: number;
+  estimated_time?: number;
+  address?: any;
+  specialize_in?: Array<{ id: string; name: string }>;
+};
 
 // Helper function to get rating badge color
 const getRatingBadgeColor = (rating: number | undefined) => {
@@ -74,9 +90,58 @@ const PromotionWithRestaurantsScreen = () => {
   const navigation =
     useNavigation<PromotionWithRestaurantsSreenNavigationProp>();
   const route = useRoute<RestaurantDetailRouteProp>();
-  const { restaurants: restaurantList, promotionTitle } = route.params;
+  const { restaurants: initialRestaurantList, promotionTitle, foodCategoryId } = route.params;
+  const [restaurantList, setRestaurantList] = useState<Restaurant[]>(initialRestaurantList || []);
   const [selectedAddress, setSelectedAddress] = useState<string | null>(null);
   const [modalVisible, setModalVisible] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const { address, id } = useSelector((state: RootState) => state.auth);
+
+    console.log('cehck food category id', foodCategoryId)
+  // Fetch restaurants by food category if foodCategoryId is provided
+  useEffect(() => {
+    const fetchRestaurantsByFoodCategory = async () => {
+      if (!foodCategoryId) return;
+      
+      setIsLoading(true);
+      try {
+        // Fetch restaurants from the API
+        const response = await axiosInstance.get(`/customers/restaurants/${id}`);
+        
+        console.log('check resposne.data.', response.data)
+        if (response.data.EC === 0) {
+          // Filter restaurants that specialize in the selected food category
+          const filteredRestaurants = response.data.data.filter((restaurant: Restaurant) => 
+            restaurant.specialize_in?.some(category => category.id === foodCategoryId)
+          );
+          
+          // Map and normalize the restaurant data
+          const mappedRestaurants = filteredRestaurants.map((restaurant: any) => ({
+            ...restaurant,
+            address: restaurant.address ? {
+              ...restaurant.address,
+              location: restaurant.address.location ? {
+                lat: restaurant.address.location.lat,
+                lng: restaurant.address.location.lon || restaurant.address.location.lng,
+              } : undefined,
+            } : undefined,
+            specialize_in: restaurant.specialize_in || [],
+            distance: typeof restaurant.distance === 'number' ? restaurant.distance : parseFloat(restaurant.distance || '0'),
+            estimated_time: typeof restaurant.estimated_time === 'number' ? restaurant.estimated_time : parseInt(restaurant.estimated_time || '0', 10),
+            avg_rating: typeof restaurant.avg_rating === 'number' ? restaurant.avg_rating : parseFloat(restaurant.avg_rating || '0')
+          }));
+          
+          setRestaurantList(mappedRestaurants);
+        }
+      } catch (error) {
+        console.error('Error fetching restaurants by food category:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    
+    fetchRestaurantsByFoodCategory();
+  }, [foodCategoryId]);
 
   const renderRestaurantItem = ({
     item,
@@ -217,30 +282,45 @@ const PromotionWithRestaurantsScreen = () => {
         navigation={navigation}
         title={promotionTitle ?? ""}
       />
-      <FlatList
-        data={restaurantList}
-        keyExtractor={(item) => item.id.toString()}
-        renderItem={renderRestaurantItem}
-        contentContainerStyle={{ padding: spacing.md }}
-        showsVerticalScrollIndicator={false}
-        ListEmptyComponent={
-          <View style={{
-            padding: spacing.xl,
-            alignItems: "center",
-            justifyContent: "center"
-          }}>
-            <IconFeather name="coffee" size={50} color="#9ca3af" />
-            <FFText style={{ 
-              color: "#9ca3af", 
-              fontWeight: "500", 
-              fontSize: 16,
-              marginTop: spacing.md 
+      {isLoading ? (
+        <View style={{
+          flex: 1,
+          alignItems: "center",
+          justifyContent: "center"
+        }}>
+          <ActivityIndicator size="large" color="#3FB854" />
+          <FFText style={{ marginTop: spacing.md, color: "#6b7280" }}>
+            Loading restaurants...
+          </FFText>
+        </View>
+      ) : (
+        <FlatList
+          data={restaurantList}
+          keyExtractor={(item) => item.id.toString()}
+          renderItem={renderRestaurantItem}
+          contentContainerStyle={{ padding: spacing.md }}
+          showsVerticalScrollIndicator={false}
+          ListEmptyComponent={
+            <View style={{
+              padding: spacing.xl,
+              alignItems: "center",
+              justifyContent: "center"
             }}>
-              This promotion has not been applied to any restaurant
-            </FFText>
-          </View>
-        }
-      />
+              <IconFeather name="coffee" size={50} color="#9ca3af" />
+              <FFText style={{ 
+                color: "#9ca3af", 
+                fontWeight: "500", 
+                fontSize: 16,
+                marginTop: spacing.md 
+              }}>
+                {foodCategoryId 
+                  ? "No restaurants found for this food category" 
+                  : "This promotion has not been applied to any restaurant"}
+              </FFText>
+            </View>
+          }
+        />
+      )}
       
       {/* Address Modal */}
       <FFModal
