@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { View, Pressable, ScrollView } from "react-native";
+import { View, Pressable, ScrollView, TouchableOpacity } from "react-native";
 import FFSafeAreaView from "@/src/components/FFSafeAreaView";
 import FFText from "@/src/components/FFText";
 import { useHomeScreen } from "@/src/hooks/useHomeScreen";
@@ -18,6 +18,8 @@ import { RootState } from "../store/store";
 import { loadTokenFromAsyncStorage } from "../store/authSlice";
 import PromotionsSliderSection from "../components/screens/Home/PromotionsSliderSection";
 import { IMAGE_LINKS } from "@/src/assets/imageLinks";
+import { usePushNotifications } from "@/src/hooks/usePushNotifications";
+import * as Notifications from "expo-notifications";
 
 type HomeRestaurantSreenNavigationProp = StackNavigationProp<
   MainStackParamList,
@@ -57,6 +59,27 @@ const HomeScreen = () => {
     desc: promo.description || ''
   }));
 
+  // Get the notification test function
+  const { sendTestNotification } = usePushNotifications();
+  
+  // Function to test driver arrival notification
+  const testDriverArrivalNotification = async () => {
+    try {
+      console.log("🚗 Testing driver arrival notification");
+      await Notifications.presentNotificationAsync({
+        title: "Driver Arriving Soon",
+        body: `Your driver will arrive in approximately 4 minutes`,
+        data: { driverId: "test-driver-id" },
+        sound: true,
+        priority: Notifications.AndroidNotificationPriority.HIGH,
+        vibrate: [0, 250, 250, 250],
+      });
+      console.log("✅ Driver arrival notification sent successfully");
+    } catch (error) {
+      console.error("❌ Failed to send driver arrival notification:", error);
+    }
+  };
+
   return (
     <FFSafeAreaView>
       <ScrollView 
@@ -72,6 +95,48 @@ const HomeScreen = () => {
       >
         <View style={{ gap: spacing.md }}>
           <HeaderSection />
+          
+          {/* Test Notification Buttons - For Development Only */}
+        {/*  <View style={{ 
+            flexDirection: "row", 
+            justifyContent: "space-between", 
+            paddingHorizontal: spacing.xs,
+            marginTop: spacing.xs
+          }}>
+            <TouchableOpacity 
+              onPress={sendTestNotification}
+              style={{
+                backgroundColor: "#4f46e5",
+                paddingVertical: spacing.xs,
+                paddingHorizontal: spacing.sm,
+                borderRadius: borderRadius.button,
+                flex: 1,
+                marginRight: spacing.xs,
+                alignItems: "center"
+              }}
+            >
+              <FFText style={{ color: "white", fontWeight: "600" }}>
+                Test Notification
+              </FFText>
+            </TouchableOpacity>
+            
+            <TouchableOpacity 
+              onPress={testDriverArrivalNotification}
+              style={{
+                backgroundColor: "#f59e0b",
+                paddingVertical: spacing.xs,
+                paddingHorizontal: spacing.sm,
+                borderRadius: borderRadius.button,
+                flex: 1,
+                marginLeft: spacing.xs,
+                alignItems: "center"
+              }}
+            >
+              <FFText style={{ color: "white", fontWeight: "600" }}>
+                Test Driver ETA
+              </FFText>
+            </TouchableOpacity>
+          </View> */}
 
           <Pressable
             onPress={() => navigation.navigate("Search")}
