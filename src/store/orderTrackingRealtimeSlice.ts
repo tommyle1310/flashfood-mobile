@@ -32,6 +32,9 @@ const mapOrderToLog = (order: OrderTracking) => ({
   // Add sub_total and discount_amount to the log
   subTotal: order.sub_total || 0,
   discountAmount: order.discount_amount || 0,
+  // Add driver avatar information to the log
+  hasDriverAvatar: !!order.driver_avatar || !!order.driver?.avatar,
+  hasDriverDetails: !!order.driverDetails,
 });
 
 // Debounced function to save to AsyncStorage
@@ -47,6 +50,8 @@ const debouncedSaveToStorage = debounce(async (orders: OrderTracking[]) => {
       // Log sub_total and discount_amount to verify they're being saved
       subTotals: orders.map((o) => o.sub_total || 0),
       discountAmounts: orders.map((o) => o.discount_amount || 0),
+      // Log driver avatar information to verify it's being saved
+      driverAvatars: orders.map((o) => !!o.driver_avatar || !!o.driver?.avatar),
     });
   } catch (error) {
     console.error("❌ Error saving to AsyncStorage:", error);
@@ -66,6 +71,8 @@ const saveToStorageNonBlocking = (orders: OrderTracking[]) => {
         // Log sub_total and discount_amount to verify they're being saved
         subTotals: orders.map((o) => o.sub_total || 0),
         discountAmounts: orders.map((o) => o.discount_amount || 0),
+        // Log driver avatar information to verify it's being saved
+        driverAvatars: orders.map((o) => !!o.driver_avatar || !!o.driver?.avatar),
       });
     })
     .catch((error) => {
@@ -140,6 +147,18 @@ export const updateAndSaveOrderTracking = createAsyncThunk(
         // Preserve driver details if the incoming order doesn't have it
         driverDetails: order.driverDetails || existingOrder.driverDetails,
         
+        // Preserve driver avatar if the incoming order doesn't have it
+        driver_avatar: order.driver_avatar || existingOrder.driver_avatar,
+        
+        // Preserve driver if the incoming order doesn't have it
+        driver: order.driver
+          ? {
+              ...order.driver,
+              // Preserve avatar if the incoming driver doesn't have one
+              avatar: order.driver.avatar || existingOrder.driver?.avatar
+            }
+          : existingOrder.driver,
+        
         // CRITICAL: Preserve order_items with their avatars and menu_item_variant data
         // Use a special merge function to ensure we don't lose any data
         order_items: order.order_items?.map(newItem => {
@@ -198,6 +217,10 @@ export const updateAndSaveOrderTracking = createAsyncThunk(
         hasOldDriverDetails: !!currentOrders[existingIndex].driverDetails,
         hasNewDriverDetails: !!order.driverDetails,
         hasFinalDriverDetails: !!updatedOrders[existingIndex].driverDetails,
+        // Log driver avatar preservation
+        hasOldDriverAvatar: !!currentOrders[existingIndex].driver_avatar || !!currentOrders[existingIndex].driver?.avatar,
+        hasNewDriverAvatar: !!order.driver_avatar || !!order.driver?.avatar,
+        hasFinalDriverAvatar: !!updatedOrders[existingIndex].driver_avatar || !!updatedOrders[existingIndex].driver?.avatar,
         // Log avatar preservation
         orderItemsWithAvatars: (updatedOrders[existingIndex].order_items || [])
           .filter(item => item.avatar || (item.menu_item && item.menu_item.avatar)).length,
@@ -217,6 +240,7 @@ export const updateAndSaveOrderTracking = createAsyncThunk(
         serviceFee: order.service_fee,
         deliveryFee: order.delivery_fee,
         hasDriverDetails: !!order.driverDetails,
+        hasDriverAvatar: !!order.driver_avatar || !!order.driver?.avatar,
         orderItemsWithAvatars: (order.order_items || [])
           .filter(item => item.avatar || (item.menu_item && item.menu_item.avatar)).length,
         orderItemsWithVariants: (order.order_items || [])

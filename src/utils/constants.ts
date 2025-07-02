@@ -7,7 +7,7 @@ export const IP_ADDRESS = {
 
 // Try to use the primary IP, but fall back to localhost if needed
 // You can change this to use any of the IPs above
-export const BACKEND_URL = `http://${IP_ADDRESS.NEAR}:1310`;
+export const BACKEND_URL = `http://${IP_ADDRESS.IP_HOME_1}:1310`;
 export const CHAT_SOCKET_URL = `${BACKEND_URL}/chat`;
 export const DELIVERY_FEE = 3;
 export const SERVICE_FEE = 1;

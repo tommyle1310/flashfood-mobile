@@ -10,7 +10,7 @@ import FFSafeAreaView from "@/src/components/FFSafeAreaView";
 import FFText from "@/src/components/FFText";
 import FFInputControl from "@/src/components/FFInputControl";
 import FFScreenTopSection from "@/src/components/FFScreenTopSection";
-import { useNavigation } from "@react-navigation/native";
+import { RouteProp, useNavigation, useRoute } from "@react-navigation/native";
 import { StackNavigationProp } from "@react-navigation/stack";
 import { MainStackParamList } from "@/src/navigation/AppNavigator";
 import axiosInstance from "@/src/utils/axiosConfig";
@@ -23,11 +23,20 @@ type SearchSreenNavigationProp = StackNavigationProp<
   "Search"
 >;
 
+type SearchSreenRouteProp = RouteProp<
+  MainStackParamList,
+  "Search"
+>;
+
+
 const SearchScreen = () => {
   const navigation = useNavigation<SearchSreenNavigationProp>();
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
+
+    const route = useRoute<SearchSreenRouteProp>();
+  const definedCategories = route.params?.fetchedCategories;
 
   const topSearches = [
     {
@@ -172,12 +181,18 @@ const SearchScreen = () => {
             Top searches
           </FFText>
           <FlatList
-            data={topSearches}
+            data={definedCategories?.slice(0, 3)}
             keyExtractor={(item, index) => index.toString()}
             renderItem={({ item }) => (
-              <TouchableOpacity style={styles.listItem}>
+              <TouchableOpacity onPress={() => {
+                navigation.navigate("PromotionsWithRestaurant", {
+                  restaurants: [], // This will be populated by the API in a real implementation
+                  promotionTitle: `${item.name} Restaurants`,
+                  foodCategoryId: item.id // Pass the food category ID for filtering
+                });
+              }} style={styles.listItem}>
                 <FFText fontSize="md" fontWeight="500">
-                  {item.title}
+                  {item.name}
                 </FFText>
                 <FFText fontSize="sm" style={styles.listDescription}>
                   {item.description}

@@ -98,8 +98,20 @@ type OrderScreenNavigationProp = StackNavigationProp<
 export const useActiveOrderTrackingSocket = () => {
   const navigation = useNavigation<OrderScreenNavigationProp>();
   const [socket, setSocket] = useState<Socket | null>(null);
-  const { accessToken, id } = useSelector((state: RootState) => state.auth);
+  const { accessToken, id , } = useSelector((state: RootState) => state.auth);
+  const { orders } = useSelector((state: RootState) => state.orderTrackingRealtime);
+  // Store driverAvatar in state to ensure it persists across renders
+  const [persistedDriverAvatar, setPersistedDriverAvatar] = useState<Avatar | null>(null);
+  const driverAvatar = orders?.[0]?.driver?.avatar || orders?.[0]?.driverDetails?.avatar || orders?.[0]?.driver_avatar
   const dispatch = useDispatch();
+
+  // Update persisted driver avatar whenever it changes in orders
+  useEffect(() => {
+    if (driverAvatar) {
+      setPersistedDriverAvatar(driverAvatar);
+      console.log('Updated persistedDriverAvatar:', driverAvatar);
+    }
+  }, [driverAvatar]);
 
   useEffect(() => {
     if (!accessToken || !id) {
@@ -198,18 +210,27 @@ export const useActiveOrderTrackingSocket = () => {
           newStatus: orderStatus,
           tracking: trackingInfo,
         });
-
+        console.log('check driver avt',data.driverDetails?.avatar ?? data.driver_avatar ?? persistedDriverAvatar ?? driverAvatar )
         // For delivered orders, show rating screen but keep the order
         if (orderStatus === Enum_OrderStatus.DELIVERED) {
           const driverInfo: DriverRatingInfo = {
             id: data.driver_id || "unknown",
-            avatar: data.driverDetails?.avatar ?? data.driver_avatar ,
+            avatar: data.driverDetails?.avatar ?? data.driver_avatar ?? persistedDriverAvatar ?? driverAvatar,
           };
 
           const restaurantInfo: RestaurantRatingInfo = {
             id: data.restaurant_id,
             avatar: data.restaurant_avatar,
           };
+
+          console.log('Driver info for Rating screen:', {
+            driverId: driverInfo.id,
+            hasAvatar: !!driverInfo.avatar,
+            avatarSource: data.driverDetails?.avatar ? 'driverDetails.avatar' : 
+                         data.driver_avatar ? 'driver_avatar' : 
+                         persistedDriverAvatar ? 'persistedDriverAvatar' : 
+                         driverAvatar ? 'driverAvatar from orders' : 'none'
+          });
 
           navigation.navigate("Rating", {
             driver: driverInfo,
@@ -469,7 +490,7 @@ export const useActiveOrderTrackingSocket = () => {
           // Only update these fields if they're explicitly provided
           driver_id: data.driver_id !== undefined ? data.driver_id : mergedBase.driver_id,
           restaurant_avatar: data.restaurant_avatar || mergedBase.restaurant_avatar,
-          driver_avatar: data.driver_avatar || mergedBase.driver_avatar,
+          driver_avatar: data.driver_avatar || mergedBase.driver_avatar || persistedDriverAvatar,
           
           // Handle address data
           restaurantAddress: data.restaurantAddress 
@@ -502,7 +523,7 @@ export const useActiveOrderTrackingSocket = () => {
           driver: data.driver_id
               ? {
                   id: data.driver_id,
-                  avatar: data.driver_avatar,
+                  avatar: data.driver_avatar || mergedBase.driver?.avatar || persistedDriverAvatar,
                 }
               : mergedBase.driver,
               

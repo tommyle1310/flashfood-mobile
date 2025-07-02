@@ -139,7 +139,7 @@ const HomeScreen = () => {
           </View> */}
 
           <Pressable
-            onPress={() => navigation.navigate("Search")}
+            onPress={() => navigation.navigate("Search", {fetchedCategories: listFoodCategories})}
             style={{
               backgroundColor: "#ffffff",
               borderRadius: borderRadius.input,

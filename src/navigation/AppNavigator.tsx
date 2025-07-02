@@ -29,6 +29,7 @@ import FChatScreen from "@/screens/FChatScreen";
 import NearYouScreen from "@/screens/NearYouScreen";
 import {
   AvailablePromotionWithRestaurants,
+  FoodCategory,
   Restaurant,
 } from "../types/screens/Home";
 import RouteToRestaurantScreen from "@/screens/RouteToRestaurantScreen";
@@ -69,7 +70,7 @@ export type MainStackParamList = {
   Profile: undefined;
   PaymentMethod: undefined;
   ChangePassword: undefined;
-  Search: undefined;
+  Search: undefined | {fetchedCategories: FoodCategory[]};
   Notifications: undefined;
   NearYou: Restaurant[];
   PromotionsWithRestaurant: {

@@ -85,7 +85,7 @@ export const useHomeScreen = () => {
     // Add timeout for API calls to prevent infinite loading
     const fetchWithTimeout = async (url: string): Promise<any> => {
       const timeoutPromise = new Promise<never>((_, reject) => 
-        setTimeout(() => reject(new Error('Request timeout')), 5000)
+        setTimeout(() => reject(new Error('Request timeout')), 30000)
       );
       
       try {
