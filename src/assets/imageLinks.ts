@@ -1,4 +1,5 @@
 export const IMAGE_LINKS = {
+  APP_LOGO: "https://res.cloudinary.com/dlavqnrlx/image/upload/v1750145214/zfyizlfjyiutvlcr9eyv.png",
   DEFAULT_AVATAR_FOOD:
     "https://res.cloudinary.com/dlavqnrlx/image/upload/v1741448554/e3r1lfpbz7oklnjei0o7.jpg",
   EMPTY_ORDERS:

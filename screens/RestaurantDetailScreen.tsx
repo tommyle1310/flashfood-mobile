@@ -79,13 +79,21 @@ const RestaurantDetail = () => {
   const [quantity, setQuantity] = useState<number>(1);
   const [itemPrice, setItemPrice] = useState<number | null>(0);
   const [isLoading, setIsLoading] = useState<boolean>(false);
-  
+  const [expandedCategories, setExpandedCategories] = useState<{
+    [key: string]: boolean;
+  }>({});
+
   useEffect(() => {
     const fetchRestaurantDetails = async () => {
       try {
         setIsLoading(true);
-        const response = await axiosInstance.get(`/restaurants/${restaurantId}`);
-        console.log('check response asdpisad', response.data.data.restaurant_name)
+        const response = await axiosInstance.get(
+          `/restaurants/${restaurantId}`
+        );
+        console.log(
+          "check response asdpisad",
+          response.data.data.restaurant_name
+        );
         const { EC, EM, data } = response.data;
         if (EC === 0) {
           setRestaurantDetails(data);
@@ -96,8 +104,8 @@ const RestaurantDetail = () => {
         setIsLoading(false);
       }
     };
-    console.log('cehck res detail', restaurantDetails)
-    
+    console.log("cehck res detail", restaurantDetails);
+
     const fetchMenu = async () => {
       try {
         const response = await axiosInstance.get(
@@ -162,15 +170,18 @@ const RestaurantDetail = () => {
     (state: RootState) => state.userPreference.cart_items
   );
 
-  const WEEK_DAYS = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'] as const;
-  type WeekDay = typeof WEEK_DAYS[number];
+  const WEEK_DAYS = ["sun", "mon", "tue", "wed", "thu", "fri", "sat"] as const;
+  type WeekDay = (typeof WEEK_DAYS)[number];
 
   // Get current day for opening hours
   const getCurrentDayOpeningHours = () => {
     const today = WEEK_DAYS[new Date().getDay()];
-      console.log('cehk today', restaurantDetails?.restaurant_name)
+    console.log("cehk today", restaurantDetails?.restaurant_name);
 
-    if (restaurantDetails?.opening_hours && restaurantDetails.opening_hours[today]) {
+    if (
+      restaurantDetails?.opening_hours &&
+      restaurantDetails.opening_hours[today]
+    ) {
       const hours = restaurantDetails.opening_hours[today];
       return `${formatTime(hours.from)} - ${formatTime(hours.to)}`;
     }
@@ -301,7 +312,211 @@ const RestaurantDetail = () => {
   const formatTime = (time: number) => {
     const hours = Math.floor(time / 100);
     const minutes = time % 100;
-    return `${hours}:${minutes === 0 ? '00' : minutes}`;
+    return `${hours}:${minutes === 0 ? "00" : minutes}`;
+  };
+
+  const renderCategorizedMenuItems = () => {
+    if (!restaurantMenuItem || restaurantMenuItem.length === 0) {
+      return (
+        <View className="items-center justify-center py-8">
+          <FFText colorLight="#777">No menu items available</FFText>
+        </View>
+      );
+    }
+
+    // Extract all unique categories from menu items
+    const allCategories = new Map();
+
+    // First, collect all categories from all menu items
+    restaurantMenuItem.forEach((item) => {
+      if (item.categoryDetails && Array.isArray(item.categoryDetails)) {
+        item.categoryDetails.forEach((category) => {
+          if (category && category.id) {
+            allCategories.set(category.id, category);
+          }
+        });
+      }
+    });
+
+    // Convert the Map to an array
+    const categories = Array.from(allCategories.values());
+
+    // Toggle category expansion
+    const toggleCategory = (categoryId: string) => {
+      setExpandedCategories((prev) => ({
+        ...prev,
+        [categoryId]: !prev[categoryId],
+      }));
+    };
+
+    return (
+      <View>
+        {categories.map((category) => {
+          // Filter menu items that belong to this category
+          const categoryItems = restaurantMenuItem.filter((item) => {
+            if (Array.isArray(item.category)) {
+              return item.category.includes(category.id);
+            }
+            return false;
+          });
+
+          if (categoryItems.length === 0) return null;
+
+          const isExpanded = expandedCategories[category.id] ?? false;
+
+          return (
+            <View key={category.id} style={{ marginBottom: spacing.md }}>
+              {/* Category Header - Now Touchable */}
+              <TouchableOpacity
+                onPress={() => toggleCategory(category.id)}
+                style={{
+                  flexDirection: "row",
+                  alignItems: "center",
+                  marginBottom: isExpanded ? spacing.sm : 0,
+                  paddingVertical: spacing.sm,
+                  borderBottomWidth: 1,
+                  borderBottomColor: theme === "light" ? "#eee" : "#444",
+                }}
+                activeOpacity={0.7}
+              >
+                {category.avatar && (
+                  <FFAvatar
+                    avatar={category.avatar.url}
+                    size={24}
+                    style={{ marginRight: spacing.xs }}
+                  />
+                )}
+                <FFText
+                  fontSize="md"
+                  fontWeight="600"
+                  colorLight="#333"
+                  colorDark="#eee"
+                  style={{ flex: 1 }}
+                >
+                  {category.name}
+                </FFText>
+                <View
+                  style={{
+                    backgroundColor: theme === "light" ? "#f0f0f0" : "#444",
+                    borderRadius: 12,
+                    paddingHorizontal: 8,
+                    paddingVertical: 2,
+                    marginHorizontal: spacing.xs,
+                  }}
+                >
+                  <FFText fontSize="xs" colorLight="#777" colorDark="#aaa">
+                    {categoryItems.length} items
+                  </FFText>
+                </View>
+                <IconFeather
+                  name={isExpanded ? "chevron-up" : "chevron-down"}
+                  size={20}
+                  color={theme === "light" ? "#777" : "#aaa"}
+                />
+              </TouchableOpacity>
+
+              {/* Category Items - Only shown when expanded */}
+              {isExpanded && (
+                <View style={{ gap: spacing.sm }}>
+                  {categoryItems.map((item) => (
+                    <FFView
+                      style={{
+                        flexDirection: "row",
+                        alignItems: "center",
+                        gap: 12,
+                        padding: 12,
+                        borderRadius: 12,
+                        backgroundColor:
+                          theme === "light" ? "#f9f9f9" : "#2a2a2a",
+                      }}
+                      key={item.id}
+                    >
+                      <View className="w-1/4">
+                        <FFAvatar
+                          avatar={
+                            item?.avatar?.url ?? IMAGE_LINKS.DEFAULT_AVATAR_FOOD
+                          }
+                          style={{
+                            borderRadius: 10,
+                            width: "100%",
+                            height: undefined,
+                            aspectRatio: 1,
+                            backgroundColor: "#cedbc8",
+                          }}
+                        />
+                      </View>
+                      <View className="flex-1 relative">
+                        <FFText fontWeight="500">{item.name}</FFText>
+                        <FFText
+                          fontSize="sm"
+                          colorLight="#bbb"
+                          fontWeight="400"
+                        >
+                          {item.purchased_count ?? "0"} sold
+                        </FFText>
+                        <View className="flex-row gap-2 items-center">
+                          {item?.variants?.[0]
+                            ?.price_after_applied_promotion ? (
+                            <View
+                              style={{
+                                alignItems: "center",
+                                flexDirection: "row",
+                                gap: spacing.sm,
+                              }}
+                            >
+                              <FFText
+                                fontSize="sm"
+                                colorLight="#aaa"
+                                style={{
+                                  textDecorationLine: "line-through",
+                                }}
+                                fontWeight="600"
+                              >
+                                ${item?.variants?.[0]?.price}
+                              </FFText>
+                              <FFText
+                                fontSize="lg"
+                                colorLight="#59bf47"
+                                colorDark={colors.primary_dark}
+                                fontWeight="600"
+                              >
+                                $
+                                {
+                                  item?.variants?.[0]
+                                    ?.price_after_applied_promotion
+                                }
+                              </FFText>
+                            </View>
+                          ) : (
+                            <FFText
+                              fontSize="lg"
+                              fontWeight="600"
+                              style={{ color: colors.primary }}
+                            >
+                              ${item?.variants?.[0]?.price}
+                            </FFText>
+                          )}
+                        </View>
+                        <Pressable
+                          onPress={() => {
+                            setIsShowSlideUpModal(true);
+                            setSelectedMenuItem(item.id);
+                            setSelectedVariant(null); // Reset selectedVariant when opening modal
+                          }}
+                          className="p-1 -bottom-2 right-0 absolute rounded-md bg-green-500 self-end items-center justify-center"
+                        >
+                          <IconFeather name="plus" color="#fff" size={20} />
+                        </Pressable>
+                      </View>
+                    </FFView>
+                  ))}
+                </View>
+              )}
+            </View>
+          );
+        })}
+      </View>
+    );
   };
 
   if (isLoading || !restaurantDetails) {
@@ -353,16 +568,20 @@ const RestaurantDetail = () => {
                 imageStyle={{ borderRadius: 8 }}
               >
                 {restaurantDetails?.status?.is_open && (
-                  <View style={{ 
-                    position: 'absolute', 
-                    top: 20, 
-                    right: 20, 
-                    backgroundColor: '#59bf47', 
-                    paddingHorizontal: 10,
-                    paddingVertical: 5,
-                    borderRadius: 20
-                  }}>
-                    <FFText style={{ color: '#fff', fontWeight: '600' }}>Open Now</FFText>
+                  <View
+                    style={{
+                      position: "absolute",
+                      top: 20,
+                      right: 20,
+                      backgroundColor: "#59bf47",
+                      paddingHorizontal: 10,
+                      paddingVertical: 5,
+                      borderRadius: 20,
+                    }}
+                  >
+                    <FFText style={{ color: "#fff", fontWeight: "600" }}>
+                      Open Now
+                    </FFText>
                   </View>
                 )}
               </ImageBackground>
@@ -380,13 +599,14 @@ const RestaurantDetail = () => {
             >
               {/* Badges section */}
               <View className="flex-row justify-between items-center">
-                {restaurantDetails?.specialize_in && restaurantDetails.specialize_in.length > 0 && (
-                  <FFBadge
-                    title={restaurantDetails.specialize_in[0].name}
-                    textColor="#59bf47"
-                    backgroundColor="#DBF2D8"
-                  />
-                )}
+                {restaurantDetails?.specialize_in &&
+                  restaurantDetails.specialize_in.length > 0 && (
+                    <FFBadge
+                      title={restaurantDetails.specialize_in[0].name}
+                      textColor="#59bf47"
+                      backgroundColor="#DBF2D8"
+                    />
+                  )}
                 <View className="flex-row gap-2 items-center">
                   <FFBadge
                     onPress={() =>
@@ -425,15 +645,19 @@ const RestaurantDetail = () => {
               </View>
 
               {/* Restaurant Info */}
-              <FFText fontSize="lg" style={{ fontWeight: '700', marginTop: spacing.sm }}>
+              <FFText
+                fontSize="lg"
+                style={{ fontWeight: "700", marginTop: spacing.sm }}
+              >
                 {restaurantDetails?.restaurant_name}
               </FFText>
-              
+
               {/* Ratings */}
               <View className="flex-row items-center gap-2 mt-1">
                 <IconAntDesign size={20} name="star" color={"#E9A000"} />
                 <FFText fontWeight="400" colorLight="#777">
-                  {restaurantDetails?.rating_stats?.avg_rating?.toFixed(1) ?? "New"}
+                  {restaurantDetails?.rating_stats?.avg_rating?.toFixed(1) ??
+                    "New"}
                 </FFText>
                 <IconFeather
                   className="ml-4"
@@ -448,217 +672,205 @@ const RestaurantDetail = () => {
 
               {/* Opening Hours */}
               <View className="flex-row items-center gap-2 mt-1">
-                <IconMaterialIcons size={20} name="access-time" color={"#777"} />
+                <IconMaterialIcons
+                  size={20}
+                  name="access-time"
+                  color={"#777"}
+                />
                 <FFText fontWeight="400" colorLight="#777">
                   Today: {getCurrentDayOpeningHours()}
                 </FFText>
               </View>
-              
+
               {/* Address */}
               <View className="flex-row items-start gap-2 mt-1">
-                <IconFeather name="map-pin" size={20} color={"#777"} style={{ marginTop: 2 }} />
+                <IconFeather
+                  name="map-pin"
+                  size={20}
+                  color={"#777"}
+                  style={{ marginTop: 2 }}
+                />
                 <FFText fontWeight="400" colorLight="#777" style={{ flex: 1 }}>
                   {restaurantDetails?.address ? (
                     <>
-                      {restaurantDetails.address.street || ''}
-                      {restaurantDetails.address.city ? `, ${restaurantDetails.address.city}` : ''}
-                      {restaurantDetails.address.nationality ? `, ${restaurantDetails.address.nationality}` : ''}
+                      {restaurantDetails.address.street || ""}
+                      {restaurantDetails.address.city
+                        ? `, ${restaurantDetails.address.city}`
+                        : ""}
+                      {restaurantDetails.address.nationality
+                        ? `, ${restaurantDetails.address.nationality}`
+                        : ""}
                     </>
-                  ) : "Address not available"}
+                  ) : (
+                    "Address not available"
+                  )}
                 </FFText>
               </View>
-              
-              {/* Specialties */}
-              {restaurantDetails?.specialize_in && restaurantDetails.specialize_in.length > 0 && (
-                <View className="flex-row flex-wrap gap-2 mt-2">
-                  {restaurantDetails.specialize_in.map((specialty) => (
-                    <FFBadge
-                      key={specialty.id}
-                      title={specialty.name}
-                      textColor="#777"
-                      backgroundColor="#f0f0f0"
-                    />
-                  ))}
-                </View>
-              )}
 
-              {/* Description */}
-              <FFText fontSize="sm" colorLight="#777" style={{ marginTop: spacing.sm, marginBottom: spacing.md }}>
-                {restaurantDetails?.description || "No description available"}
-              </FFText>
-              
-              {/* Promotions */}
-              {restaurantDetails?.promotions && restaurantDetails.promotions.length > 0 && (
-                <View style={{ marginBottom: spacing.md }}>
-                  <FFText fontWeight="600" style={{ marginBottom: spacing.xs }}>Active Promotions</FFText>
-                  <View className="flex-row flex-wrap gap-2">
-                    {restaurantDetails.promotions.map((promo) => (
+              {/* Specialties */}
+              {restaurantDetails?.specialize_in &&
+                restaurantDetails.specialize_in.length > 0 && (
+                  <View className="flex-row flex-wrap gap-2 mt-2">
+                    {restaurantDetails.specialize_in.map((specialty) => (
                       <FFBadge
-                        key={promo.id}
-                        title={`${promo.name}: ${promo.discount_value}% off`}
-                        textColor="#fff"
-                        backgroundColor="#E9A000"
+                        key={specialty.id}
+                        title={specialty.name}
+                        textColor="#777"
+                        backgroundColor="#f0f0f0"
                       />
                     ))}
                   </View>
-                </View>
-              )}
-              
+                )}
+
+              {/* Description */}
+              <FFText
+                fontSize="sm"
+                colorLight="#777"
+                style={{ marginTop: spacing.sm, marginBottom: spacing.md }}
+              >
+                {restaurantDetails?.description || "No description available"}
+              </FFText>
+
+              {/* Promotions */}
+              {restaurantDetails?.promotions &&
+                restaurantDetails.promotions.length > 0 && (
+                  <View style={{ marginBottom: spacing.md }}>
+                    <FFText
+                      fontWeight="600"
+                      style={{ marginBottom: spacing.xs }}
+                    >
+                      Active Promotions
+                    </FFText>
+                    <View className="flex-row flex-wrap gap-2">
+                      {restaurantDetails.promotions.map((promo) => (
+                        <FFBadge
+                          key={promo.id}
+                          title={`${promo.name}: ${promo.discount_value}% off`}
+                          textColor="#fff"
+                          backgroundColor="#E9A000"
+                        />
+                      ))}
+                    </View>
+                  </View>
+                )}
+
               {/* Section divider */}
-              <View style={{ 
-                height: 1, 
-                backgroundColor: '#eee', 
-                marginVertical: spacing.md 
-              }} />
-              
-              {/* Menu items header */}
-              <FFText fontWeight="600" fontSize="md" style={{ marginBottom: spacing.sm }}>
+              <View
+                style={{
+                  height: 1,
+                  backgroundColor: "#eee",
+                  marginVertical: spacing.md,
+                }}
+              />
+
+              {/* Menu items */}
+              <FFText
+                fontWeight="600"
+                fontSize="md"
+                style={{ marginBottom: spacing.sm }}
+              >
                 Menu Items
               </FFText>
 
-              {/* Menu items */}
-              {restaurantMenuItem?.map((item) => (
-                <FFView
-                  style={{
-                    flexDirection: "row",
-                    alignItems: "center",
-                    gap: 12,
-                    padding: 12,
-                    borderRadius: 12,
-                    marginBottom: spacing.sm,
-                    backgroundColor: theme === "light" ? "#f9f9f9" : "#2a2a2a",
-                  }}
-                  key={item.id}
-                >
-                  <View className="w-1/4">
-                    <FFAvatar
-                      avatar={item?.avatar?.url ?? IMAGE_LINKS.DEFAULT_AVATAR_FOOD}
-                      style={{
-                        borderRadius: 10,
-                        width: "100%",
-                        height: undefined,
-                        aspectRatio: 1,
-                        backgroundColor: '#cedbc8',
-                      }}
-                      // imageStyle={{ borderRadius: 8 }}
-                    ></FFAvatar>
-                  </View>
-                  <View className="flex-1 relative">
-                    <FFText fontWeight="500">{item.name}</FFText>
-                    <FFText fontSize="sm" colorLight="#bbb" fontWeight="400">
-                      {item.purchased_count ?? "0"} sold
+              {/* Render categorized menu items */}
+              {renderCategorizedMenuItems()}
+
+              {/* Reviews section */}
+              {restaurantDetails?.rating_stats?.reviews &&
+                restaurantDetails.rating_stats.reviews.length > 0 && (
+                  <View style={{ marginTop: spacing.lg }}>
+                    <FFText
+                      fontWeight="600"
+                      fontSize="md"
+                      style={{ marginBottom: spacing.sm }}
+                    >
+                      Customer Reviews (
+                      {restaurantDetails.rating_stats.total_reviews})
                     </FFText>
-                    <View className="flex-row gap-2 items-center">
-                      {item?.variants?.[0]?.price_after_applied_promotion ? (
+
+                    {/* Review stats */}
+                    <View className="flex-row justify-between mb-4 bg-gray-50 p-3 rounded-lg">
+                      <View className="items-center">
+                        <FFText
+                          fontWeight="700"
+                          fontSize="lg"
+                          colorLight="#59bf47"
+                        >
+                          {restaurantDetails.rating_stats.avg_rating.toFixed(1)}
+                        </FFText>
+                        <FFText fontSize="sm" colorLight="#777">
+                          Overall
+                        </FFText>
+                      </View>
+                      <View className="items-center">
+                        <FFText
+                          fontWeight="700"
+                          fontSize="lg"
+                          colorLight="#59bf47"
+                        >
+                          {restaurantDetails.rating_stats.avg_food_rating.toFixed(
+                            1
+                          )}
+                        </FFText>
+                        <FFText fontSize="sm" colorLight="#777">
+                          Food
+                        </FFText>
+                      </View>
+                      <View className="items-center">
+                        <FFText
+                          fontWeight="700"
+                          fontSize="lg"
+                          colorLight="#59bf47"
+                        >
+                          {restaurantDetails.rating_stats.avg_delivery_rating.toFixed(
+                            1
+                          )}
+                        </FFText>
+                        <FFText fontSize="sm" colorLight="#777">
+                          Delivery
+                        </FFText>
+                      </View>
+                    </View>
+
+                    {/* Reviews list - showing first 3 */}
+                    {restaurantDetails?.rating_stats?.reviews
+                      ?.filter?.((item) => item?.food_review)
+                      ?.map((review) => (
                         <View
+                          key={review.id}
                           style={{
-                            alignItems: "center",
-                            flexDirection: "row",
-                            gap: spacing.sm,
+                            padding: spacing.sm,
+                            borderBottomWidth: 1,
+                            borderBottomColor: "#eee",
+                            marginBottom: spacing.sm,
                           }}
                         >
+                          <View className="flex-row justify-between">
+                            <FFText fontWeight="500">
+                              {review.reviewer.name}
+                            </FFText>
+                            <View className="flex-row items-center">
+                              <IconAntDesign
+                                size={16}
+                                name="star"
+                                color={"#E9A000"}
+                              />
+                              <FFText fontSize="sm" style={{ marginLeft: 4 }}>
+                                {review.food_rating}
+                              </FFText>
+                            </View>
+                          </View>
                           <FFText
                             fontSize="sm"
-                            colorLight="#aaa"
-                            style={{
-                              textDecorationLine: "line-through",
-                            }}
-                            fontWeight="600"
+                            colorLight="#777"
+                            style={{ marginTop: 4 }}
                           >
-                            ${item?.variants?.[0]?.price}
-                          </FFText>
-                          <FFText
-                            fontSize="lg"
-                            colorLight="#59bf47"
-                            colorDark={colors.primary_dark}
-                            fontWeight="600"
-                          >
-                            $
-                            {item?.variants?.[0]?.price_after_applied_promotion}
+                            {review.food_review}
                           </FFText>
                         </View>
-                      ) : (
-                        <FFText
-                          fontSize="lg"
-                          fontWeight="600"
-                          style={{ color: colors.primary }}
-                        >
-                          ${item?.variants?.[0]?.price}
-                        </FFText>
-                      )}
-                    </View>
-                    <Pressable
-                      onPress={() => {
-                        setIsShowSlideUpModal(true);
-                        setSelectedMenuItem(item.id);
-                        setSelectedVariant(null); // Reset selectedVariant when opening modal
-                      }}
-                      className="p-1 -bottom-2 right-0 absolute rounded-md bg-green-500 self-end items-center justify-center"
-                    >
-                      <IconFeather name="plus" color="#fff" size={20} />
-                    </Pressable>
+                      ))}
                   </View>
-                </FFView>
-              ))}
-              
-              {/* Reviews section */}
-              {restaurantDetails?.rating_stats?.reviews && restaurantDetails.rating_stats.reviews.length > 0 && (
-                <View style={{ marginTop: spacing.lg }}>
-                  <FFText fontWeight="600" fontSize="md" style={{ marginBottom: spacing.sm }}>
-                    Customer Reviews ({restaurantDetails.rating_stats.total_reviews})
-                  </FFText>
-                  
-                  {/* Review stats */}
-                  <View className="flex-row justify-between mb-4 bg-gray-50 p-3 rounded-lg">
-                    <View className="items-center">
-                      <FFText fontWeight="700" fontSize="lg" colorLight="#59bf47">
-                        {restaurantDetails.rating_stats.avg_rating.toFixed(1)}
-                      </FFText>
-                      <FFText fontSize="sm" colorLight="#777">Overall</FFText>
-                    </View>
-                    <View className="items-center">
-                      <FFText fontWeight="700" fontSize="lg" colorLight="#59bf47">
-                        {restaurantDetails.rating_stats.avg_food_rating.toFixed(1)}
-                      </FFText>
-                      <FFText fontSize="sm" colorLight="#777">Food</FFText>
-                    </View>
-                    <View className="items-center">
-                      <FFText fontWeight="700" fontSize="lg" colorLight="#59bf47">
-                        {restaurantDetails.rating_stats.avg_delivery_rating.toFixed(1)}
-                      </FFText>
-                      <FFText fontSize="sm" colorLight="#777">Delivery</FFText>
-                    </View>
-                  </View>
-                  
-                  {/* Reviews list - showing first 3 */}
-                  {restaurantDetails?.rating_stats?.reviews?.filter?.(item => item?.food_review)?.map((review) => (
-                    <View 
-                      key={review.id} 
-                      style={{
-                        padding: spacing.sm,
-                        borderBottomWidth: 1,
-                        borderBottomColor: '#eee',
-                        marginBottom: spacing.sm
-                      }}
-                    >
-                      <View className="flex-row justify-between">
-                        <FFText fontWeight="500">
-                          {review.reviewer.name}
-                        </FFText>
-                        <View className="flex-row items-center">
-                          <IconAntDesign size={16} name="star" color={"#E9A000"} />
-                          <FFText fontSize="sm" style={{ marginLeft: 4 }}>
-                            {review.food_rating}
-                          </FFText>
-                        </View>
-                      </View>
-                      <FFText fontSize="sm" colorLight="#777" style={{ marginTop: 4 }}>
-                        {review.food_review}
-                      </FFText>
-                    </View>
-                  ))}
-                </View>
-              )}
+                )}
             </FFView>
           </FFView>
         </ScrollView>

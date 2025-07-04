@@ -81,7 +81,8 @@ export interface Props_MenuItem {
   restaurant_id: string;
   avatar: { url: string; key: string };
   name: string;
-  category: { id: string; name: string; description: string };
+  category: { id: string; name: string; description: string } | { id: string; name: string; description: string }[];
+  categoryDetails?: { id: string; name: string; description: string } | { id: string; name: string; description: string }[];
   availability: boolean;
   suggested_notes: string[];
   price: number;

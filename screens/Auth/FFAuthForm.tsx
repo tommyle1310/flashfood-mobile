@@ -15,6 +15,7 @@ import FFInputControl from "@/src/components/FFInputControl";
 import { spacing } from "@/src/theme";
 import FFView from "@/src/components/FFView";
 import FFText from "@/src/components/FFText";
+import { IMAGE_LINKS } from "@/src/assets/imageLinks";
 
 type FFAuthFormProps = {
   isSignUp: boolean;
@@ -67,7 +68,7 @@ const FFAuthForm = ({
           transform: [{ translateX: "40%" }],
         }}
       >
-        <FFAvatar avatar="https://res.cloudinary.com/dpubnzap3/image/upload/v1738820317/g2nvwg7zrqkevpdarn3r.png" />
+        <FFAvatar avatar={IMAGE_LINKS.APP_LOGO} />
       </View>
       <FFText style={styles.headerText}>
         {isSignUp ? "Sign Up" : "Login"}
