@@ -20,6 +20,7 @@ import PromotionsSliderSection from "../components/screens/Home/PromotionsSlider
 import { IMAGE_LINKS } from "@/src/assets/imageLinks";
 import { usePushNotifications } from "@/src/hooks/usePushNotifications";
 import * as Notifications from "expo-notifications";
+import { PopularRestaurantsSection } from "../components/screens/Home/PopularRestaurantsSection";
 
 type HomeRestaurantSreenNavigationProp = StackNavigationProp<
   MainStackParamList,
@@ -35,6 +36,7 @@ const HomeScreen = () => {
   
   const {
     filteredRestaurants,
+    popularRestaurants,
     selectedFoodCategories,
     handleToggleFavorite,
     setSelectedFoodCategories,
@@ -213,6 +215,13 @@ const HomeScreen = () => {
             favoriteRestaurants={favoriteRestaurants}
             handleToggleFavorite={handleToggleFavorite}
             isLoading={loading.restaurants}
+          />
+
+            <PopularRestaurantsSection
+            restaurants={popularRestaurants}
+            favoriteRestaurants={favoriteRestaurants}
+            handleToggleFavorite={handleToggleFavorite}
+            isLoading={loading.popularRestaurants}
           />
 
           <PromotionsSection

@@ -42,6 +42,8 @@ import NotificationScreen from "@/screens/NotificationScreen";
 import HomeScreen from "../screens/HomeScreen";
 import PromotionWithRestaurantsScreen from "@/screens/PromotionWithRestaurantsScreen";
 import CreateInquiryScreen from "../screens/CreateInquiryScreen";
+import FFSplashScreen from "@/screens/SplashScreen";
+import PopularRestaurantsScreen from "@/screens/PopularRestaurantsScreen";
 
 export type RootStackParamList = {
   Login: undefined;
@@ -63,6 +65,7 @@ export type MainStackParamList = {
     };
     orderId?: string;
   };
+  PopularRestaurants: Restaurant[];
   BottomTabs: { screenIndex?: number }; // Thêm tham số screenIndex
   SupportCenter: undefined;
   CreateInquiry: undefined;
@@ -138,6 +141,11 @@ const MainStackScreen = () => {
         options={{ headerShown: false }}
         name="NearYou"
         component={NearYouScreen}
+      />
+      <MainStack.Screen
+        options={{ headerShown: false }}
+        name="PopularRestaurants"
+        component={PopularRestaurantsScreen}
       />
       <MainStack.Screen
         options={{ headerShown: false }}
@@ -229,6 +237,7 @@ const AppNavigator = () => {
   const token = useSelector((state: RootState) => state.auth.accessToken);
   const dispatch = useDispatch();
   const [loading, setLoading] = useState(true);
+  const [showSplash, setShowSplash] = useState(true);
 
   useEffect(() => {
     const loadToken = async () => {
@@ -237,6 +246,14 @@ const AppNavigator = () => {
     };
     loadToken();
   }, [dispatch]);
+
+  const handleSplashFinish = () => {
+    setShowSplash(false);
+  };
+
+    if (showSplash) {
+    return <FFSplashScreen onFinish={handleSplashFinish} />;
+  }
 
   if (loading) {
     return null;

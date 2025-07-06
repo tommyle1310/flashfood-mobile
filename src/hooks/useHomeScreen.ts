@@ -60,6 +60,7 @@ export const useHomeScreen = () => {
   const [selectedFoodCategories, setSelectedFoodCategories] = useState<string[] | null>(null);
   const [listFoodCategories, setListFoodCategories] = useState<FoodCategory[]>([]);
   const [listRestaurants, setListRestaurants] = useState<Restaurant[]>([]);
+  const [popularRestaurants, setPopularRestaurants] = useState<Restaurant[]>([]);
   const [availablePromotionWithRestaurants, setAvailablePromotionWithRestaurants] = useState<AvailablePromotionWithRestaurants[]>([]);
   const [originalPromotionWithRestaurants, setOriginalPromotionWithRestaurants] = useState<AvailablePromotionWithRestaurants[]>([]);
   const [favoriteRestaurants, setFavoriteRestaurants] = useState<FavoriteRestaurant[]>([]);
@@ -68,6 +69,7 @@ export const useHomeScreen = () => {
     restaurants: false,    // Start with loading false for faster cached responses
     promotions: false,     // Start with loading false for faster cached responses
     favoriteRestaurants: false,
+    popularRestaurants: false,
   });
 
   useEffect(() => {
@@ -78,7 +80,8 @@ export const useHomeScreen = () => {
         foodCategories: false,
         restaurants: false,
         promotions: false,
-        favoriteRestaurants: false
+        favoriteRestaurants: false,
+        popularRestaurants: false
       });
     }, 10000);
     
@@ -107,7 +110,8 @@ export const useHomeScreen = () => {
           ...prev, 
           foodCategories: true, 
           restaurants: true, 
-          promotions: true 
+          promotions: true,
+          popularRestaurants: true
         }));
 
         // Use Promise.all with our timeout wrapper
@@ -115,10 +119,12 @@ export const useHomeScreen = () => {
           foodCategoriesResponse,
           restaurantsResponse,
           promotionsWithRestaurantsResponse,
+          popularRestaurantsResponse
         ] = await Promise.all([
           fetchWithTimeout("/food-categories"),
           fetchWithTimeout(`/customers/restaurants/${globalState.id || 'default'}`),
           fetchWithTimeout(`/promotions/valid`),
+          fetchWithTimeout(`/customers/popular-restaurants/${globalState.id || 'default'}`)
         ]);
 
         // Process all responses and update loading states immediately
@@ -153,6 +159,37 @@ export const useHomeScreen = () => {
         } else {
           // Only use fallback data when there's an error
           setListRestaurants(createMockRestaurants());
+        }
+
+        // Process popular restaurants response
+        if (popularRestaurantsResponse.data.EC === 0) {
+          const mappedPopularRestaurants = popularRestaurantsResponse.data.data.map(
+            (restaurant: any) => ({
+              ...restaurant,
+              address: {
+                ...restaurant.address,
+                location: {
+                  lat: restaurant?.address?.location?.lat,
+                  lng: restaurant?.address?.location?.lon || restaurant?.address?.location?.lng,
+                },
+              },
+              // Ensure specialize_in is properly initialized
+              specialize_in: restaurant.specialize_in || [],
+              // Ensure new fields are properly typed
+              distance: typeof restaurant.distance === 'number' ? restaurant.distance : parseFloat(restaurant.distance || '0'),
+              estimated_time: typeof restaurant.estimated_time === 'number' ? restaurant.estimated_time : parseInt(restaurant.estimated_time || '0', 10),
+              avg_rating: typeof restaurant.avg_rating === 'number' ? restaurant.avg_rating : parseFloat(restaurant.avg_rating || '0')
+            })
+          );
+          
+          setPopularRestaurants(mappedPopularRestaurants);
+        } else {
+          // Use fallback data when there's an error - create mock popular restaurants with higher ratings
+          const mockPopular = createMockRestaurants().map(restaurant => ({
+            ...restaurant,
+            avg_rating: 4 + Math.random() // Ratings between 4.0 and 5.0
+          }));
+          setPopularRestaurants(mockPopular);
         }
 
         if (promotionsWithRestaurantsResponse.data.EC === 0) {
@@ -194,7 +231,8 @@ export const useHomeScreen = () => {
           ...prev, 
           foodCategories: false, 
           restaurants: false, 
-          promotions: false 
+          promotions: false,
+          popularRestaurants: false
         }));
 
         // Clear the emergency timeout since we completed successfully
@@ -209,12 +247,20 @@ export const useHomeScreen = () => {
         setOriginalPromotionWithRestaurants(mockPromotions);
         setAvailablePromotionWithRestaurants(mockPromotions);
         
+        // Create mock popular restaurants with higher ratings
+        const mockPopular = createMockRestaurants().map(restaurant => ({
+          ...restaurant,
+          avg_rating: 4 + Math.random() // Ratings between 4.0 and 5.0
+        }));
+        setPopularRestaurants(mockPopular);
+        
         // Turn off loading states
         setLoading({
           foodCategories: false,
           restaurants: false,
           promotions: false,
-          favoriteRestaurants: false
+          favoriteRestaurants: false,
+          popularRestaurants: false
         });
 
         // Clear the emergency timeout since we completed (even with error)
@@ -257,7 +303,8 @@ export const useHomeScreen = () => {
         foodCategories: false,
         restaurants: false,
         promotions: false,
-        favoriteRestaurants: false
+        favoriteRestaurants: false,
+        popularRestaurants: false
       });
       // Clear the force timeout since we're not loading
       clearTimeout(forceLoadingTimeout);
@@ -329,6 +376,7 @@ export const useHomeScreen = () => {
     setSelectedFoodCategories,
     listFoodCategories,
     listRestaurants,
+    popularRestaurants,
     availablePromotionWithRestaurants,
     favoriteRestaurants,
     loading,
