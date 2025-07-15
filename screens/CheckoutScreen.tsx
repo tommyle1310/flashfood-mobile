@@ -279,6 +279,14 @@ const CheckoutScreen = () => {
         });
         setIsLoading(false);
       }
+      else if (EC === -17) {
+        setToastDetails({
+          status: "WARNING",
+          title: "Action Denied",
+          desc: "You have already used this voucher today, please try again tomorrow",
+        });
+        setIsLoading(false);
+      }
       else {
         setIsShowModalStatusCheckout(true);
         setModalContentType("ERROR");

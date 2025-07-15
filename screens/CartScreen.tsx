@@ -29,6 +29,7 @@ import { IMAGE_LINKS } from "@/src/assets/imageLinks";
 import colors from "@/src/theme/colors";
 import { spacing } from "@/src/theme";
 import axiosInstance from "@/src/utils/axiosConfig";
+import FFSpinner from "@/src/components/FFSpinner";
 
 interface GroupedCartList {
   [restaurantId: string]: CartItem[];
@@ -53,6 +54,7 @@ const defaultSelectedRestaurant = {
 };
 
 const CartScreen = () => {
+  const [isLoading, setIsLoading] = useState<boolean>(false);
   const navigation = useNavigation<CartScreenNavigationProp>();
   const [groupedCartList, setGroupedCartList] = useState<GroupedCartList>({});
   const [selectedVariants, setSelectedVariants] = useState<Variant[]>([]);
@@ -303,7 +305,7 @@ const CartScreen = () => {
 
     const { cartItem, variant } = itemToDelete;
     const isLastVariant = cartItem.variants.length === 1;
-
+    setIsLoading(true);
     try {
       if (isLastVariant) {
         const response = await axiosInstance.delete(
@@ -358,6 +360,7 @@ const CartScreen = () => {
     } finally {
       setIsDeleteModalVisible(false);
       setItemToDelete(null);
+      setIsLoading(false);
     }
   };
 
@@ -622,6 +625,7 @@ const CartScreen = () => {
           {modalDetails.desc}
         </FFText>
       </FFModal>
+      <FFSpinner isVisible={isLoading} />
     </FFSafeAreaView>
   );
 };
