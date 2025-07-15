@@ -180,7 +180,7 @@ const styles = StyleSheet.create({
   },
   tagline: {
     fontSize: 16,
-    color: colors.textSecondary,
+    color: colors.lightGrey,
     marginBottom: 40,
   },
   loadingContainer: {

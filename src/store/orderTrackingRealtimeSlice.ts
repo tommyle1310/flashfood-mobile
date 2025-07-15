@@ -114,14 +114,16 @@ export const updateAndSaveOrderTracking = createAsyncThunk(
         
         // CRITICAL: Special handling for fields that should never be overwritten with null/undefined
         
-        // Preserve customer_note if the incoming order doesn't have one
-        customer_note: order.customer_note !== undefined 
+        // CRITICAL FIX: Only update customer_note when new value is truthy AND different
+        // Never overwrite with falsy values (empty string, null, undefined)
+        customer_note: (order.customer_note && order.customer_note !== existingOrder.customer_note)
           ? order.customer_note 
           : existingOrder.customer_note,
         
-        // Preserve restaurant_note if the incoming order doesn't have one
-        restaurant_note: order.restaurant_note !== undefined 
-          ? order.restaurant_note 
+        // CRITICAL FIX: Only update restaurant_note when new value is truthy AND different  
+        // Never overwrite with falsy values (empty string, null, undefined)
+        restaurant_note: (order.restaurant_note && order.restaurant_note !== existingOrder.restaurant_note)
+          ? order.restaurant_note
           : existingOrder.restaurant_note,
         
         // Preserve sub_total if the incoming order doesn't have it
@@ -155,7 +157,7 @@ export const updateAndSaveOrderTracking = createAsyncThunk(
           ? {
               ...order.driver,
               // Preserve avatar if the incoming driver doesn't have one
-              avatar: order.driver.avatar || existingOrder.driver?.avatar
+              avatar: order.driver.avatar ?? existingOrder.driver?.avatar ?? null
             }
           : existingOrder.driver,
         
@@ -195,9 +197,12 @@ export const updateAndSaveOrderTracking = createAsyncThunk(
         orderId: order.orderId,
         oldStatus: currentOrders[existingIndex].status,
         newStatus: order.status,
-        // Log customer_note preservation
+        // Log customer_note preservation with new logic
         oldCustomerNote: currentOrders[existingIndex].customer_note || "(empty)",
-        newCustomerNote: order.customer_note || "(empty)",
+        newCustomerNote: order.customer_note || "(empty)", 
+        newCustomerNoteIsTruthy: !!order.customer_note,
+        newCustomerNoteIsDifferent: order.customer_note !== currentOrders[existingIndex].customer_note,
+        willUpdateCustomerNote: !!(order.customer_note && order.customer_note !== currentOrders[existingIndex].customer_note),
         finalCustomerNote: updatedOrders[existingIndex].customer_note || "(empty)",
         // Log sub_total and discount_amount preservation
         oldSubTotal: currentOrders[existingIndex].sub_total,

@@ -213,9 +213,23 @@ export const useActiveOrderTrackingSocket = () => {
         console.log('check driver avt',data.driverDetails?.avatar ?? data.driver_avatar ?? persistedDriverAvatar ?? driverAvatar )
         // For delivered orders, show rating screen but keep the order
         if (orderStatus === Enum_OrderStatus.DELIVERED) {
+          // CRITICAL FIX: Get driver info from Redux store (preserved data) instead of raw socket data
+          // The socket data for DELIVERED status often has null driver_avatar and driverDetails
+          const currentState = store.getState();
+          const existingOrder = currentState.orderTrackingRealtime.orders.find(
+            (order) => order.orderId === data.orderId
+          );
+
+          // Use preserved driver data from Redux store, fallback to socket data, then to persisted avatar
           const driverInfo: DriverRatingInfo = {
             id: data.driver_id || "unknown",
-            avatar: data.driverDetails?.avatar ?? data.driver_avatar ?? persistedDriverAvatar ?? driverAvatar,
+            avatar: existingOrder?.driverDetails?.avatar ?? 
+                   existingOrder?.driver_avatar ?? 
+                   existingOrder?.driver?.avatar ??
+                   data.driverDetails?.avatar ?? 
+                   data.driver_avatar ?? 
+                   persistedDriverAvatar ?? 
+                   driverAvatar,
           };
 
           const restaurantInfo: RestaurantRatingInfo = {
@@ -226,10 +240,16 @@ export const useActiveOrderTrackingSocket = () => {
           console.log('Driver info for Rating screen:', {
             driverId: driverInfo.id,
             hasAvatar: !!driverInfo.avatar,
-            avatarSource: data.driverDetails?.avatar ? 'driverDetails.avatar' : 
-                         data.driver_avatar ? 'driver_avatar' : 
+            avatarSource: existingOrder?.driverDetails?.avatar ? 'existingOrder.driverDetails.avatar' :
+                         existingOrder?.driver_avatar ? 'existingOrder.driver_avatar' :
+                         existingOrder?.driver?.avatar ? 'existingOrder.driver.avatar' :
+                         data.driverDetails?.avatar ? 'data.driverDetails.avatar' : 
+                         data.driver_avatar ? 'data.driver_avatar' : 
                          persistedDriverAvatar ? 'persistedDriverAvatar' : 
-                         driverAvatar ? 'driverAvatar from orders' : 'none'
+                         driverAvatar ? 'driverAvatar from orders' : 'none',
+            existingOrderFound: !!existingOrder,
+            hasExistingDriverDetails: !!existingOrder?.driverDetails,
+            hasExistingDriverAvatar: !!existingOrder?.driver_avatar
           });
 
           navigation.navigate("Rating", {
@@ -421,10 +441,13 @@ export const useActiveOrderTrackingSocket = () => {
           hasAvatarInExistingItems: existingOrder?.order_items?.some(item => item.avatar && item.avatar.url) || false,
           hasMenuItemAvatarInIncomingItems: data.order_items?.some(item => item.menu_item && item.menu_item.avatar && item.menu_item.avatar.url) || false,
           hasMenuItemAvatarInExistingItems: existingOrder?.order_items?.some(item => item.menu_item && item.menu_item.avatar && item.menu_item.avatar.url) || false,
-          // Add customer_note debugging
+          // Add customer_note debugging  
           incomingCustomerNote: data.customer_note,
           existingCustomerNote: existingOrder?.customer_note,
-          willPreserveExistingCustomerNote: data.customer_note === undefined && !!existingOrder?.customer_note,
+          incomingCustomerNoteIsTruthy: !!data.customer_note,
+          incomingCustomerNoteIsDifferent: data.customer_note !== existingOrder?.customer_note,
+          willUpdateCustomerNote: !!(data.customer_note && data.customer_note !== existingOrder?.customer_note),
+          willPreserveExistingCustomerNote: !(data.customer_note && data.customer_note !== existingOrder?.customer_note) && !!existingOrder?.customer_note,
         });
 
         // Create base order with required fields

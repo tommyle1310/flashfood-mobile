@@ -214,6 +214,7 @@ const userPreferenceSlice = createSlice({
     removeItemFromCart: (state, action) => {
       const itemId = action.payload;
       state.cart_items = state.cart_items.filter((item) => item.id !== itemId);
+      AsyncStorage.setItem("cart_items", JSON.stringify(state.cart_items));
     },
 
     updateItemQuantity: (state, action) => {

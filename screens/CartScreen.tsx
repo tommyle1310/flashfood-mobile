@@ -8,6 +8,7 @@ import { RootState } from "@/src/store/store";
 import {
   CartItem,
   loadCartItemsFromAsyncStorage,
+  removeItemFromCart,
   Variant,
   updateItemQuantity,
 } from "@/src/store/userPreferenceSlice";
@@ -27,6 +28,7 @@ import FFView from "@/src/components/FFView";
 import { IMAGE_LINKS } from "@/src/assets/imageLinks";
 import colors from "@/src/theme/colors";
 import { spacing } from "@/src/theme";
+import axiosInstance from "@/src/utils/axiosConfig";
 
 interface GroupedCartList {
   [restaurantId: string]: CartItem[];
@@ -58,6 +60,17 @@ const CartScreen = () => {
     useState<Type_SelectedRestaurant>(defaultSelectedRestaurant);
   const [isShowModal, setIsShowModal] = useState<boolean>(false);
   const [isShowSubmitBtn, setIsShowSubmitBtn] = useState<boolean>(false);
+  const [isDeleteModalVisible, setIsDeleteModalVisible] =
+    useState<boolean>(false);
+  const [itemToDelete, setItemToDelete] = useState<{
+    cartItem: CartItem;
+    variant: Variant;
+  } | null>(null);
+  const [modalDetails, setModalDetails] = useState<{
+    status: "SUCCESS" | "ERROR" | "HIDDEN";
+    title: string;
+    desc: string;
+  }>({ status: "HIDDEN", title: "", desc: "" });
 
   const { user_id, address, id } = useSelector(
     (state: RootState) => state.auth
@@ -269,35 +282,82 @@ const CartScreen = () => {
 
   const handleSubtractQuantity = (cartItem: CartItem, variant: Variant) => {
     const newQuantity = variant.quantity - 1;
-    dispatch(
-      updateItemQuantity({
-        itemId: cartItem?.id,
-        variantId: variant.variant_id,
-        quantity: newQuantity,
-      })
-    );
-
-    // Check if restaurant should be reset
-    const restaurantId = cartItem.item.restaurantDetails?.id;
-    const remainingItems = normalizedCartList.filter(
-      (item) =>
-        item.item.restaurantDetails?.id === restaurantId &&
-        item.id !== cartItem.id
-    );
-    const remainingVariants = normalizedCartList.find(
-      (item) => item.id === cartItem.id
-    )?.variants;
-
-    if (
-      newQuantity <= 0 &&
-      remainingItems.length === 0 &&
-      (!remainingVariants || remainingVariants.length <= 1)
-    ) {
-      setSelectedRestaurant(defaultSelectedRestaurant);
-      setSelectedVariants([]);
-      console.log(
-        "Reset selectedRestaurant and selectedVariants as restaurant is empty"
+    if (newQuantity > 0) {
+      dispatch(
+        updateItemQuantity({
+          itemId: cartItem?.id,
+          variantId: variant.variant_id,
+          quantity: newQuantity,
+        })
       );
+    } else {
+      setItemToDelete({ cartItem, variant });
+      setIsDeleteModalVisible(true);
+    }
+  };
+
+  const handleConfirmDeleteItem = async () => {
+    if (!itemToDelete) {
+      return;
+    }
+
+    const { cartItem, variant } = itemToDelete;
+    const isLastVariant = cartItem.variants.length === 1;
+
+    try {
+      if (isLastVariant) {
+        const response = await axiosInstance.delete(
+          `/customers/cart-items/${cartItem.id}`
+        );
+        const { EC, EM } = response.data;
+
+        if (EC === 0) {
+          dispatch(removeItemFromCart(cartItem.id));
+          const restaurantId = cartItem.item.restaurantDetails?.id;
+          const itemsFromSameRestaurant = normalizedCartList.filter(
+            (item) => item.item.restaurantDetails?.id === restaurantId
+          );
+
+          if (itemsFromSameRestaurant.length === 1) {
+            setSelectedRestaurant(defaultSelectedRestaurant);
+            setSelectedVariants([]);
+          }
+          setModalDetails({
+            status: "SUCCESS",
+            title: "Success!",
+            desc: "Item removed from your cart.",
+          });
+        } else {
+          setModalDetails({
+            status: "ERROR",
+            title: "Error",
+            desc: EM || "Failed to remove item.",
+          });
+        }
+      } else {
+        dispatch(
+          updateItemQuantity({
+            itemId: cartItem.id,
+            variantId: variant.variant_id,
+            quantity: 0,
+          })
+        );
+        setModalDetails({
+          status: "SUCCESS",
+          title: "Success!",
+          desc: "Item updated in your cart.",
+        });
+      }
+    } catch (error) {
+      console.error("Failed to delete item from cart:", error);
+      setModalDetails({
+        status: "ERROR",
+        title: "Error",
+        desc: "An unexpected error occurred while updating your cart.",
+      });
+    } finally {
+      setIsDeleteModalVisible(false);
+      setItemToDelete(null);
     }
   };
 
@@ -514,6 +574,53 @@ const CartScreen = () => {
         >
           Clear Selection
         </FFButton>
+      </FFModal>
+      <FFModal
+        visible={isDeleteModalVisible}
+        onClose={() => {
+          setIsDeleteModalVisible(false);
+          setItemToDelete(null);
+        }}
+      >
+        <FFText fontSize="lg" fontWeight="bold" style={{ marginBottom: 16 }}>
+          Remove Item
+        </FFText>
+        <FFText fontSize="md" fontWeight="400" style={{ marginBottom: 24, color: "#aaa" }}>
+          Are you sure you want to remove this item from your cart?
+        </FFText>
+        <View style={{ flexDirection: "row", justifyContent: "flex-end" }}>
+          <FFButton
+            onPress={() => {
+              setIsDeleteModalVisible(false);
+              setItemToDelete(null);
+            }}
+            variant="outline"
+            style={{ marginRight: 8 }}
+          >
+            Cancel
+          </FFButton>
+          <FFButton
+            onPress={handleConfirmDeleteItem}
+            variant="danger"
+          >
+            Remove
+          </FFButton>
+        </View>
+      </FFModal>
+      <FFModal
+        visible={modalDetails.status !== "HIDDEN"}
+        onClose={() => setModalDetails({ status: "HIDDEN", title: "", desc: "" })}
+      >
+        <FFText
+          fontSize="lg"
+          fontWeight="bold"
+          style={{ textAlign: "center", marginBottom: 8 }}
+        >
+          {modalDetails.title}
+        </FFText>
+        <FFText fontSize="sm" style={{ textAlign: "center", color: "#666" }}>
+          {modalDetails.desc}
+        </FFText>
       </FFModal>
     </FFSafeAreaView>
   );

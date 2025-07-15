@@ -1,5 +1,5 @@
 import { View, Text, TouchableOpacity } from "react-native";
-import React from "react";
+import React, { useEffect } from "react";
 import FFText from "../../FFText";
 import FFButton from "../../FFButton";
 import { Order } from "@/src/types/Orders";
@@ -32,6 +32,13 @@ const OrderConfirmation = ({
 }) => {
   const globalState = useSelector((state: RootState) => state.auth);
   const navigation = useNavigation<CheckoutSreenNavigationProp>();
+
+  useEffect(() => {
+    const defaultAddress = globalState.address?.find((item) => item.is_default);
+    if (defaultAddress && !selected) {
+      handleSelect(defaultAddress.title);
+    }
+  }, [globalState.address, handleSelect, selected]);
 
   return (
     <View className="flex-1 gap-4">
