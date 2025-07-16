@@ -51,15 +51,21 @@ const HomeScreen = () => {
     filteredRestaurants && filteredRestaurants.length > 0 ? filteredRestaurants : listRestaurants;
 
   // Format promotions for PromotionsSliderSection
-  const formattedPromotions = availablePromotionWithRestaurants.map(promo => ({
+  
+  const formattedPromotions = availablePromotionWithRestaurants.map((promo, i) =>{
+if     (i === 2) {
+  console.log('check promo', promo?.avatar, promo )
+
+}
+    return({
     avatar: { 
-      url: promo.restaurants?.[0]?.avatar?.url || IMAGE_LINKS?.DEFAULT_AVATAR_FOOD, 
+      url: promo?.avatar?.url ? promo?.avatar?.url : IMAGE_LINKS.DEFAULT_AVATAR_FOOD, 
       key: promo.id || '' 
     },
     id: promo.id,
     name: promo.name || '',
     desc: promo.description || ''
-  }));
+  })});
 
   // Get the notification test function
   const { sendTestNotification } = usePushNotifications();

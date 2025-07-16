@@ -369,7 +369,7 @@ export const useHomeScreen = () => {
       console.error("Error toggling favorite:", error);
     }
   };
-  
+    // console.log('check promo', availablePromotionWithRestaurants?.[2]?.avatar, availablePromotionWithRestaurants?.[2]?.name)
   return {
     filteredRestaurants,
     selectedFoodCategories,

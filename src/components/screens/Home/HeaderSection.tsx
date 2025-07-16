@@ -31,7 +31,7 @@ export const HeaderSection = () => {
           size={50}
         />
         <View>
-          <FFText>{userRedux?.email}</FFText>
+          <FFText>{userRedux?.first_name} {userRedux?.last_name}</FFText>
           <FFText style={{ fontWeight: "400", fontSize: 12, color: "#bbb" }}>
             {userRedux?.address?.find((item) => item.is_default)?.title}
           </FFText>
