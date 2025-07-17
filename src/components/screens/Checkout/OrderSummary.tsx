@@ -133,7 +133,7 @@ const OrderSummary = ({
         value: voucher.id,
         label: voucher.name,
         description: voucher.description,
-        imageUrl: voucher.avatar || "https://via.placeholder.com/40",
+        imageUrl: voucher.avatar.url || "https://via.placeholder.com/40",
         fullVoucherData: voucher, // Pass the full voucher object for modal
         isDisabled: !isValid,
         disabledReason: reason,
@@ -222,7 +222,7 @@ const OrderSummary = ({
           <FFAvatar
             rounded="sm"
             size={60}
-            avatar={voucher.avatar || "https://via.placeholder.com/60"}
+            avatar={voucher.avatar.url || "https://via.placeholder.com/60"}
           />
           <View style={{ marginLeft: spacing.md, flex: 1 }}>
             <FFText fontWeight="bold" fontSize="lg">{voucher.name}</FFText>

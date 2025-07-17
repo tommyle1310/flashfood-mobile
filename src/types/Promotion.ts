@@ -28,7 +28,10 @@ export interface Voucher {
   discount_value: string;
   maximum_discount_amount: string | null;
   minimum_order_value: string | null;
-  avatar: string | null;
+  avatar: {
+    key: string;
+    url: string;
+  };
   status: string;
   scope: string;
   current_usage: number;
