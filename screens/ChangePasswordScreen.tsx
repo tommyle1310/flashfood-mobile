@@ -1,223 +1,273 @@
-import React, { useState } from "react";
-import { View, StyleSheet, Image, Linking } from "react-native";
+import React, { useEffect, useState } from "react";
+import {
+  View,
+  StyleSheet,
+  Linking,
+  TouchableOpacity,
+  StyleProp,
+  ViewStyle,
+} from "react-native";
 import FFSafeAreaView from "@/src/components/FFSafeAreaView";
 import FFText from "@/src/components/FFText";
 import FFButton from "@/src/components/FFButton";
 import FFInputControl from "@/src/components/FFInputControl";
 import Spinner from "@/src/components/FFSpinner";
 import axiosInstance from "@/src/utils/axiosConfig";
-import FFModal from "@/src/components/FFModal";
-import { spacing } from "@/src/theme";
+import { spacing, colors } from "@/src/theme";
+import { Ionicons } from "@expo/vector-icons";
+import { useSelector } from "@/src/store/types";
+import { RootState } from "@/src/store/store";
+import FFScreenTopSection from "@/src/components/FFScreenTopSection";
+import { useNavigation } from "@react-navigation/native";
+
+type Step = "enterEmail" | "checkEmail" | "createPassword";
+
+const Header = ({ onBack, title }: { onBack?: () => void; title: string }) => (
+  <View style={styles.headerContainer}>
+    {onBack && (
+      <TouchableOpacity onPress={onBack} style={styles.backButton}>
+        <Ionicons name="arrow-back" size={24} color={colors.text} />
+      </TouchableOpacity>
+    )}
+    <FFText fontSize="xl" fontWeight="700" style={styles.headerTitle}>
+      {title}
+    </FFText>
+  </View>
+);
+
+const EnterEmailStep = ({
+  email,
+  setEmail,
+  onSend,
+}: {
+  email: string;
+  setEmail: React.Dispatch<React.SetStateAction<string>>;
+  onSend: () => void;
+}) => (
+  <View style={styles.stepContainer}>
+    <FFText style={styles.description}>
+      Enter the email associated with your account and we'll send an email with
+      instructions to reset your password.
+    </FFText>
+    <FFInputControl
+      placeholder="Enter your email"
+      value={email}
+      setValue={setEmail}
+      keyboardType="email-address"
+      autoCapitalize="none"
+    />
+    <FFButton onPress={onSend} style={styles.button}>
+      Send Instructions
+    </FFButton>
+  </View>
+);
+
+const CheckEmailStep = ({
+  onBack,
+  onOpenEmail,
+  onSkip,
+}: {
+  onBack: () => void;
+  onOpenEmail: () => void;
+  onSkip: () => void;
+}) => (
+  <View style={styles.stepContainer}>
+    <View style={styles.iconContainer}>
+      <Ionicons name="mail-outline" size={80} color={colors.primary} />
+    </View>
+    <FFText style={styles.description}>
+      We have sent a password recovery instruction to your email.
+    </FFText>
+    <FFButton onPress={onOpenEmail} style={styles.button}>
+      Open Email App
+    </FFButton>
+  </View>
+);
+
+const CreatePasswordStep = ({
+  password,
+  setPassword,
+  confirmPassword,
+  setConfirmPassword,
+  onReset,
+  onBack,
+}: {
+  password: string;
+  setPassword: React.Dispatch<React.SetStateAction<string>>;
+  confirmPassword: string;
+  setConfirmPassword: React.Dispatch<React.SetStateAction<string>>;
+  onReset: () => void;
+  onBack: () => void;
+}) => (
+  <View style={styles.stepContainer}>
+    <Header title="Create New Password" onBack={onBack} />
+    <FFText style={styles.description}>
+      Your new password must be different from previously used passwords.
+    </FFText>
+    <FFInputControl
+      placeholder="Enter new password"
+      secureTextEntry
+      value={password}
+      setValue={setPassword}
+    />
+    <FFInputControl
+      placeholder="Confirm new password"
+      secureTextEntry
+      value={confirmPassword}
+      setValue={setConfirmPassword}
+      containerStyle={{ marginTop: spacing.md }}
+    />
+    <FFButton onPress={onReset} style={styles.button}>
+      Reset Password
+    </FFButton>
+  </View>
+);
 
 const ChangePasswordScreen = () => {
-  const [step, setStep] = useState<
-    "enterEmail" | "checkEmail" | "createPassword"
-  >("enterEmail");
+  const [step, setStep] = useState<Step>("enterEmail");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const [modalDetails, setModalDetails] = useState<{
-    status: "SUCCESS" | "ERROR" | "HIDDEN" | "INFO" | "YESNO";
-    title: string;
-    desc: string;
-  }>({ status: "HIDDEN", title: "", desc: "" });
+  const {email: emailRedux} = useSelector((state: RootState) => state.auth);
 
   const handleSendInstructions = async () => {
     setIsLoading(true);
     try {
-      const response = await axiosInstance.post(
-        `/auth/request-reset-password`,
-        { email },
-        {
-          validateStatus: () => true,
-        }
-      );
-      if (response.data.EC === 0) {
-        setModalDetails({
-          status: "SUCCESS",
-          title: "Reset password confirmation mail sent",
-          desc: `Please check your mail to proceed password resetting. (${email})`,
-        });
-      }
+      await axiosInstance.post(`/auth/request-reset-password`, { email });
       setStep("checkEmail");
     } catch (error) {
       console.log("Error sending instructions:", error);
-      setModalDetails({
-        status: "ERROR",
-        title: "Error",
-        desc: "Failed to send instructions.",
-      });
+      // You might want to show a modal or a toast here
     } finally {
       setIsLoading(false);
     }
   };
 
   const handleOpenEmailApp = async () => {
-    try {
-      const emailUrl = "mailto:";
-      const supported = await Linking.canOpenURL(emailUrl);
-
-      if (supported) {
-        await Linking.openURL(emailUrl);
-        console.log("Opening email app...");
-      } else {
-        console.log("No email app is available on this device.");
-      }
-    } catch (error) {
-      console.error("Error opening email app:", error);
+    const supported = await Linking.canOpenURL("mailto:");
+    if (supported) {
+      await Linking.openURL("mailto:");
+    } else {
+      console.log("No email app is available on this device.");
+      // You might want to show a modal or a toast here
     }
   };
 
   const handleResetPassword = () => {
-    if (password === confirmPassword) {
-      console.log("Password reset successfully!");
-      // Handle password reset logic
-    } else {
+    if (password !== confirmPassword) {
       console.log("Passwords do not match!");
+      // You might want to show a modal or a toast here
+      return;
+    }
+    console.log("Password reset successfully!");
+    // Handle password reset logic here
+  };
+
+  const handleGoBack = () => {
+    if (step === "checkEmail") {
+      setStep("enterEmail");
+    } else if (step === "createPassword") {
+      setStep("checkEmail");
     }
   };
 
-  if (isLoading) {
-    return <Spinner isVisible isOverlay />;
-  }
+  const renderStep = () => {
+    switch (step) {
+      case "enterEmail":
+        return (
+          <EnterEmailStep
+            email={email}
+            setEmail={setEmail}
+            onSend={handleSendInstructions}
+          />
+        );
+      case "checkEmail":
+        return (
+          <CheckEmailStep
+            onBack={handleGoBack}
+            onOpenEmail={handleOpenEmailApp}
+            onSkip={() => setStep("createPassword")}
+          />
+        );
+      case "createPassword":
+        return (
+          <CreatePasswordStep
+            password={password}
+            setPassword={setPassword}
+            confirmPassword={confirmPassword}
+            setConfirmPassword={setConfirmPassword}
+            onReset={handleResetPassword}
+            onBack={handleGoBack}
+          />
+        );
+      default:
+        return null;
+    }
+  };
 
+  useEffect(() => {
+    if (emailRedux) {
+      console.log('cehck emeial redux', emailRedux)
+      setEmail(emailRedux)
+    }
+  }, [emailRedux])
+  const navigation = useNavigation()
   return (
     <FFSafeAreaView>
-      {step === "enterEmail" && (
-        <View style={styles.container}>
-          <FFText fontSize="xl" fontWeight="700" style={styles.title}>
-            Reset password
-          </FFText>
-          <FFText fontSize="sm" style={styles.description}>
-            Enter the email associated with your account and we'll send an email
-            with instructions to reset your password.
-          </FFText>
-          <View style={{ width: "100%", marginBottom: spacing.lg }}>
-            <FFInputControl
-              placeholder="Email address"
-              value={email}
-              setValue={setEmail}
-              label=""
-              style={styles.input}
-            />
-          </View>
-          <FFButton onPress={handleSendInstructions} style={styles.button}>
-            Send Instructions
-          </FFButton>
-        </View>
-      )}
-
-      {step === "checkEmail" && (
-        <View style={styles.container}>
-          <Image
-            source={{ uri: "https://via.placeholder.com/150" }} // Replace with your email icon
-            style={styles.icon}
-          />
-          <FFText fontSize="xl" fontWeight="700" style={styles.title}>
-            Check your mail
-          </FFText>
-          <FFText fontSize="md" style={styles.description}>
-            We have sent a password recovery instruction to your email.
-          </FFText>
-          <FFButton onPress={handleOpenEmailApp} style={styles.button}>
-            Open email app
-          </FFButton>
-          <FFButton onPress={() => setStep("createPassword")} variant="outline">
-            Skip, I'll confirm later
-          </FFButton>
-        </View>
-      )}
-
-      {step === "createPassword" && (
-        <View style={styles.container}>
-          <FFText fontSize="xl" fontWeight="700" style={styles.title}>
-            Create new password
-          </FFText>
-          <FFText fontSize="md" style={styles.description}>
-            Your new password must be different from previously used passwords.
-          </FFText>
-          <View style={{ width: "100%", marginBottom: spacing.lg }}>
-            <FFInputControl
-              placeholder="Password"
-              secureTextEntry
-              value={password}
-              setValue={setPassword}
-              style={styles.input}
-            />
-            <FFInputControl
-              placeholder="Confirm Password"
-              secureTextEntry
-              value={confirmPassword}
-              setValue={setConfirmPassword}
-              style={styles.input}
-            />
-          </View>
-          <FFButton onPress={handleResetPassword} style={styles.button}>
-            Reset Password
-          </FFButton>
-        </View>
-      )}
-
-      {/* <FFModal
-        visible={modalDetails.status !== "HIDDEN"}
-        onClose={() =>
-          setModalDetails({ status: "HIDDEN", title: "", desc: "" })
-        }
-      >
-        <FFText fontSize="lg" fontWeight="700" style={styles.title}>
-          {modalDetails.title}
-        </FFText>
-        <FFText fontSize="sm" style={styles.description}>
-          {modalDetails.desc}
-        </FFText>
-        <FFButton
-          onPress={() =>
-            setModalDetails({ status: "HIDDEN", title: "", desc: "" })
-          }
-          style={styles.button}
-        >
-          Close
-        </FFButton>
-      </FFModal> */}
+      <Spinner isVisible={isLoading} isOverlay />
+      <FFScreenTopSection navigation={navigation} title={step === 'enterEmail' ? 'Enter Email' : step === 'checkEmail' ? 'Check Email' : 'Create Password'}/>
+      <View style={styles.container}>{renderStep()}</View>
     </FFSafeAreaView>
   );
 };
 
 const styles = StyleSheet.create({
+  screen: {
+    flex: 1,
+    backgroundColor: colors.white,
+  },
   container: {
     flex: 1,
-    padding: spacing.md,
-    marginTop: -spacing.xl,
-    width: "100%",
+    padding: spacing.lg,
     justifyContent: "center",
-    alignItems: "center",
   },
-  title: {
-    marginBottom: spacing.md,
+  stepContainer: {
+    flex: 1,
+    justifyContent: "center",
+    marginTop: -spacing.xl
+  },
+  headerContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: spacing.lg,
+    position: "relative", // For absolute positioning of back button
+    justifyContent: "center",
+  },
+  backButton: {
+    position: "absolute",
+    left: 0,
+    padding: spacing.sm,
+  },
+  headerTitle: {
     textAlign: "center",
+    color: colors.text,
   },
   description: {
-    marginBottom: 24,
+    marginBottom: spacing.xl,
     textAlign: "center",
-    color: "#888",
-  },
-  input: {
-    width: "100%",
-    marginBottom: spacing.md,
+    color: colors.textSecondary,
+    fontSize: 16,
+    lineHeight: 24,
   },
   button: {
-    width: "100%",
-    marginBottom: spacing.md,
+    marginTop: spacing.lg,
   },
-  skipButton: {
-    backgroundColor: "transparent",
-  },
-  icon: {
-    width: 100,
-    height: 100,
-    marginBottom: 24,
+  iconContainer: {
+    alignItems: "center",
+    marginBottom: spacing.xl,
   },
 });
 
 export default ChangePasswordScreen;
+

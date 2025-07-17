@@ -44,6 +44,7 @@ import PromotionWithRestaurantsScreen from "@/screens/PromotionWithRestaurantsSc
 import CreateInquiryScreen from "../screens/CreateInquiryScreen";
 import FFSplashScreen from "@/screens/SplashScreen";
 import PopularRestaurantsScreen from "@/screens/PopularRestaurantsScreen";
+import AccountVerificationScreen from "@/screens/AccountVerificationScreen";
 
 export type RootStackParamList = {
   Login: undefined;
@@ -75,6 +76,7 @@ export type MainStackParamList = {
   ChangePassword: undefined;
   Search: undefined | {fetchedCategories: FoodCategory[]};
   Notifications: undefined;
+  AccountVerification: undefined;
   NearYou: Restaurant[];
   PromotionsWithRestaurant: {
     promotionTitle?: string;
@@ -186,6 +188,11 @@ const MainStackScreen = () => {
         options={{ headerShown: false }}
         name="FChat"
         component={FChatScreen}
+      />
+      <MainStack.Screen
+        options={{ headerShown: false }}
+        name="AccountVerification"
+        component={AccountVerificationScreen}
       />
     </MainStack.Navigator>
   );

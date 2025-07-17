@@ -4,7 +4,7 @@ import FFSafeAreaView from "@/src/components/FFSafeAreaView";
 import { useNavigation } from "@react-navigation/native";
 import FFAuthForm from "./FFAuthForm";
 import { StackNavigationProp } from "@react-navigation/stack";
-import { RootStackParamList } from "@/src/navigation/AppNavigator"; // Make sure you have this path correct
+import { RootStackParamList } from "@/src/navigation/AppNavigator";
 import { LinearGradient } from "expo-linear-gradient";
 import { useDispatch, useSelector } from "@/src/store/types";
 import {
@@ -31,9 +31,35 @@ const Login = () => {
   const navigation = useNavigation<LoginScreenNavigationProp>();
   const dispatch = useDispatch();
   const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState("");
-  const handleLoginSubmit = async (email: string, password: string) => {
-    // Request body
+  // Change error state to an object to hold field-specific errors
+  const [formErrors, setFormErrors] = useState<{
+    general?: string;
+    email?: string;
+    password?: string;
+    firstName?: string;
+    lastName?: string;
+  }>({});
+
+  const handleLoginSubmit = async (
+    email: string,
+    password: string,
+    firstName: string,
+    lastName: string
+  ) => {
+    // Clear previous errors
+    setFormErrors({});
+
+    // Simple client-side validation for missing fields
+    // This is a basic example; you might want more robust validation.
+    const newErrors: typeof formErrors = {};
+    if (!email) newErrors.email = "Email is required.";
+    if (!password) newErrors.password = "Password is required.";
+
+    if (Object.keys(newErrors).length > 0) {
+      setFormErrors(newErrors);
+      return; // Stop submission if client-side validation fails
+    }
+
     const requestBody = {
       email: email,
       password: password,
@@ -42,83 +68,102 @@ const Login = () => {
     setIsLoading(true);
 
     try {
-      // Make the POST request
       const response = await axiosInstance.post(
         "/auth/login-customer",
         requestBody,
         {
-          // This will ensure axios does NOT reject on non-2xx status codes
-          validateStatus: () => true, // Always return true so axios doesn't throw on errors
+          validateStatus: () => true,
         }
       );
 
-      // Now you can safely access the EC field
-      const { EC, EM, data } = response.data; // Access EC, EM, and data
+      const { EC, EM, data } = response.data;
       console.log("response.data", response.data);
-      if (EC === 0) {
-        // Success, decode the JWT token (assuming 'data.access_token' contains the JWT)
-        const userData = decodeJWT(data.access_token); // Decode JWT to get user data
 
-        // Dispatch the action to save the user data to AsyncStorage and Redux store
+      if (EC === 0) {
+        // Success
+        const userData = decodeJWT(data.access_token);
         console.log("🔐 Login success - saving user data:", userData);
-        const responseCartItem =     await axiosInstance.get(
+
+        const responseCartItem = await axiosInstance.get(
           `/customers/cart-items/${userData.id}`,
-         
           {
-            // This will ensure axios does NOT reject on non-2xx status codes
-            validateStatus: () => true, // Always return true so axios doesn't throw on errors
+            validateStatus: () => true,
           }
         );
-        try {
-          // Wait for the save operations to complete before navigating
-          await dispatch(
-            saveTokenToAsyncStorage({
-              accessToken: data.access_token, // Saving the actual access token
-              app_preferences: userData.app_preferences || {}, // Fallback to empty object if not present
-              email: userData.email || "", // Default to empty string if email is missing
-              first_name: userData.first_name || "", // Default to empty string if email is missing
-              last_name: userData.last_name || "", // Default to empty string if email is missing
-              phone: userData.phone || "", // Add the missing phone property
-              preferred_category: userData.preferred_category || [], // Ensure this is an array
-              favorite_items: userData.favorite_items || [], // Ensure this is an array
-              avatar: userData.avatar || null, // Use null if no avatar data is available
-              support_tickets: userData.support_tickets || [], // Ensure this is an array
-              user_id: userData.user_id || "", // Default to empty string if not present
-              user_type: userData.user_type || [], // Ensure this is an array
-              address: userData.address || [],
-              id: userData.id || "",
-              fWallet_id: userData.fWallet_id || "",
-              fWallet_balance: parseFloat(userData.fWallet_balance) || 0,
-              // cart_items: userData.cart_items || [],
-            })
-          );
-          
-          await dispatch(saveFavoriteRestaurantsToAsyncStorage());
-          await dispatch(saveCartItemsToAsyncStorage(responseCartItem.data.data));
 
-          console.log("💾 All user data saved successfully, navigating...");
-          
-          navigation.reset({
-            index: 0,
-            routes: [{ name: "MainStack" }],
-          });
-        } catch (error) {
-          console.error("❌ Error saving user data:", error);
-        }
-        
-        setIsLoading(false);
+        await dispatch(
+          saveTokenToAsyncStorage({
+            accessToken: data.access_token,
+            app_preferences: userData.app_preferences || {},
+            email: userData.email || "",
+            first_name: userData.first_name || "",
+            last_name: userData.last_name || "",
+            phone: userData.phone || "",
+            preferred_category: userData.preferred_category || [],
+            favorite_items: userData.favorite_items || [],
+            avatar: userData.avatar || null,
+            support_tickets: userData.support_tickets || [],
+            user_id: userData.user_id || "",
+            user_type: userData.user_type || [],
+            address: userData.address || [],
+            is_verified: userData.is_verified || false,
+            id: userData.id || "",
+            fWallet_id: userData.fWallet_id || "",
+            fWallet_balance: parseFloat(userData.fWallet_balance) || 0,
+          })
+        );
+
+        await dispatch(saveFavoriteRestaurantsToAsyncStorage());
+        await dispatch(saveCartItemsToAsyncStorage(responseCartItem.data.data));
+
+        console.log("💾 All user data saved successfully, navigating...", {
+          accessToken: data.access_token,
+          app_preferences: userData.app_preferences || {},
+          email: userData.email || "",
+          first_name: userData.first_name || "",
+          last_name: userData.last_name || "",
+          phone: userData.phone || "",
+          preferred_category: userData.preferred_category || [],
+          favorite_items: userData.favorite_items || [],
+          avatar: userData.avatar || null,
+          support_tickets: userData.support_tickets || [],
+          user_id: userData.user_id || "",
+          user_type: userData.user_type || [],
+          address: userData.address || [],
+          is_verified: userData.is_verified || false,
+          id: userData.id || "",
+          fWallet_id: userData.fWallet_id || "",
+          fWallet_balance: parseFloat(userData.fWallet_balance) || 0,
+        });
+
+        navigation.reset({
+          index: 0,
+          routes: [{ name: "MainStack" }],
+        });
+      } else if (EC === 3) {
+        // Invalid credentials
+        setFormErrors({ general: EM || "Invalid email or password. Please try again." });
+      } else if (EC === 1) {
+        // Missing required fields (server-side validation)
+        // Assuming EM might contain details about missing fields, or you map generic EC=1 to specific fields.
+        // For now, we'll just show a general message or infer from EM if possible.
+        setFormErrors({ general: EM || "Please fill in all required fields." });
+        // If EM gives specific field names, you could parse it:
+        // if (EM.includes("email")) newErrors.email = "Email is missing.";
+        // if (EM.includes("password")) newErrors.password = "Password is missing.";
+        // setFormErrors(newErrors);
       } else {
-        setIsLoading(false);
-        // Handle error based on EC (optional)
-        setError(EM); // Show error message if EC is non-zero
+        // Other errors
+        setFormErrors({ general: EM || "An unexpected error occurred. Please try again later." });
       }
     } catch (error) {
-      setIsLoading(false);
       console.error("Login failed:", error);
-
-      setError("An unexpected error occurred during login."); // Provide a generic error message if the request fails
+      setFormErrors({ general: "Network error or unexpected issue. Please check your connection." });
+    } finally {
+      setIsLoading(false);
     }
   };
+
   const { theme } = useTheme();
 
   const accessToken = useSelector((state: RootState) => state.auth.accessToken);
@@ -149,7 +194,7 @@ const Login = () => {
         className="flex-1 items-center justify-center"
       >
         <FFAuthForm
-          error={error}
+          formErrors={formErrors} // Pass the formErrors object
           isSignUp={false}
           onSubmit={handleLoginSubmit}
           navigation={navigation}

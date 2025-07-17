@@ -4,6 +4,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 interface AuthState {
   accessToken: string | null;
   isAuthenticated: boolean;
+  is_verified: boolean;
   email: string | null;
   id: string | null;
   first_name: string | null;
@@ -39,6 +40,7 @@ interface AuthState {
 const initialState: AuthState = {
   accessToken: null,
   isAuthenticated: false,
+  is_verified: false,
   email: null,
   id: null,
   first_name: null,
@@ -76,6 +78,7 @@ export const loadTokenFromAsyncStorage = createAsyncThunk(
     const fWallet_id = await AsyncStorage.getItem("fWallet_id");
     const user_type = await AsyncStorage.getItem("user_type");
     const address = await AsyncStorage.getItem("address");
+    const is_verified = await AsyncStorage.getItem("is_verified");
 
 
     const result = {
@@ -97,6 +100,7 @@ export const loadTokenFromAsyncStorage = createAsyncThunk(
       user_id,
       user_type: user_type ? JSON.parse(user_type) : [],
       address: address ? JSON.parse(address) : [],
+      is_verified: is_verified ? JSON.parse(is_verified) : false,
     };
     
     return result;
@@ -122,6 +126,7 @@ export const saveTokenToAsyncStorage = createAsyncThunk(
     support_tickets: any[];
     user_id: string;
     user_type: string[];
+    is_verified: boolean;
     address: Array<{
       location: { lng: number; lat: number };
       id: string;
@@ -168,7 +173,8 @@ export const saveTokenToAsyncStorage = createAsyncThunk(
     );
     await AsyncStorage.setItem("user_id", data.user_id);
     await AsyncStorage.setItem("user_type", JSON.stringify(data.user_type));
-    
+    await AsyncStorage.setItem("is_verified", JSON.stringify(data.is_verified));
+
     console.log("🏠 Saving address:", data.address);
     await AsyncStorage.setItem("address", JSON.stringify(data.address)); // Save address to AsyncStorage
 
@@ -186,8 +192,9 @@ export const saveTokenToAsyncStorage = createAsyncThunk(
     return data;
   }
 );
+
 export const saveProfileDataToAsyncStorage = createAsyncThunk(
-  "auth/saveToken",
+  "auth/saveProfileData",
   async (data: {
     email: string;
     avatar: { url: string; key: string };
@@ -195,13 +202,20 @@ export const saveProfileDataToAsyncStorage = createAsyncThunk(
     last_name: string;
     phone: string;
   }) => {
-    await AsyncStorage.setItem("email", data.email);
-    await AsyncStorage.setItem("avatar", JSON.stringify(data.avatar));
-    await AsyncStorage.setItem("first_name", JSON.stringify(data.avatar));
-    await AsyncStorage.setItem("last_name", JSON.stringify(data.avatar));
-    await AsyncStorage.setItem("phone", data.phone);
-
-    return data;
+    // Save all profile fields to AsyncStorage
+    if (data.avatar) {
+      await AsyncStorage.setItem("avatar", JSON.stringify(data.avatar));
+    }
+    if (data.first_name) {
+      await AsyncStorage.setItem("first_name", data.first_name);
+    }
+    if (data.last_name) {
+      await AsyncStorage.setItem("last_name", data.last_name);
+    }
+    if (data.phone) {
+      await AsyncStorage.setItem("phone", data.phone);
+    }
+    return data; // Return all data to be handled by the reducer
   }
 );
 
@@ -408,6 +422,9 @@ const authSlice = createSlice({
   name: "auth",
   initialState,
   reducers: {
+    setVerificationStatus: (state, action) => {
+      state.is_verified = action.payload;
+    },
     setAuthState: (state, action) => {
       const {
         id,
@@ -532,11 +549,19 @@ const authSlice = createSlice({
           state.user_id = user_id;
           state.user_type = user_type;
           state.address = address; // Set the address if available
+          state.is_verified = action.payload.is_verified;
           
         } else {
           console.log("❌ No accessToken found, setting unauthenticated state");
           state.isAuthenticated = false;
         }
+      })
+      .addCase(saveProfileDataToAsyncStorage.fulfilled, (state, action) => {
+        // Update state with new profile data
+        state.first_name = action.payload.first_name;
+        state.last_name = action.payload.last_name;
+        state.phone = action.payload.phone;
+        state.avatar = action.payload.avatar;
       })
       .addCase(saveTokenToAsyncStorage.fulfilled, (state, action) => {
         console.log("🔄 saveTokenToAsyncStorage.fulfilled: Updating Redux state", action.payload);
@@ -558,6 +583,7 @@ const authSlice = createSlice({
           user_id,
           user_type,
           address,
+          is_verified,
         } = action.payload;
 
         state.accessToken = accessToken;
@@ -577,6 +603,7 @@ const authSlice = createSlice({
         state.user_id = user_id;
         state.user_type = user_type;
         state.address = address; // Set the address in the state
+        state.is_verified = is_verified;
         
         console.log("✅ saveTokenToAsyncStorage.fulfilled: Redux state updated", state);
       })
@@ -598,6 +625,7 @@ const authSlice = createSlice({
         state.user_id = null;
         state.user_type = [];
         state.address = []; // Clear address on logout
+        state.is_verified = false;
       })
       .addCase(updateAddressInState.fulfilled, (state, action) => {
         const updatedAddress = action.payload;
@@ -634,7 +662,7 @@ const authSlice = createSlice({
   },
 });
 
-export const { setAuthState, clearAuthState, setAvatar, setDefaultAddress } =
+export const { setAuthState, clearAuthState, setAvatar, setDefaultAddress, setVerificationStatus } =
   authSlice.actions;
 
 export default authSlice.reducer;

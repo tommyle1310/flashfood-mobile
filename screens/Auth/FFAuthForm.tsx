@@ -11,8 +11,8 @@ import {
 import { LinearGradient } from "expo-linear-gradient";
 import IconIonicons from "react-native-vector-icons/Ionicons";
 import FFAvatar from "@/src/components/FFAvatar";
-import FFInputControl from "@/src/components/FFInputControl";
-import { spacing } from "@/src/theme";
+import FFInputControl from "@/src/components/FFInputControl"; // We will also update this component
+import { colors, spacing } from "@/src/theme";
 import FFView from "@/src/components/FFView";
 import FFText from "@/src/components/FFText";
 import { IMAGE_LINKS } from "@/src/assets/imageLinks";
@@ -26,20 +26,27 @@ type FFAuthFormProps = {
     lastName: string
   ) => void;
   navigation?: any; // Optional navigation prop, used only in SignUp for navigation,
-  error?: string;
+  // Change error prop to formErrors object
+  formErrors?: {
+    general?: string;
+    email?: string;
+    password?: string;
+    firstName?: string;
+    lastName?: string;
+  };
 };
 
 const FFAuthForm = ({
   isSignUp,
   onSubmit,
   navigation,
-  error,
+  formErrors, // Destructure formErrors
 }: FFAuthFormProps) => {
   const [email, setEmail] = useState("flashfood211@gmail.com");
   const [password, setPassword] = useState("000000");
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
-  const [isPasswordVisible, setIsPasswordVisible] = useState(false); // State to toggle password visibility
+  const [isPasswordVisible, setIsPasswordVisible] = useState(false);
   const passwordInputRef = useRef<TextInput>(null);
 
   const togglePasswordVisibility = () => {
@@ -64,7 +71,6 @@ const FFAuthForm = ({
           right: 0,
           left: 0,
           top: -40,
-
           transform: [{ translateX: "40%" }],
         }}
       >
@@ -86,8 +92,16 @@ const FFAuthForm = ({
         </TouchableOpacity>
       </View>
 
+      {/* Display general error message if it exists */}
+      {formErrors?.general && (
+        <View style={{width: '100%', justifyContent: 'center', paddingTop: spacing.sm,  borderRadius: spacing.sm, backgroundColor: colors.ligth_error, alignItems: 'center'}}>
+        <FFText style={styles.generalErrorText}>{formErrors.general}</FFText>
+
+        </View>
+      )}
+
       <FFInputControl
-        error={error}
+        error={formErrors?.email} // Pass specific error for email
         label="Email"
         placeholder="teo@gmail.com"
         setValue={setEmail}
@@ -96,14 +110,14 @@ const FFAuthForm = ({
       {isSignUp && (
         <>
           <FFInputControl
-            error={error}
+            error={formErrors?.firstName} // Pass specific error for first name
             label="First name"
             placeholder="Tom"
             setValue={setFirstName}
             value={firstName}
           />
           <FFInputControl
-            error={error}
+            error={formErrors?.lastName} // Pass specific error for last name
             label="Last name"
             placeholder="Morn"
             setValue={setLastName}
@@ -113,12 +127,15 @@ const FFAuthForm = ({
       )}
 
       <FFInputControl
-        error={error}
+        error={formErrors?.password} // Pass specific error for password
         secureTextEntry
         label="Password"
         placeholder="******"
         setValue={setPassword}
         value={password}
+        // You might want to remove the password visibility toggle from FFAuthForm if FFInputControl handles it
+        // Or if FFInputControl *doesn't* handle it, you'd need to adapt FFInputControl to accept these props
+        // For now, let's assume FFInputControl takes care of its own secureTextEntry icon or you move that logic there.
       />
 
       <Pressable onPress={handleSubmit}>
@@ -139,7 +156,6 @@ const FFAuthForm = ({
 
 const styles = StyleSheet.create({
   container: {
-    // backgroundColor: "#fff",
     padding: spacing.md,
     borderRadius: 16,
     position: "relative",
@@ -161,6 +177,12 @@ const styles = StyleSheet.create({
     gap: 4,
     alignItems: "center",
     marginTop: spacing.sm,
+  },
+  generalErrorText: {
+    color: "red",
+    textAlign: "center",
+    marginBottom: spacing.sm,
+    fontSize: 14,
   },
   passwordContainer: {
     flexDirection: "row",

@@ -1,3 +1,4 @@
+// screens/Signup.tsx
 import React, { useState } from "react";
 import FFSafeAreaView from "@/src/components/FFSafeAreaView";
 import { useNavigation } from "@react-navigation/native";
@@ -10,7 +11,7 @@ import { useDispatch } from "@/src/store/types";
 import { setAuthState } from "@/src/store/authSlice";
 import FFModal from "@/src/components/FFModal";
 import FFText from "@/src/components/FFText";
-import { TextInput, TouchableOpacity, View, Text } from "react-native";
+import { TextInput, TouchableOpacity, View, Text, StyleSheet } from "react-native"; // Added StyleSheet for modal error text
 import IconIonicon from "react-native-vector-icons/Ionicons";
 
 import FFButton from "@/src/components/FFButton";
@@ -27,8 +28,18 @@ const Signup = () => {
   const dispatch = useDispatch();
   const [loading, setLoading] = useState<boolean>(false);
   const [verificationCode, setVerificationCode] = useState("");
-  const [error, setError] = useState("");
-  const [email, setEmail] = useState("");
+  // Change error state to an object to hold field-specific errors for the main form
+  const [formErrors, setFormErrors] = useState<{
+    general?: string;
+    email?: string;
+    password?: string;
+    firstName?: string;
+    lastName?: string;
+  }>({});
+  // Error state specifically for the verification modal
+  const [verificationModalError, setVerificationModalError] = useState("");
+
+  const [email, setEmail] = useState(""); // This state is used to pass email to the modal
   const [modalStatus, setModalStatus] = useState<
     "ENTER_CODE" | "VERIFIED_SUCCESS"
   >("ENTER_CODE");
@@ -36,16 +47,30 @@ const Signup = () => {
     useState<boolean>(false);
   const { theme } = useTheme();
 
-  const handleSignupSubmit = (
+  const handleSignupSubmit = async (
     email: string,
     password: string,
     firstName: string,
     lastName: string
   ) => {
-    // Set loading to true when starting the request
-    setLoading(true);
+    // Clear previous errors
+    setFormErrors({});
+    setEmail(email); // Keep email state updated for the modal
 
-    // Request body
+    // Client-side validation for missing fields
+    const newErrors: typeof formErrors = {};
+    if (!email) newErrors.email = "Email is required.";
+    if (!password) newErrors.password = "Password is required.";
+    if (!firstName) newErrors.firstName = "First name is required.";
+    if (!lastName) newErrors.lastName = "Last name is required.";
+
+    if (Object.keys(newErrors).length > 0) {
+      setFormErrors(newErrors);
+      return; // Stop submission if client-side validation fails
+    }
+
+    setLoading(true); // Set loading to true when starting the request
+
     const requestBody = {
       email: email,
       password: password,
@@ -53,72 +78,100 @@ const Signup = () => {
       last_name: lastName,
     };
 
-    // Make the POST request
-    axiosInstance
-      .post("/auth/register-customer", requestBody, {
-        validateStatus: () => true, // Always return true so axios doesn't throw on errors
-      })
-      .then((response) => {
-        // Set loading to false once the response is received
-        setLoading(false);
+    try {
+      const response = await axiosInstance.post(
+        "/auth/register-customer",
+        requestBody,
+        {
+          validateStatus: () => true, // Always return true so axios doesn't throw on errors
+        }
+      );
 
-        if (response.data) {
-          const { EC, EM } = response.data; // Access EC directly
+      setLoading(false); // Set loading to false once the response is received
 
-          if (EC === 0) {
-            setError("");
-            // Success
-            setEmail(email); // Ensure email state is set
-            setIsOpenVerificationModal(true); // Open the verification modal
+      if (response.data) {
+        const { EC, EM } = response.data;
+
+        if (EC === 0) {
+          setFormErrors({}); // Clear all form errors on success
+          setIsOpenVerificationModal(true); // Open the verification modal
+          setVerificationModalError(""); // Clear any previous modal errors
+        } else if (EC === -3) {
+          // Email already used
+          setFormErrors({ email: 'This email is already registered. Please use a different email or log in' });
+        } else if (EC === 1) {
+          // Missing required fields (server-side validation)
+          // Attempt to parse EM for specific field errors if possible, otherwise show general
+          const missingFieldsErrors: typeof formErrors = {};
+          if (EM && typeof EM === 'string') {
+            if (EM.toLowerCase().includes("email")) missingFieldsErrors.email = "Email is missing or invalid.";
+            if (EM.toLowerCase().includes("password")) missingFieldsErrors.password = "Password is missing or invalid.";
+            if (EM.toLowerCase().includes("first_name")) missingFieldsErrors.firstName = "First name is missing.";
+            if (EM.toLowerCase().includes("last_name")) missingFieldsErrors.lastName = "Last name is missing.";
+          }
+          if (Object.keys(missingFieldsErrors).length > 0) {
+            setFormErrors(missingFieldsErrors);
           } else {
-            // Handle error based on EC (optional)
-            setError(EM);
+            setFormErrors({ general: EM || "Please fill in all required fields." });
           }
         } else {
-          // If there is no data or the response is malformed
-          setError("Something went wrong. Please try again.");
+          // Other errors
+          setFormErrors({ general: EM || "An unexpected error occurred during signup. Please try again." });
         }
-      })
-      .catch((error) => {
-        // Set loading to false if there's an error
-        setLoading(false);
-
-        // Handle the error (e.g., network error)
-        setError("Network error. Please try again later.");
-      });
+      } else {
+        setFormErrors({ general: "Something went wrong. Please try again." });
+      }
+    } catch (error) {
+      setLoading(false);
+      setFormErrors({ general: "Network error. Please check your connection and try again." });
+    }
   };
 
-  const handleSubmitVerificationCode = () => {
+  const handleSubmitVerificationCode = async () => {
+    setLoading(true);
+    setVerificationModalError(""); // Clear previous modal errors
+
+    if (!verificationCode) {
+      setVerificationModalError("Please enter the verification code.");
+      setLoading(false);
+      return;
+    }
+
     const requestBody = {
       email: email,
       code: verificationCode,
     };
 
-    // Make the POST request
-    axiosInstance
-      .post("/auth/verify-email", requestBody, {
-        validateStatus: () => true, // Always return true so axios doesn't throw on errors
-      })
-      .then((response) => {
-        // Set loading to false once the response is received
-        setLoading(false);
-
-        if (response.data) {
-          const { EC, EM } = response.data; // Access EC directly
-
-          if (EC === 0) {
-            setModalStatus("VERIFIED_SUCCESS");
-          } else {
-            setError(EM);
-          }
-        } else {
-          setError("Something went wrong. Please try again.");
-        }
-      })
-      .catch((error) => {
-        setLoading(false);
-        setError("Network error. Please try again later.");
+    try {
+      const response = await axiosInstance.post("/auth/verify-email", requestBody, {
+        validateStatus: () => true,
       });
+
+      setLoading(false);
+
+      if (response.data) {
+        const { EC, EM } = response.data;
+
+        if (EC === 0) {
+          setModalStatus("VERIFIED_SUCCESS");
+          setVerificationModalError(""); // Clear error on success
+        } else if (EC === 3) {
+            // Invalid verification code
+            setVerificationModalError(EM || "Invalid verification code. Please try again.");
+        } else if (EC === 1) {
+            // Missing code or email in verification (should be caught by client-side, but as fallback)
+            setVerificationModalError(EM || "Verification code or email is missing.");
+        }
+        else {
+          setVerificationModalError(EM || "Failed to verify email. Please try again.");
+        }
+      } else {
+        setVerificationModalError("Something went wrong during verification. Please try again.");
+      }
+    } catch (error) {
+      setLoading(false);
+      setVerificationModalError("Network error during verification. Please try again later.");
+    }
   };
 
   return (
@@ -134,7 +187,7 @@ const Signup = () => {
         className="flex-1 items-center justify-center"
       >
         <Spinner
-          isVisible={loading} // Ensure this is set to `true` when loading
+          isVisible={loading}
           isOverlay={true}
           overlayColor="rgba(0, 0, 0, 0.5)"
         />
@@ -142,7 +195,7 @@ const Signup = () => {
           isSignUp={true}
           onSubmit={handleSignupSubmit}
           navigation={navigation}
-          error={error}
+          formErrors={formErrors} // Pass the formErrors object
         />
       </LinearGradient>
 
@@ -178,7 +231,8 @@ const Signup = () => {
                 }
                 value={verificationCode}
               />
-              {error && <Text className="text-red-500">{error}</Text>}
+              {/* Display verification modal specific error */}
+              {verificationModalError && <Text style={modalStyles.errorText}>{verificationModalError}</Text>}
             </View>
             <FFButton
               onPress={handleSubmitVerificationCode}
@@ -219,5 +273,14 @@ const Signup = () => {
     </FFSafeAreaView>
   );
 };
+
+// New StyleSheet for modal specific styles
+const modalStyles = StyleSheet.create({
+    errorText: {
+        color: 'red',
+        fontSize: 12,
+        marginTop: 4,
+    },
+});
 
 export default Signup;

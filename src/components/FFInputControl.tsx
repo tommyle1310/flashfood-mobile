@@ -7,6 +7,7 @@ import {
   Pressable,
   StyleProp,
   ViewStyle,
+  TextInputProps,
 } from "react-native";
 import React, { useState, useRef } from "react";
 import IconIonicons from "react-native-vector-icons/Ionicons";
@@ -16,7 +17,8 @@ import colors from "../theme/colors";
 import { spacing } from "../theme";
 
 // Dùng generic T để type của value và setValue khớp nhau
-interface FFInputControlProps<T extends string | number> {
+interface FFInputControlProps<T extends string | number>
+  extends Omit<TextInputProps, "value" | "onChangeText"> {
   value: T; // value có thể là string hoặc number
   setValue?: React.Dispatch<React.SetStateAction<T>>; // setValue khớp với type của value
   error?: string | null | undefined;
@@ -26,7 +28,7 @@ interface FFInputControlProps<T extends string | number> {
   disabled?: boolean;
   readonly?: boolean;
   isNumeric?: boolean; // Thêm prop để ép kiểu number (optional)
-  style?: StyleProp<ViewStyle>; // Thêm prop style cho container chính
+  containerStyle?: StyleProp<ViewStyle>; // Thêm prop style cho container chính
   colorDark?: string;
   colorLight?: string;
   borderColorDark?: string;
@@ -45,13 +47,14 @@ const FFInputControl = <T extends string | number>({
   disabled = false,
   readonly = false,
   isNumeric = false,
-  style, // Thêm style vào destructuring
+  containerStyle, // Thêm style vào destructuring
   colorDark = "#333",
   colorLight = "#fff",
   borderColorDark = "#666",
   borderColorLight = "#d1d1d1",
   textColorDark = "#fff",
   textColorLight = "#333",
+  ...rest
 }: FFInputControlProps<T>) => {
   const { theme } = useTheme();
   const [isPasswordVisible, setIsPasswordVisible] = useState<boolean>(false);
@@ -101,7 +104,7 @@ const FFInputControl = <T extends string | number>({
   // Nếu readonly, dùng FFText
   if (readonly) {
     return (
-      <View style={style}>
+      <View style={containerStyle}>
         <FFText
           fontSize="sm"
           colorDark={textColorDark}
@@ -138,7 +141,7 @@ const FFInputControl = <T extends string | number>({
     <Pressable
       onPress={handleInputContainerPress}
       disabled={disabled}
-      style={style} // Áp dụng style cho container chính
+      style={containerStyle} // Áp dụng style cho container chính
     >
       <FFText
         fontSize="sm"
@@ -167,9 +170,9 @@ const FFInputControl = <T extends string | number>({
           secureTextEntry={secureTextEntry && !isPasswordVisible}
           style={[styles.inputField, { color: textColor }]}
           editable={!disabled}
-          autoCapitalize="none"
           keyboardType={isNumeric ? "decimal-pad" : "default"} // Bàn phím số thập phân nếu là numeric
           returnKeyType={isNumeric ? "done" : "next"} // Nút Done cho số
+          {...rest}
           placeholderTextColor={theme === "light" ? "#999" : "#666"}
         />
         {secureTextEntry && !disabled && (

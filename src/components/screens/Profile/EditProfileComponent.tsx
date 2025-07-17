@@ -98,12 +98,13 @@ const EditProfileComponent = ({
             first_name: firstName,
             last_name: lastName,
             email: email,
-            avatar: responseUploadImage?.data?.avatar,
+            phone: phone,
+            avatar: responseUploadImage?.data?.avatar ?? avatar,
           })
         );
         setModalDetails({
           status: "SUCCESS",
-          title: "Update Profile Successfully! 🦴",
+          title: "Update Profile Successfully! ⭐",
           desc: "",
         });
       } else {

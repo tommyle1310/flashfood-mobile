@@ -7,6 +7,7 @@ export const colors = {
   success: "#63c550",
   warning: "#FFA500",
   error: "#FF4444",
+  ligth_error: "#FFe1e1",
   info: "#2196F3",
 
   // Text colors

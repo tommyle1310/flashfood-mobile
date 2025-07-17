@@ -21,7 +21,7 @@ export const HeaderSection = () => {
     // Note: Token loading is handled in RootLayout.tsx, no need to load again here
   
     const userRedux = useSelector((state: RootState) => state.auth);
-
+  console.log('check userRedux', userRedux.first_name)
   return (
     <View style={{ paddingHorizontal: spacing.sm}} className="flex-row justify-between items-center ">
       <View className="flex-row items-center gap-2">

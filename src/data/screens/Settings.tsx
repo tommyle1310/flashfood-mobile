@@ -43,6 +43,19 @@ const useSettingData = () => {
         },
       },
       {
+        title: "Account Verification",
+        rightIcon: (
+          <IconIonicons
+            name="chevron-forward-outline"
+            size={20}
+            style={{ color: theme === "dark" ? "#eeee" : "#222" }}
+          />
+        ),
+        onPress: () => {
+          navigation.navigate("AccountVerification");
+        },
+      },
+      {
         title: "Address",
         rightIcon: (
           <IconIonicons

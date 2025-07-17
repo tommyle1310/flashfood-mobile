@@ -1,5 +1,5 @@
 import { View, TouchableOpacity, ScrollView } from "react-native";
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import { RouteProp, useNavigation, useRoute } from "@react-navigation/native";
 import FFSafeAreaView from "@/src/components/FFSafeAreaView";
 import OrderSummary from "@/src/components/screens/Checkout/OrderSummary";
@@ -26,6 +26,7 @@ import { colors, spacing } from "@/src/theme";
 import { useTheme } from "@/src/hooks/useTheme";
 import IconIonicons from "react-native-vector-icons/Ionicons";
 import FFToast from "@/src/components/FFToast";
+import moment from "moment";
 
 type CheckoutRouteProps = RouteProp<MainStackParamList, "Checkout">;
 type CheckoutScreenNavigationProp = StackNavigationProp<
@@ -41,44 +42,49 @@ interface FinanceRules {
 const CheckoutScreen = () => {
   const dispatch = useDispatch();
   const route = useRoute<CheckoutRouteProps>();
-  const { orderItem } = route.params;
-  const [isShowModalStatusCheckout, setIsShowModalStatusCheckout] =
-    useState<boolean>(false);
+  const { orderItem } = route.params; // Initial order data from navigation params
+
+  // Modal visibility states
+  const [isShowModalStatusCheckout, setIsShowModalStatusCheckout] = useState<boolean>(false);
   const [modalContentType, setModalContentType] = useState<
     "SUCCESS" | "ERROR" | "WARNING" | "INSUFFICIENT_BALANCE"
   >("ERROR");
-
-  // New modal states for the improved UX
-  const [isOrderSummaryModalVisible, setIsOrderSummaryModalVisible] =
-    useState(false);
+  const [isOrderSummaryModalVisible, setIsOrderSummaryModalVisible] = useState(false);
   const [isPaymentModalVisible, setIsPaymentModalVisible] = useState(false);
-  const [isConfirmationModalVisible, setIsConfirmationModalVisible] =
-    useState(false);
+  const [isConfirmationModalVisible, setIsConfirmationModalVisible] = useState(false);
+
   const navigation = useNavigation<CheckoutScreenNavigationProp>();
-  const [deliveryFee, setDeliveryFee] = useState<number>(0);
-  const [serviceFee, setServiceFee] = useState<number>(0);
-  const [subTotal, setSubTotal] = useState<number>(0);
-  const [totalAmountActual, setTotalAmountActual] = useState<number>(0);
   const globalState = useSelector((state: RootState) => state.auth);
   const { theme } = useTheme();
-  const [selectedPaymentMethod, setSelectedPaymentMethod] =
-    useState<string>("");
+  const realtimeOrders = useSelector((state: RootState) => state.orderTrackingRealtime.orders);
+
+  // Core state for calculations
+  const [subTotal, setSubTotal] = useState<number>(0);
+  const [deliveryFee, setDeliveryFee] = useState<number>(DELIVERY_FEE); // Initialize with a default
+  const [serviceFee, setServiceFee] = useState<number>(0);
+  const [voucherDiscount, setVoucherDiscount] = useState<number>(0);
+  const [totalAmountActual, setTotalAmountActual] = useState<number>(0); // Final calculated total
+
+  // Data fetched from APIs
+  const [financeRules, setFinanceRules] = useState<FinanceRules | null>(null);
+  const [voucherList, setVoucherList] = useState<Voucher[]>([]);
+  const [promotionList, setPromotionList] = useState<Promotion[]>([]); // Assuming promotions are restaurant-specific
+
+  // User selections
+  const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<string>("");
   const [selectedVoucher, setSelectedVoucher] = useState<string>("");
   const [selectedAddress, setSelectedAddress] = useState<string>("");
   const [customerNote, setCustomerNote] = useState<string>("");
+
+  // UI state
   const [isLoading, setIsLoading] = useState<boolean>(false);
-  const [promotionList, setPromotionList] = useState<Promotion[]>([]);
-  const [voucherList, setVoucherList] = useState<Voucher[]>([]);
-  const [voucherDiscount, setVoucherDiscount] = useState<number>(0);
   const [toastDetails, setToastDetails] = useState<{
     status: "SUCCESS" | "DANGER" | "INFO" | "WARNING" | "HIDDEN";
     title: string;
     desc: string;
   }>({ status: "HIDDEN", title: "", desc: "" });
-  const [financeRules, setFinanceRules] = useState<FinanceRules | null>(null);
-  const realtimeOrders = useSelector(
-    (state: RootState) => state.orderTrackingRealtime.orders
-  );
+
+  // --- Data Fetching ---
   const fetchData = async () => {
     setIsLoading(true);
     try {
@@ -87,8 +93,6 @@ const CheckoutScreen = () => {
         axiosInstance.get("/finance-rules"),
         axiosInstance.get("/vouchers/valid-at-time"),
       ]);
-      console.log('check voucher response', voucherResponse.data)
-      // Log API responses for debugging
 
       // Process restaurant response
       const restaurantData = restaurantResponse.data;
@@ -115,17 +119,18 @@ const CheckoutScreen = () => {
       const { EC, EM, data } = financeRulesResponse.data;
       if (EC === 0 && data && data[0]) {
         setFinanceRules(data[0]);
-        const deliveryFeeValue = data[0].delivery_fee ?? DELIVERY_FEE ?? 0;
+        // Use the finance rule delivery fee if available, otherwise keep default
+        const deliveryFeeValue = data[0].delivery_fee ?? deliveryFee;
         setDeliveryFee(deliveryFeeValue);
       } else {
         console.error("Finance rules API error:", EM, "Data:", data);
         setFinanceRules(null);
-        setDeliveryFee(0);
+        setDeliveryFee(deliveryFee); // Fallback to default
       }
     } catch (error) {
       console.error("Error fetching data:", error);
       setFinanceRules(null);
-      setDeliveryFee(0);
+      setDeliveryFee(deliveryFee);
       setVoucherList([]);
     } finally {
       setIsLoading(false);
@@ -136,82 +141,153 @@ const CheckoutScreen = () => {
     if (orderItem.restaurant_id) {
       fetchData();
     }
+  }, [orderItem]); // Depend on orderItem to re-fetch if order changes (e.g., from navigation)
+
+  // --- Core Calculation Logic ---
+  // 1. Calculate Subtotal (only depends on orderItem)
+  useEffect(() => {
+    const calculatedSubTotal = orderItem.order_items.reduce((total, item) => {
+      return total + ((item?.price_at_time_of_order as number) ?? 0) * (item?.quantity ?? 1);
+    }, 0);
+    setSubTotal(calculatedSubTotal);
   }, [orderItem]);
 
-  // Calculate serviceFee and totalAmountActual
+  // 2. Calculate Service Fee, Voucher Discount, and Total Amount
+  // This useEffect runs whenever subTotal, financeRules, deliveryFee, selectedVoucher, or voucherList changes.
   useEffect(() => {
+    let currentCalculatedServiceFee = 0;
     if (financeRules && subTotal > 0) {
-      const calculatedServiceFee = Number(
+      currentCalculatedServiceFee = Number(
         (financeRules.app_service_fee * subTotal).toFixed(2)
       );
-      
-      // Calculate voucher discount
-      let calculatedVoucherDiscount = 0;
-      if (selectedVoucher && voucherList.length > 0) {
-        const selectedVoucherData = voucherList.find(v => v.id === selectedVoucher);
-        if (selectedVoucherData) {
-          switch (selectedVoucherData.voucher_type) {
-            case 'FIXED':
-              calculatedVoucherDiscount = parseFloat(selectedVoucherData.discount_value);
-              break;
-            case 'PERCENTAGE':
-              calculatedVoucherDiscount = (subTotal * parseFloat(selectedVoucherData.discount_value)) / 100;
-              break;
-            case 'FREESHIP':
-              calculatedVoucherDiscount = deliveryFee;
-              break;
-            default:
-              calculatedVoucherDiscount = 0;
-          }
-        }
-      }
-      
-      setVoucherDiscount(calculatedVoucherDiscount);
-      
-      const calculatedTotal = Number(
-        (subTotal + calculatedServiceFee + deliveryFee - calculatedVoucherDiscount).toFixed(2)
-      );
-      setServiceFee(calculatedServiceFee);
-      setTotalAmountActual(calculatedTotal);
-    } else {
-      setServiceFee(0);
-      setTotalAmountActual(0);
-      setVoucherDiscount(0);
     }
-  }, [subTotal, financeRules, deliveryFee, selectedVoucher, voucherList]);
+    setServiceFee(currentCalculatedServiceFee);
 
-  const handleSelectPaymentMethod = (option: string) => {
+    let currentCalculatedVoucherDiscount = 0;
+    const selectedVoucherData = voucherList.find(v => v.id === selectedVoucher);
+
+    if (selectedVoucher && selectedVoucherData) {
+      // Check voucher validity again here for calculation, in case conditions changed since dropdown render
+      const currentTime = moment();
+      const startDate = moment.unix(parseInt(selectedVoucherData.start_date));
+      const endDate = moment.unix(parseInt(selectedVoucherData.end_date));
+      const currentDay = currentTime.day(); // 0 for Sunday, 1 for Monday...
+
+      const isDateValid = currentTime.isBetween(startDate, endDate, null, '[]');
+
+      let isDayValid = true;
+      if (selectedVoucherData.applicable_days && selectedVoucherData.applicable_days.length > 0) {
+          isDayValid = selectedVoucherData.applicable_days.includes(currentDay);
+      }
+
+      let isTimeValid = true;
+      if (selectedVoucherData.applicable_time_ranges && selectedVoucherData.applicable_time_ranges.length > 0) {
+          isTimeValid = selectedVoucherData.applicable_time_ranges.some(range => {
+              const [startHour, startMinute] = range.start_time.split(":").map(Number);
+              const [endHour, endMinute] = range.end_time.split(":").map(Number);
+              let startTime = currentTime.clone().hour(startHour).minute(startMinute).second(0).millisecond(0);
+              let endTime = currentTime.clone().hour(endHour).minute(endMinute).second(0).millisecond(0);
+              if (endTime.isBefore(startTime)) { endTime.add(1, 'day'); }
+              return currentTime.isBetween(startTime, endTime, null, '[]');
+          });
+      }
+
+      const isMinOrderValueMet = !selectedVoucherData.minimum_order_value || subTotal >= parseFloat(selectedVoucherData.minimum_order_value);
+
+      if (isDateValid && isDayValid && isTimeValid && isMinOrderValueMet) {
+        switch (selectedVoucherData.voucher_type) {
+          case 'FIXED':
+            currentCalculatedVoucherDiscount = parseFloat(selectedVoucherData.discount_value);
+            break;
+          case 'PERCENTAGE':
+            let percentageDiscount = (subTotal * parseFloat(selectedVoucherData.discount_value)) / 100;
+            if (selectedVoucherData.maximum_discount_amount && percentageDiscount > parseFloat(selectedVoucherData.maximum_discount_amount)) {
+              percentageDiscount = parseFloat(selectedVoucherData.maximum_discount_amount);
+            }
+            currentCalculatedVoucherDiscount = percentageDiscount;
+            break;
+          case 'FREESHIP':
+            currentCalculatedVoucherDiscount = deliveryFee; // Discount equals the delivery fee
+            break;
+          default:
+            currentCalculatedVoucherDiscount = 0;
+        }
+      } else {
+        // If the selected voucher is no longer valid for any reason, reset it
+        // This is important to prevent applying an invalid voucher if conditions change
+        // while the user is on the checkout screen.
+        setSelectedVoucher("");
+        currentCalculatedVoucherDiscount = 0;
+        setToastDetails({
+          status: "WARNING",
+          title: "Voucher Invalidated",
+          desc: "The selected voucher is no longer applicable due to updated conditions.",
+        });
+      }
+    }
+    setVoucherDiscount(Number(currentCalculatedVoucherDiscount.toFixed(2))); // Ensure discount is rounded
+
+    let currentTotalAmountActual = subTotal + currentCalculatedServiceFee;
+    let actualDeliveryFee = deliveryFee;
+
+    // Apply free delivery discount
+    if (selectedVoucherData?.voucher_type === "FREESHIP" && voucherDiscount > 0) {
+      actualDeliveryFee = 0; // If free delivery is applied, the actual delivery fee for total calculation is 0
+    }
+    
+    currentTotalAmountActual = (subTotal + actualDeliveryFee + currentCalculatedServiceFee - currentCalculatedVoucherDiscount);
+    
+    setTotalAmountActual(Number(Math.max(0, currentTotalAmountActual).toFixed(2))); // Total can't be negative
+  }, [subTotal, financeRules, deliveryFee, selectedVoucher, voucherList]); // Re-run when these dependencies change
+
+  // --- Handlers for User Interactions ---
+  const handleSelectPaymentMethod = useCallback((option: string) => {
     setSelectedPaymentMethod(option);
-  };
+  }, []);
 
-  const handleSelectAddress = (option: string) => {
+  const handleSelectAddress = useCallback((option: string) => {
     setSelectedAddress(option);
-  };
+  }, []);
 
-  const handleSelectVoucher = (option: string) => {
+  // Pass this handler to OrderSummary to update selectedVoucher state
+  const handleSelectVoucher = useCallback((option: string) => {
     setSelectedVoucher(option);
-  };
+  }, []);
 
+  // --- Place Order Logic ---
   const handlePlaceOrder = async () => {
     setIsLoading(true);
-    if (realtimeOrders && realtimeOrders?.[0]?.orderId) {
 
+    if (realtimeOrders && realtimeOrders?.[0]?.orderId) {
       setToastDetails({
         status: "DANGER",
         title: "Action Denied",
-        desc: "You are currently have 1 active order, please try again when that order is completed.",
+        desc: "You currently have an active order. Please try again when that order is completed.",
       });
       setIsLoading(false);
       return;
     }
 
-    if (!selectedPaymentMethod || !selectedAddress) {
+    if (!selectedPaymentMethod || !selectedAddress || selectedAddress === "Add Address") {
       setIsShowModalStatusCheckout(true);
       setModalContentType("ERROR");
       setIsLoading(false);
       return;
     }
-    console.log("cehck subttoal", subTotal);
+
+    const customerAddress = globalState?.address?.find(
+      (item) => item.title === selectedAddress
+    );
+
+    if (!customerAddress) {
+      setToastDetails({
+        status: "DANGER",
+        title: "Address Error",
+        desc: "Selected address not found or invalid.",
+      });
+      setIsLoading(false);
+      return;
+    }
 
     const requestData = {
       ...orderItem,
@@ -220,13 +296,11 @@ const CheckoutScreen = () => {
         orderItem?.restaurant_location,
       payment_method: selectedPaymentMethod,
       customer_note: customerNote,
-      customer_location: globalState?.address?.find(
-        (item) => item.title === selectedAddress
-      )?.id,
+      customer_location: customerAddress.id,
       total_amount: totalAmountActual,
       service_fee: serviceFee,
       sub_total: subTotal,
-      delivery_fee: deliveryFee,
+      delivery_fee: (selectedVoucher && voucherList.find(v => v.id === selectedVoucher)?.voucher_type === "FREESHIP") ? 0 : deliveryFee, // Send actual delivery fee to backend, 0 if free ship applied
       order_items: orderItem.order_items.map((item) => ({
         item_id: item?.item?.id,
         variant_id: item.variant_id,
@@ -243,54 +317,42 @@ const CheckoutScreen = () => {
       vouchers_applied: selectedVoucher ? [selectedVoucher] : [],
     };
 
-    console.log('check request data', requestData)
+    console.log('Sending order request data:', JSON.stringify(requestData, null, 2));
 
     try {
       const response = await axiosInstance.post(`/orders`, requestData, {
-        validateStatus: () => true,
+        validateStatus: () => true, // Allows us to handle non-2xx responses in catch block
       });
-      console.log(
-        "================================check whar req data",
-        requestData
-      );
 
-      console.log("Order response:", JSON.stringify(response.data));
-      const { EC, data } = response.data;
+      const { EC, data, EM } = response.data;
       if (EC === 0) {
         dispatch(subtractItemFromCart(data.order_items));
         dispatch(removeCartItemFromAsyncStorage(data.order_items));
         setIsShowModalStatusCheckout(true);
         setModalContentType("SUCCESS");
         setTimeout(() => {
-        setIsShowModalStatusCheckout(false);
-          
-          navigation.navigate("BottomTabs", { screenIndex: 1 });
+          setIsShowModalStatusCheckout(false);
+          navigation.navigate("BottomTabs", { screenIndex: 1 }); // Navigate to Orders screen
         }, 5000);
       } else if (EC === -8) {
         setIsShowModalStatusCheckout(true);
         setModalContentType("INSUFFICIENT_BALANCE");
-        // console.error("Order API error: Insufficient Balance");
-      }
-      else if (EC === -15) {
+      } else if (EC === -15) {
         setToastDetails({
           status: "WARNING",
-          title: "Action Denied",
-          desc: "This voucher could not be used today, please try again tomorrow",
+          title: "Voucher Error",
+          desc: "This voucher could not be used today. Please try again tomorrow.",
         });
-        setIsLoading(false);
-      }
-      else if (EC === -17) {
+      } else if (EC === -17) {
         setToastDetails({
           status: "WARNING",
-          title: "Action Denied",
-          desc: "You have already used this voucher today, please try again tomorrow",
+          title: "Voucher Error",
+          desc: "You have already used this voucher today. Please try again tomorrow.",
         });
-        setIsLoading(false);
-      }
-      else {
+      } else {
         setIsShowModalStatusCheckout(true);
         setModalContentType("ERROR");
-        console.error("Order API error:", response.data.EM);
+        console.error("Order API error:", EM);
       }
     } catch (error) {
       console.error("Error placing order:", error);
@@ -301,99 +363,101 @@ const CheckoutScreen = () => {
     }
   };
 
-  console.log("cehck curen active", realtimeOrders);
-
   // Helper function to get completion status for each section
-  const getSectionStatus = (
-    section: "summary" | "payment" | "confirmation"
-  ) => {
-    switch (section) {
-      case "summary":
-        return orderItem && orderItem.order_items.length > 0;
-      case "payment":
-        return selectedPaymentMethod !== "";
-      case "confirmation":
-        return selectedAddress !== "" && selectedAddress !== "Add Address";
-      default:
-        return false;
-    }
-  };
+  const getSectionStatus = useCallback(
+    (section: "summary" | "payment" | "confirmation") => {
+      switch (section) {
+        case "summary":
+          return subTotal > 0 && orderItem && orderItem.order_items.length > 0;
+        case "payment":
+          return selectedPaymentMethod !== "";
+        case "confirmation":
+          return selectedAddress !== "" && selectedAddress !== "Add Address";
+        default:
+          return false;
+      }
+    },
+    [subTotal, orderItem, selectedPaymentMethod, selectedAddress]
+  );
 
   // Helper function to render section card
-  const renderSectionCard = (
-    title: string,
-    subtitle: string,
-    isCompleted: boolean,
-    onPress: () => void,
-    stepNumber: number
-  ) => {
-    const backgroundColor = theme === "light" ? "#fff" : "#333";
-    const borderColor = isCompleted
-      ? "#10B981"
-      : theme === "light"
-      ? "#E5E7EB"
-      : "#4B5563";
-    const textColor = theme === "light" ? "#111827" : "#F9FAFB";
-    const subtitleColor = theme === "light" ? "#6B7280" : "#9CA3AF";
+  const renderSectionCard = useCallback(
+    (
+      title: string,
+      subtitle: string,
+      isCompleted: boolean,
+      onPress: () => void,
+      stepNumber: number
+    ) => {
+      const backgroundColor = theme === "light" ? "#fff" : "#333";
+      const borderColor = isCompleted
+        ? colors.primary
+        : theme === "light"
+        ? "#E5E7EB"
+        : "#4B5563";
+      const textColor = theme === "light" ? "#111827" : "#F9FAFB";
+      const subtitleColor = theme === "light" ? "#6B7280" : "#9CA3AF";
 
-    return (
-      <TouchableOpacity
-        onPress={onPress}
-        style={{
-          backgroundColor,
-          borderWidth: 2,
-          borderColor,
-          borderRadius: 12,
-          padding: spacing.lg,
-          marginBottom: spacing.md,
-          flexDirection: "row",
-          alignItems: "center",
-          elevation: 2,
-          shadowColor: "#000",
-          shadowOffset: { width: 0, height: 2 },
-          shadowOpacity: 0.1,
-          shadowRadius: 4,
-        }}
-      >
-        {/* Step number circle */}
-        <View
+      return (
+        <TouchableOpacity
+          onPress={onPress}
           style={{
-            width: 32,
-            height: 32,
-            borderRadius: 16,
-            backgroundColor: isCompleted ? "#10B981" : borderColor,
-            justifyContent: "center",
+            backgroundColor,
+            borderWidth: 2,
+            borderColor,
+            borderRadius: 12,
+            padding: spacing.lg,
+            marginBottom: spacing.md,
+            flexDirection: "row",
             alignItems: "center",
-            marginRight: spacing.md,
+            elevation: 2,
+            shadowColor: "#000",
+            shadowOffset: { width: 0, height: 2 },
+            shadowOpacity: 0.1,
+            shadowRadius: 4,
           }}
         >
-          {isCompleted ? (
-            <IconIonicons name="checkmark" size={18} color="white" />
-          ) : (
-            <FFText style={{ color: "white", fontWeight: "bold" }}>
-              {stepNumber}
-            </FFText>
-          )}
-        </View>
-
-        {/* Content */}
-        <View style={{ flex: 1 }}>
-          <FFText
-            fontWeight="600"
-            style={{ color: textColor, marginBottom: 4 }}
+          {/* Step number circle */}
+          <View
+            style={{
+              width: 32,
+              height: 32,
+              borderRadius: 16,
+              backgroundColor: isCompleted ? colors.primary : borderColor,
+              justifyContent: "center",
+              alignItems: "center",
+              marginRight: spacing.md,
+            }}
           >
-            {title}
-          </FFText>
-          <FFText fontSize="sm" style={{ color: subtitleColor }}>
-            {subtitle}
-          </FFText>
-        </View>
+            {isCompleted ? (
+              <IconIonicons name="checkmark" size={18} color="white" />
+            ) : (
+              <FFText style={{ color: "white", fontWeight: "bold" }}>
+                {stepNumber}
+              </FFText>
+            )}
+          </View>
 
-        {/* Arrow icon */}
-        <IconIonicons name="chevron-forward" size={20} color={subtitleColor} />
-      </TouchableOpacity>
-    );
-  };
+          {/* Content */}
+          <View style={{ flex: 1 }}>
+            <FFText
+              fontWeight="600"
+              style={{ color: textColor, marginBottom: 4 }}
+            >
+              {title}
+            </FFText>
+            <FFText fontSize="sm" style={{ color: subtitleColor }}>
+              {subtitle}
+            </FFText>
+          </View>
+
+          {/* Arrow icon */}
+          <IconIonicons name="chevron-forward" size={20} color={subtitleColor} />
+        </TouchableOpacity>
+      );
+    },
+    [theme, colors.primary]
+  ); // Dependencies for renderSectionCard
 
   if (isLoading) {
     return <Spinner isVisible isOverlay />;
@@ -426,10 +490,8 @@ const CheckoutScreen = () => {
         {/* Section Cards */}
         {renderSectionCard(
           "Order Summary",
-          orderItem
-            ? `${
-                orderItem.order_items.length
-              } items • $${totalAmountActual.toFixed(2)}`
+          orderItem && orderItem.order_items.length > 0
+            ? `${orderItem.order_items.length} items • $${totalAmountActual.toFixed(2)}`
             : "Review your order",
           getSectionStatus("summary"),
           () => setIsOrderSummaryModalVisible(true),
@@ -463,11 +525,11 @@ const CheckoutScreen = () => {
               !getSectionStatus("confirmation");
 
             return (
-              // <></>
               <FFButton
                 style={{ width: "100%" }}
                 className="w-full"
                 onPress={isDisabled ? () => {} : handlePlaceOrder}
+                disabled={isDisabled} // Explicitly disable button
               >
                 <FFText colorLight={colors.white} fontWeight="500">
                   Place Order • ${totalAmountActual.toFixed(2)}
@@ -482,7 +544,7 @@ const CheckoutScreen = () => {
           setToastDetails({ status: "HIDDEN", title: "", desc: "" })
         }
         visible={toastDetails.status !== "HIDDEN"}
-        variant={"DANGER"}
+        variant={toastDetails.status === "SUCCESS" ? "SUCCESS" : toastDetails.status === "INFO" ? "INFO" : toastDetails.status === "WARNING" ? "WARNING" : "DANGER"}
         title={toastDetails.title}
       >
         <FFText
@@ -493,6 +555,7 @@ const CheckoutScreen = () => {
           {toastDetails.desc}
         </FFText>
       </FFToast>
+
       {/* Modals */}
       <FFModal
         visible={isOrderSummaryModalVisible}
@@ -502,10 +565,13 @@ const CheckoutScreen = () => {
           orderItem={orderItem}
           deliveryFee={deliveryFee}
           serviceFee={serviceFee}
-          setTotalAmountParent={setSubTotal}
+          // The setTotalAmountParent prop is now removed from OrderSummary component,
+          // as subTotal, serviceFee, deliveryFee, and totalAmountActual are
+          // calculated and managed by the parent CheckoutScreen.
+          // OrderSummary now just *displays* these calculated values.
           selectedVoucher={selectedVoucher}
           voucherList={voucherList}
-          handleSelectVoucher={handleSelectVoucher}
+          handleSelectVoucher={handleSelectVoucher} // This passes the handler to update selectedVoucher state
           totalAmountActual={totalAmountActual}
           voucherDiscount={voucherDiscount}
         />
@@ -546,5 +612,6 @@ const CheckoutScreen = () => {
     </FFSafeAreaView>
   );
 };
+
 
 export default CheckoutScreen;

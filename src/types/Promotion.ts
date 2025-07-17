@@ -17,7 +17,6 @@ export interface Promotion {
   status: "ACTIVE";
   updated_at: Date;
 }
-
 export interface Voucher {
   id: string;
   code: string;
@@ -25,28 +24,44 @@ export interface Voucher {
   description: string;
   start_date: string;
   end_date: string;
-  voucher_type: "PERCENTAGE" | "FIXED" | "FREESHIP";
+  voucher_type: string;
   discount_value: string;
   maximum_discount_amount: string | null;
-  minimum_order_value: string;
-  avatar: any | null;
-  status: "ACTIVE" | "INACTIVE";
-  scope: "NEW_CUSTOMERS" | "ALL_CUSTOMERS";
+  minimum_order_value: string | null;
+  avatar: string | null;
+  status: string;
+  scope: string;
   current_usage: number;
   maximum_usage: number;
   usage_limit_per_customer: number;
   applicable_days: number[] | null;
-  applicable_time_ranges: Array<{
-    start_time: string;
-    end_time: string;
-  }> | null;
-  applicable_food_category_ids: string[];
-  applicable_restaurant_ids: string[];
-  excluded_food_category_ids: string[];
-  excluded_restaurant_ids: string[];
-  specific_customer_ids: string[];
+  applicable_time_ranges: { end_time: string; start_time: string }[] | null;
+  applicable_food_category_ids: any[];
+  applicable_restaurant_ids: any[];
+  excluded_food_category_ids: any[];
+  excluded_restaurant_ids: any[];
+  specific_customer_ids: any[];
   minimum_orders_required: number | null;
-  minimum_total_spent: string | null;
+  minimum_total_spent: number | null;
   created_at: string;
   updated_at: string;
 }
+
+// Updated DropdownOption interface from FFDropdown.tsx
+export interface DropdownOption {
+  value: string;
+  label: string;
+  imageUrl?: string;
+  description?: string;
+  voucherCode?: string;
+  startDateFormatted?: string;
+  endDateFormatted?: string;
+  discountDetails?: string;
+  minimumOrderValueFormatted?: string;
+  applicableDaysFormatted?: string;
+  applicableTimeRangesFormatted?: string;
+  usageInfo?: string;
+  scope?: string;
+  additionalConditions?: string;
+}
+
