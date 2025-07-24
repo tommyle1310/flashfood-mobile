@@ -18,7 +18,7 @@ import FFScreenTopSection from "@/src/components/FFScreenTopSection";
 import { useNavigation, useRoute, RouteProp } from "@react-navigation/native";
 import { MainStackParamList } from "@/src/navigation/AppNavigator";
 import { StackNavigationProp } from "@react-navigation/stack";
-import { useFChatSocket, ChatbotMessage } from "@/src/hooks/useFChatSocket";
+import { useFChatSocket, ChatbotMessage, ChatbotFormField } from "@/src/hooks/useFChatSocket";
 import { useSelector, useDispatch } from "@/src/store/types";
 import { RootState } from "@/src/store/store";
 import { truncateString } from "@/src/utils/functions";
@@ -44,6 +44,78 @@ type FChatRouteProp = RouteProp<
   "FChat"
 >;
 
+// Add this function to detect and render order details
+const renderOrderDetails = (content: string) => {
+  // Check if this is an order details message
+  if (content.includes("Order #") && content.includes("Status:")) {
+    try {
+      // Extract order ID
+      const orderIdMatch = content.match(/Order #([a-f0-9-]+)/);
+      const orderId = orderIdMatch ? orderIdMatch[1] : "";
+      
+      // Extract status
+      const statusMatch = content.match(/Status: ([^\n]+)/);
+      const status = statusMatch ? statusMatch[1] : "";
+      
+      // Extract order total
+      const totalMatch = content.match(/Order total: ([^\n]+)/);
+      const total = totalMatch ? totalMatch[1] : "";
+      
+      // Extract customer name
+      const customerMatch = content.match(/Customer: ([^\n]+)/);
+      const customer = customerMatch ? customerMatch[1] : "";
+      
+      // Extract restaurant name
+      const restaurantMatch = content.match(/Restaurant: ([^\n]+)/);
+      const restaurant = restaurantMatch ? restaurantMatch[1] : "";
+      
+      // Return styled order details
+      return (
+        <View style={styles.orderDetailsCard}>
+          <View style={styles.orderHeaderRow}>
+            <View style={styles.orderIdContainer}>
+              <FFText style={styles.orderIdLabel}>Order ID</FFText>
+              <FFText style={styles.orderId}>{truncateString(orderId, 8)}</FFText>
+            </View>
+            <View style={[
+              styles.statusBadge, 
+              status === "In Transit" ? styles.inTransitBadge : 
+              status === "Delivered" ? styles.deliveredBadge : 
+              status === "Preparing" ? styles.preparingBadge : 
+              styles.defaultBadge
+            ]}>
+              <FFText style={styles.statusText}>{status}</FFText>
+            </View>
+          </View>
+          
+          <View style={styles.orderDetailRow}>
+            <Ionicons name="restaurant-outline" size={16} color="#666" />
+            <FFText style={styles.orderDetailLabel}>Restaurant:</FFText>
+            <FFText style={styles.orderDetailValue}>{restaurant}</FFText>
+          </View>
+          
+          <View style={styles.orderDetailRow}>
+            <Ionicons name="person-outline" size={16} color="#666" />
+            <FFText style={styles.orderDetailLabel}>Customer:</FFText>
+            <FFText style={styles.orderDetailValue}>{customer}</FFText>
+          </View>
+          
+          <View style={styles.orderTotalRow}>
+            <FFText style={styles.orderTotalLabel}>Total:</FFText>
+            <FFText style={styles.orderTotalValue}>${total}</FFText>
+          </View>
+        </View>
+      );
+    } catch (error) {
+      console.log("Error parsing order details:", error);
+      return <FFText>{content}</FFText>;
+    }
+  }
+  
+  // If not an order details message, return the content as is
+  return <FFText>{content}</FFText>;
+};
+
 // Separate component for message content to handle state properly
 const MessageContent = ({ message, userId, onOptionSelect }: { 
   message: ChatMessage, 
@@ -51,13 +123,87 @@ const MessageContent = ({ message, userId, onOptionSelect }: {
   onOptionSelect: (value: string) => void
 }) => {
   const [imageError, setImageError] = useState(false);
+  const [formValues, setFormValues] = useState<Record<string, string>>({});
   const chatbotData = message.metadata?.chatbotMessage as ChatbotMessage | undefined;
   const agentData = message.metadata?.agentMessage as any;
-    console.log('cehck agent data', agentData);
+  console.log('check agent data', agentData);
+  
   // Helper function to format timestamp
   const formatTime = (timestamp: Date | string | number) => {
     const date = new Date(timestamp);
     return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  };
+  
+  // Function to detect and render order details
+  const renderOrderDetails = (content: string) => {
+    // Check if this is an order details message
+    if (content.includes("Order #") && content.includes("Status:")) {
+      try {
+        // Extract order ID
+        const orderIdMatch = content.match(/Order #([a-f0-9-]+)/);
+        const orderId = orderIdMatch ? orderIdMatch[1] : "";
+        
+        // Extract status
+        const statusMatch = content.match(/Status: ([^\n]+)/);
+        const status = statusMatch ? statusMatch[1] : "";
+        
+        // Extract order total
+        const totalMatch = content.match(/Order total: ([^\n]+)/);
+        const total = totalMatch ? totalMatch[1] : "";
+        
+        // Extract customer name
+        const customerMatch = content.match(/Customer: ([^\n]+)/);
+        const customer = customerMatch ? customerMatch[1] : "";
+        
+        // Extract restaurant name
+        const restaurantMatch = content.match(/Restaurant: ([^\n]+)/);
+        const restaurant = restaurantMatch ? restaurantMatch[1] : "";
+        
+        // Return styled order details
+        return (
+          <View style={styles.orderDetailsCard}>
+            <View style={styles.orderHeaderRow}>
+              <View style={styles.orderIdContainer}>
+                <FFText style={styles.orderIdLabel}>Order ID</FFText>
+                <FFText style={styles.orderId}>{truncateString(orderId, 8)}</FFText>
+              </View>
+              <View style={[
+                styles.statusBadge, 
+                status === "In Transit" ? styles.inTransitBadge : 
+                status === "Delivered" ? styles.deliveredBadge : 
+                status === "Preparing" ? styles.preparingBadge : 
+                styles.defaultBadge
+              ]}>
+                <FFText style={styles.statusText}>{status}</FFText>
+              </View>
+            </View>
+            
+            <View style={styles.orderDetailRow}>
+              <Ionicons name="restaurant-outline" size={16} color="#666" />
+              <FFText style={styles.orderDetailLabel}>Restaurant:</FFText>
+              <FFText style={styles.orderDetailValue}>{restaurant}</FFText>
+            </View>
+            
+            <View style={styles.orderDetailRow}>
+              <Ionicons name="person-outline" size={16} color="#666" />
+              <FFText style={styles.orderDetailLabel}>Customer:</FFText>
+              <FFText style={styles.orderDetailValue}>{customer}</FFText>
+            </View>
+            
+            <View style={styles.orderTotalRow}>
+              <FFText style={styles.orderTotalLabel}>Total:</FFText>
+              <FFText style={styles.orderTotalValue}>${total}</FFText>
+            </View>
+          </View>
+        );
+      } catch (error) {
+        console.log("Error parsing order details:", error);
+        return <FFText>{content}</FFText>;
+      }
+    }
+    
+    // If not an order details message, return null
+    return null;
   };
   
   // Render chatbot options
@@ -98,13 +244,141 @@ const MessageContent = ({ message, userId, onOptionSelect }: {
     );
   };
   
+  // Render form fields - fix parameter order (required params first)
+  const renderFormFields = (formFields: ChatbotFormField[], messageId: string, followUpPrompt?: string) => {
+    console.log("Rendering form fields:", formFields.length, "for message:", messageId);
+    
+    const handleSubmit = () => {
+      // Check if we have any values to submit
+      if (Object.keys(formValues).length === 0) {
+        alert("Please fill at least one field");
+        return;
+      }
+      
+      // Format the response as JSON string
+      const response = JSON.stringify(formValues);
+      console.log("Submitting form values:", response);
+      
+      // Send the form data
+      onOptionSelect(response);
+      
+      // Reset form values
+      setFormValues({});
+    };
+    
+    return (
+      <View style={styles.formContainer}>
+        {followUpPrompt && (
+          <FFText style={styles.followUpPrompt}>{followUpPrompt}</FFText>
+        )}
+        
+        {/* {formFields.map((field, index) => {
+          // Handle text, number, and phone inputs
+          if (field.type === 'text' || field.type === 'number' || field.type === 'phone') {
+            return (
+              <View key={`${messageId}_field_${index}`} style={styles.formField}>
+                <FFText style={styles.formLabel}>
+                  {field.label} {field.required && <FFText style={styles.requiredStar}>*</FFText>}
+                </FFText>
+                <TextInput
+                  style={styles.formInput}
+                  placeholder={`Enter ${field.label.toLowerCase()}`}
+                  value={formValues[field.key] || 'FF_ORDER_fe5d838f-19d9-4944-9c78-47d6dedbae64'}
+                  onChangeText={(text) => setFormValues({
+                    ...formValues,
+                    [field.key]: text
+                  })}
+                  keyboardType={field.type === 'number' || field.type === 'phone' ? 'phone-pad' : 'default'}
+                />
+              </View>
+            );
+          } 
+          // Handle select inputs
+          else if (field.type === 'select' && field.options) {
+            return (
+              <View key={`${messageId}_field_${index}`} style={styles.formField}>
+                <FFText style={styles.formLabel}>
+                  {field.label} {field.required && <FFText style={styles.requiredStar}>*</FFText>}
+                </FFText>
+                <View style={styles.selectOptionsContainer}>
+                  {field.options.map((option, optIndex) => (
+                    <TouchableOpacity
+                      key={`${messageId}_field_${index}_option_${optIndex}`}
+                      style={[
+                        styles.selectOption,
+                        formValues[field.key] === option.value && styles.selectedOption
+                      ]}
+                      onPress={() => setFormValues({
+                        ...formValues,
+                        [field.key]: option.value
+                      })}
+                    >
+                      <FFText style={formValues[field.key] === option.value ? 
+                        styles.selectedOptionText : styles.selectOptionText}>
+                        {option.text}
+                      </FFText>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+              </View>
+            );
+          } 
+          // Handle date inputs
+          else if (field.type === 'date') {
+            return (
+              <View key={`${messageId}_field_${index}`} style={styles.formField}>
+                <FFText style={styles.formLabel}>
+                  {field.label} {field.required && <FFText style={styles.requiredStar}>*</FFText>}
+                </FFText>
+                <TextInput
+                  style={styles.formInput}
+                  placeholder="YYYY-MM-DD"
+                  value={formValues[field.key] || ''}
+                  onChangeText={(text) => setFormValues({
+                    ...formValues,
+                    [field.key]: text
+                  })}
+                />
+              </View>
+            );
+          }
+          return null;
+        })} */}
+        
+        {/* <TouchableOpacity
+          style={styles.formSubmitButton}
+          onPress={handleSubmit}
+        >
+          <FFText style={styles.formSubmitButtonText}>Submit</FFText>
+        </TouchableOpacity> */}
+      </View>
+    );
+  };
+  
+  // Update the condition to check for order details messages
   console.log("Rendering message content:", message.messageId, "type:", message.type, 
     "has chatbot data:", !!chatbotData,
     "has agent data:", !!agentData);
-  
+
   // Force image type for agent messages with image messageType
   const isImageMessage = message.type === "IMAGE" || 
     (agentData && agentData.messageType === "image");
+
+  // Check if this is an order details message that should be styled
+  const isOrderDetailsMessage = 
+    (chatbotData && 
+     message.content.includes("Order #") && 
+     message.content.includes("Status:") &&
+     message.content.includes("Order total:")) ||
+    message.metadata?.isOrderDetails === true;
+
+  if (isOrderDetailsMessage) {
+    console.log("Rendering order details message");
+    const orderDetails = renderOrderDetails(message.content);
+    if (orderDetails) {
+      return orderDetails;
+    }
+  }
   
   if (isImageMessage) {
     console.log("Rendering image message:", message.content);
@@ -185,6 +459,27 @@ const MessageContent = ({ message, userId, onOptionSelect }: {
         {renderQuickReplies(chatbotData.quickReplies, message.messageId)}
       </View>
     );
+  } else if ((chatbotData?.type === 'form' || message.type === "FORM") && chatbotData?.formFields) {
+    console.log("Rendering form message with fields:", chatbotData.formFields);
+    return (
+      <View>
+        <FFText
+          style={{
+            ...styles.messageText,
+            ...(message.senderId === userId || message.from === userId
+               ? styles.sentMessageText
+               : styles.receivedMessageText),
+          }}
+        >
+          {message.content}
+        </FFText>
+        {renderFormFields(
+          chatbotData.formFields, 
+          message.messageId,
+          chatbotData.followUpPrompt
+        )}
+      </View>
+    );
   } else if (agentData) {
     // Special styling for human agent messages
     return (
@@ -215,19 +510,71 @@ const MessageContent = ({ message, userId, onOptionSelect }: {
       </View>
     );
   } else {
-    return (
-      <FFText
-        style={{
-          ...styles.messageText,
-          ...(message.senderId === userId || message.from === userId
-             ? styles.sentMessageText
-             : styles.receivedMessageText),
-        }}
-      >
-        {message.content}
-      </FFText>
-    );
+    // Add this function to detect and render order details
+    if (chatbotData) {
+      // Check if this is an order details message
+      if (chatbotData.message && chatbotData.message.includes("Order #") && chatbotData.message.includes("Status:")) {
+        return (
+          <View>
+            {renderOrderDetails(message.content)}
+          </View>
+        );
+      }
+      
+      // Regular chatbot message
+      return (
+        <FFText
+          style={{
+            ...styles.messageText,
+            ...(message.senderId === userId || message.from === userId
+               ? styles.sentMessageText
+               : styles.receivedMessageText),
+          }}
+        >
+          {message.content}
+        </FFText>
+      );
+    } else {
+      return (
+        <FFText
+          style={{
+            ...styles.messageText,
+            ...(message.senderId === userId || message.from === userId
+               ? styles.sentMessageText
+               : styles.receivedMessageText),
+          }}
+        >
+          {message.content}
+        </FFText>
+      );
+    }
   }
+};
+
+// Add a function to filter out duplicate messages
+const filterDuplicateMessages = (messages: ChatMessage[]): ChatMessage[] => {
+  if (!messages || messages.length === 0) return [];
+  
+  const uniqueMessages: ChatMessage[] = [];
+  const seenMessages = new Map<string, boolean>();
+  
+  messages.forEach(msg => {
+    // Create a unique key for agent messages based on content, sender and approximate timestamp
+    // For non-agent messages, use the messageId as the key
+    const isAgentMessage = msg.metadata?.agentMessage;
+    const key = isAgentMessage 
+      ? `${msg.senderId}_${msg.content}_${Math.floor(new Date(msg.timestamp).getTime() / 1000)}`
+      : msg.messageId;
+    
+    if (!seenMessages.has(key)) {
+      seenMessages.set(key, true);
+      uniqueMessages.push(msg);
+    } else {
+      console.log("Filtered duplicate message:", msg.messageId, msg.content);
+    }
+  });
+  
+  return uniqueMessages;
 };
 
 const FChatScreen = () => {
@@ -632,7 +979,7 @@ const FChatScreen = () => {
               </Text>
             </View>
           ) : (
-            messages.map((msg) => (
+            filterDuplicateMessages(messages).map((msg) => (
               <View
                 key={msg.messageId || `${msg.from}-${msg.timestamp}`}
                 className={`flex-row ${
@@ -785,6 +1132,168 @@ const styles = StyleSheet.create({
     right: 8,
     backgroundColor: 'white',
     borderRadius: 12,
+  },
+  // Form styles
+  formContainer: {
+    marginTop: 12,
+    backgroundColor: '#f8f8f8',
+    borderRadius: 8,
+    padding: 12,
+  },
+  followUpPrompt: {
+    fontSize: 14,
+    color: '#555',
+    marginBottom: 12,
+    fontStyle: 'italic',
+  },
+  formField: {
+    marginBottom: 16,
+  },
+  formLabel: {
+    fontSize: 14,
+    fontWeight: '500',
+    marginBottom: 6,
+    color: '#444',
+  },
+  requiredStar: {
+    color: '#ff3b30',
+  },
+  formInput: {
+    backgroundColor: 'white',
+    borderWidth: 1,
+    borderColor: '#ddd',
+    borderRadius: 8,
+    padding: 10,
+    fontSize: 16,
+  },
+  selectOptionsContainer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+  },
+  selectOption: {
+    backgroundColor: 'white',
+    borderWidth: 1,
+    borderColor: '#ddd',
+    borderRadius: 8,
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    marginRight: 8,
+    marginBottom: 8,
+  },
+  selectedOption: {
+    backgroundColor: '#63c550',
+    borderColor: '#63c550',
+  },
+  selectOptionText: {
+    color: '#333',
+  },
+  selectedOptionText: {
+    color: 'white',
+    fontWeight: '500',
+  },
+  formSubmitButton: {
+    backgroundColor: '#63c550',
+    borderRadius: 8,
+    paddingVertical: 12,
+    alignItems: 'center',
+    marginTop: 8,
+  },
+  formSubmitButtonText: {
+    color: 'white',
+    fontWeight: '600',
+    fontSize: 16,
+  },
+  // Order details styles
+  orderDetailsCard: {
+    backgroundColor: '#f8f8f8',
+    borderRadius: 12,
+    padding: 12,
+    marginTop: 4,
+    borderLeftWidth: 4,
+    borderLeftColor: '#63c550',
+  },
+  orderHeaderRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  orderIdContainer: {
+    flexDirection: 'column',
+  },
+  orderIdLabel: {
+    fontSize: 12,
+    color: '#666',
+    fontWeight: '500',
+  },
+  orderId: {
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  statusBadge: {
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 12,
+  },
+  inTransitBadge: {
+    backgroundColor: '#ffb74d20',
+    borderWidth: 1,
+    borderColor: '#ffb74d',
+  },
+  deliveredBadge: {
+    backgroundColor: '#4caf5020',
+    borderWidth: 1,
+    borderColor: '#4caf50',
+  },
+  preparingBadge: {
+    backgroundColor: '#2196f320',
+    borderWidth: 1,
+    borderColor: '#2196f3',
+  },
+  defaultBadge: {
+    backgroundColor: '#9e9e9e20',
+    borderWidth: 1,
+    borderColor: '#9e9e9e',
+  },
+  statusText: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#333',
+  },
+  orderDetailRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  orderDetailLabel: {
+    fontSize: 14,
+    color: '#666',
+    marginLeft: 6,
+    marginRight: 4,
+  },
+  orderDetailValue: {
+    fontSize: 14,
+    fontWeight: '500',
+    color: '#333',
+  },
+  orderTotalRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginTop: 8,
+    paddingTop: 8,
+    borderTopWidth: 1,
+    borderTopColor: '#eee',
+  },
+  orderTotalLabel: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#333',
+  },
+  orderTotalValue: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: '#63c550',
   },
 });
 

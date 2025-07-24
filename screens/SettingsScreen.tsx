@@ -17,6 +17,7 @@ import useSettingData from "@/src/data/screens/Settings";
 import FFView from "@/src/components/FFView";
 import { clearOrderTracking } from "@/src/store/orderTrackingRealtimeSlice";
 import { spacing } from "@/src/theme";
+import { clearChatSession } from "@/src/store/chatSlice";
 
 type LogoutSreenNavigationProp = StackNavigationProp<
   RootStackParamList,
@@ -94,9 +95,22 @@ const SettingsScreen = () => {
                   </Pressable>
                 ))}
                 {/* Log Out Button */}
+                <View style={styles.settingsSection}>
+                  <FFText style={styles.sectionTitle}>Developer</FFText>
+                  <Pressable
+                    onPress={() => (navigation as any).navigate("Theme")}
+                    style={styles.optionItem}
+                  >
+                    <FFText>Theme</FFText>
+                    <IconIonicons name="chevron-forward" size={20} color="#ccc" />
+                  </Pressable>
+                </View>
+
+                {/* Log Out Button */}
                 <FFButton
                   onPress={() => {
                     dispatch(logout());
+                    dispatch(clearChatSession("ALL"));
                     dispatch(clearOrderTracking()); // Xóa state
                     navigation.navigate("Login");
                   }}

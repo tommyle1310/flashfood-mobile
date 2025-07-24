@@ -42,10 +42,12 @@ export interface ChatbotCard {
   }>;
 }
 
+// Update the ChatbotFormField interface to match the structure in the example message
 export interface ChatbotFormField {
-  type: 'text' | 'select' | 'date' | 'number';
+  type: 'text' | 'select' | 'date' | 'number' | 'phone';
   label: string;
   key: string;
+  name: string; // Add name property that's used in the example
   required?: boolean;
   options?: Array<{
     text: string;
@@ -86,6 +88,13 @@ export const useFChatSocket = () => {
   // Track sent messages to avoid duplicates
   const sentMessagesRef = useRef<Set<string>>(new Set());
   
+  // Add a reference to track the last agent message
+  const lastAgentMessageRef = useRef<{
+    content: string;
+    timestamp: string;
+    agentId: string;
+  } | null>(null);
+
   const dispatch = useDispatch();
   
   // Get state from Redux
@@ -608,18 +617,30 @@ export const useFChatSocket = () => {
         // Make sure the room exists and is active
         const roomId = data.sessionId.startsWith('chatbot_') ? data.sessionId : `chatbot_${data.sessionId}`;
         
+        // Special handling for form-type messages
+        const messageType = data.type === "form" ? "FORM" : 
+                            data.type === "options" ? "OPTIONS" : "TEXT";
+        
+        // Check if this is an order details message (contains Order # and Status:)
+        const isOrderDetailsMessage = 
+          data.message && 
+          typeof data.message === 'string' &&
+          data.message.includes("Order #") && 
+          data.message.includes("Status:");
+        
         // Create a message for the chatbot response
         const formattedMessage: ChatMessage = {
           messageId: `chatbot_${Date.now()}`,
           from: "chatbot",
           senderId: "chatbot",
           content: data.message || "",
-          type: data.type === "options" ? "OPTIONS" : "TEXT",
-          messageType: data.type === "options" ? "OPTIONS" : "TEXT",
+          type: messageType,
+          messageType: messageType,
           timestamp: data.timestamp || new Date().toISOString(),
           roomId: roomId,
           metadata: {
             chatbotMessage: data,
+            isOrderDetails: isOrderDetailsMessage,
           },
         };
         
@@ -670,6 +691,26 @@ export const useFChatSocket = () => {
       
       console.log("Current support session from store:", currentSupportSession);
       console.log("Session ID match:", data.sessionId === currentSupportSession?.sessionId);
+      
+      // Check for duplicate message - compare content, timestamp, and agent ID
+      const isDuplicate = lastAgentMessageRef.current && 
+        lastAgentMessageRef.current.content === data.message &&
+        lastAgentMessageRef.current.agentId === data.agentId &&
+        // Allow a small time difference (1 second) to account for network delays
+        Math.abs(new Date(lastAgentMessageRef.current.timestamp).getTime() - 
+                 new Date(data.timestamp).getTime()) < 1000;
+      
+      if (isDuplicate) {
+        console.log("Skipping duplicate agent message:", data.message);
+        return;
+      }
+      
+      // Store this message as the last agent message
+      lastAgentMessageRef.current = {
+        content: data.message,
+        timestamp: data.timestamp,
+        agentId: data.agentId
+      };
       
       if (data.sessionId && currentSupportSession?.sessionId === data.sessionId) {
         console.log("Processing agent message...");
@@ -835,7 +876,7 @@ export const useFChatSocket = () => {
 
   const sendMessage = useCallback((
     content: string,
-    type: "TEXT" | "IMAGE" | "VIDEO" | "ORDER_INFO" | "OPTIONS" = "TEXT"
+    type: "TEXT" | "IMAGE" | "VIDEO" | "ORDER_INFO" | "OPTIONS" | "FORM" = "TEXT"
   ) => {
     console.log("sendMessage called with:", { content, type, chatType, currentSession, roomId });
     
@@ -873,12 +914,30 @@ export const useFChatSocket = () => {
       // Add the user message immediately to show in UI
       dispatch(addMessage(userMessage));
       
-      // Emit sendSupportMessage for both SUPPORT and CHATBOT
-      socket.emit("sendSupportMessage", {
+      // For form submissions, try to parse the JSON content
+      let messagePayload: any = {
         sessionId: currentSession.supportSessionId,
         message: content,
         type,
-      });
+      };
+      
+      // If this is a form submission, try to parse the JSON content
+      if (type === "FORM" && content.startsWith('{')) {
+        try {
+          const formData = JSON.parse(content);
+          messagePayload = {
+            ...messagePayload,
+            formData,
+            // Still include the original message for compatibility
+            message: `Form submitted: ${Object.keys(formData).map(key => `${key}: ${formData[key]}`).join(', ')}`,
+          };
+        } catch (e) {
+          console.error("Failed to parse form data:", e);
+        }
+      }
+      
+      // Emit sendSupportMessage for both SUPPORT and CHATBOT
+      socket.emit("sendSupportMessage", messagePayload);
       
       return;
     }
@@ -959,14 +1018,19 @@ export const useFChatSocket = () => {
          ? currentSession.supportSessionId 
          : `chatbot_${currentSession.supportSessionId}`);
     
+    // Determine if this is a form submission (JSON string)
+    const isFormSubmission = value.startsWith('{') && value.endsWith('}');
+    
     // Create a local message to show the user's selection immediately
     const userMessage: ChatMessage = {
       messageId: `option_${Date.now()}`,
       from: userId || "user",
       senderId: userId || "user",
-      content: value,
-      type: "TEXT",
-      messageType: "TEXT",
+      content: isFormSubmission 
+        ? "Form submitted" // Simple display text for form submissions
+        : value,
+      type: isFormSubmission ? "FORM" : "TEXT",
+      messageType: isFormSubmission ? "FORM" : "TEXT",
       timestamp: new Date().toISOString(),
       roomId: optionRoomId,
       metadata: {},
@@ -974,12 +1038,25 @@ export const useFChatSocket = () => {
     
     dispatch(addMessage(userMessage));
     
-    socket.emit("sendSupportMessage", {
+    // Prepare payload for the socket emission
+    let payload: any = {
       sessionId: currentSession.supportSessionId,
       message: value,
-      type: "TEXT",
-      isOptionSelection: true,
-    });
+      type: isFormSubmission ? "FORM" : "TEXT",
+      isOptionSelection: !isFormSubmission,
+    };
+    
+    // If this is a form submission, add the parsed form data
+    if (isFormSubmission) {
+      try {
+        const formData = JSON.parse(value);
+        payload.formData = formData;
+      } catch (e) {
+        console.error("Failed to parse form data:", e);
+      }
+    }
+    
+    socket.emit("sendSupportMessage", payload);
   }, [socket, currentSession, chatType, userId, dispatch]);
 
   return {

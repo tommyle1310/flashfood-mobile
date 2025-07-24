@@ -45,6 +45,7 @@ import CreateInquiryScreen from "../screens/CreateInquiryScreen";
 import FFSplashScreen from "@/screens/SplashScreen";
 import PopularRestaurantsScreen from "@/screens/PopularRestaurantsScreen";
 import AccountVerificationScreen from "@/screens/AccountVerificationScreen";
+import ThemeScreen from '../screens/ThemeScreen';
 
 export type RootStackParamList = {
   Login: undefined;
@@ -77,6 +78,7 @@ export type MainStackParamList = {
   Search: undefined | {fetchedCategories: FoodCategory[]};
   Notifications: undefined;
   AccountVerification: undefined;
+  Theme: undefined;
   NearYou: Restaurant[];
   PromotionsWithRestaurant: {
     promotionTitle?: string;
@@ -193,6 +195,11 @@ const MainStackScreen = () => {
         options={{ headerShown: false }}
         name="AccountVerification"
         component={AccountVerificationScreen}
+      />
+      <MainStack.Screen
+        options={{ headerShown: true, title: 'Theme' }}
+        name="Theme"
+        component={ThemeScreen}
       />
     </MainStack.Navigator>
   );

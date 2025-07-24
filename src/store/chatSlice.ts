@@ -7,8 +7,8 @@ export interface ChatMessage {
   senderId?: string;
   from: string;
   content: string;
-  type: "TEXT" | "IMAGE" | "VIDEO" | "ORDER_INFO" | "OPTIONS";
-  messageType?: "TEXT" | "IMAGE" | "VIDEO" | "ORDER_INFO" | "OPTIONS";
+  type: "TEXT" | "IMAGE" | "VIDEO" | "ORDER_INFO" | "OPTIONS" | "FORM";
+  messageType?: "TEXT" | "IMAGE" | "VIDEO" | "ORDER_INFO" | "OPTIONS" | "FORM";
   timestamp: Date | string; // Allow both for compatibility
   roomId: string;
   // Additional fields from server response
